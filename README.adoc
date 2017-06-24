@@ -1,12 +1,11 @@
 = Giblish: Generate docs from asciidoc files in a git repo
 
 == Purpose
-The Giblish application is used to parse a directory tree in search of AsciiDoc
-files. The found asciidoc files are generated into pdf or html versions in a
-directory tree that mimics the source file organization but with a user
-configurable destination dir and an index page.
+giblish is used to convert a source directory tree containing AsciiDoc files to
+a destination directory tree containing the corresponding html or pdf files
+and add a handy index page for the converted files.
 
-If the directory tree is part of a git repository, giblish can generate
+If the source directory tree is part of a git repository, giblish can generate
 separate html/pdf trees for branches and/or tags that match a user specified
 regexp (see examples below).
 
@@ -14,54 +13,18 @@ regexp (see examples below).
 
 Giblish is basically a convenience wrapper around the awesome asciidoctor and
 asciidoctor-pdf projects. Thank you @mojavelinux and others for making these
-brilliant tools.
+brilliant tools!!
 
-== Usage
-----
- giblish [options] source_dir_top dest_dir_top
+== Installation
 
-Options:
--h --help                  show this help text
--v --version               show version nr and exit
--f --format <format>       the output format, currently html5 or pdf are supported
-                           *html5* is used if -f is not supplied
--n --no-build-ref          suppress generation of a reference document at the destination
-                           tree root.
--r --resource-dir <dir>    specify a directory where fonts, themes, css and other
-                           central stuff needed for document generation are located.
-                           The resources are expected to be located in a subfolder
-                           whose name matches the resource type (font, theme
-                           or css). If no resource dir is specified, the asciidoctor
-                           defaults are used.
--s --style <name>          The style information used when converting the documents
-                           using the -r option for specifying resource directories.
-                           For html this is a name of a css file, for pdf, this is
-                           the name of an yml file. If no style is given 'giblish'
-                           is used as default.
--w --web-root <path>       Specifies the top dir (DirectoryRoot) of a file system
-                           tree published by a web server. This switch is only used
-                           when generating html. The typical use case is that giblish
-                           is used to generate html docs which are linked to a css.
-                           The css link needs to be relative to the top of the web
-                           tree (DirectoryRoot on Apache) and not the full absolute
-                           path to the css directory.
--g --git-branches <regExp> if the source_dir_top is located within a git repo,
-                           generate docs for all remote branches that matches
-                           the given regular expression. Each git branch will
-                           be generated to a separate subdir under the destination
-                           root dir.
--t --git-tags <regExp>     if the source_dir_top is located within a git repo,
-                           generate docs for all tags that matches the given
-                           regular expression. Each tag will be generated to
-                           a separate subdir under the destination root dir.
--c --local-only            do not try to fetch git info from any remotes of the
-                           repo before generating documents.
---log-level                set the log level explicitly. Must be one of
-                           debug, info, warn (default), error or fatal.
+ gem install giblish
 
-----
+== Usage Examples
 
-== Examples
+.Get available options
+====
+ giblish -h
+====
 
 .Giblish 'hello world'
 ====
