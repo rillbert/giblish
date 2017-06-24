@@ -2,6 +2,7 @@
 Generate docs from asciidoc files in a git repo
 
 == Purpose
+
 giblish is used to convert a source directory tree containing AsciiDoc files to
 a destination directory tree containing the corresponding html or pdf files
 and add a handy index page for the converted files.
@@ -19,6 +20,18 @@ making these brilliant tools available!!
 == Installation
 
  gem install giblish
+
+== Some random notes
+
+When using giblish for generating docs the following applies:
+
+ * giblish *will overwrite* files with the same name in the destination directory.
+ * make sure that the git working tree and index of the source git repo are clean
+   when generating docs from a git repo.
+ * giblish will make explicit check-outs of all the branches or tags that matches
+   the selection criteria. The working dir of the source git repo will thus have
+   the last branch that giblish checked-out as the current branch after doc
+   generation.
 
 == Usage Examples
 
@@ -55,7 +68,7 @@ to this css. Fonts and images used from the css must be found under
 `<working_dir/path/to/my/resources/images` respectively.
 ====
 
-.Generate docs from multiple git branches
+.Generate html from multiple git branches
 ====
  giblish -g "feature" my_src_root my_dst_root
 
@@ -68,4 +81,73 @@ dir containing links and some info about the converted files.
 
 A summary page containing links to all branches will be generated directly in
 the `my_dst_root` dir.
+====
+
+.Generate html from giblish git repo using giblish css
+====
+Assuming you have cloned this git repo to `~/github/giblish` you can do:
+
+ giblish -g "master" -r ~/github/giblish/resources ~/github/giblish my_dst_root
+
+The above will check-out all branches matching the regexp "master" and convert
+the .adoc or .ADOC files under the dir `my_src_root` to html and place the
+resulting files under the `my_dst_root/<branch_name>` dir.
+
+An index page named `index.html` is generated in each `my_dst_root/<branch_name`
+dir containing links and some info about the converted files.
+
+A summary page containing links to all branches will be generated directly in
+the `my_dst_root` dir.
+====
+
+.Generate pdf from giblish git repo using the giblish pdf theme
+====
+Assuming you have cloned this git repo to `~/github/giblish` you can do:
+
+ giblish -f pdf -g "master" -r ~/github/giblish/resources ~/github/giblish my_dst_root
+
+The above will check-out all branches matching the regexp "master" and convert
+the .adoc or .ADOC files under the dir `my_src_root` to pdf and place the
+resulting files under the `my_dst_root/<branch_name>` dir.
+
+An index page named `index.pdf` is generated in each `my_dst_root/<branch_name`
+dir containing links and some info about the converted files.
+
+A summary page containing links to all branches will be generated directly in
+the `my_dst_root` dir.
+====
+
+.Advanced usage; Publish a static html site from a git repo
+====
+giblish can be used to inject a tree of html docs suitable for serving via a web
+server (e.g. Apache). Below is an example how to create such a tree. If you
+combine this with a server side git hook that invokes this script after push,
+you will have a way of auto publish your latest documents and/or documents at
+specific git tags. In principle a poor-mans document managing system.
+
+Assumptions:
+
+ * You have a running web server that serves pages from directory root
+   `/var/www/html`
+ * You want to access the generated docs from http://your_web_site.com/proddocs
+ * The git repo containing the source docs has its working dir at `~/gh/myrepo`
+ * You only want to publish the documents in the subfolder `common/Documents` in
+   your git repo.
+ * You want to use your own css named `mylayout.css` that internally references
+   fonts and images using relative paths.
+ * You have the css and its referenced fonts and images in subfolders
+   of the git repo at `common/resources/css common/resources/fonts common/resources/images`
+ * You want to publish the documentation as it looked for your release tags
+   myprod-v1.0-final, myprod-v2.0-final, ...
+
+ giblish -t "-final$" -r ~/gh/myrepo/common/resources -s mylayout -w /var/www/html ~/gh/myrepo/common/Documents /var/www/html/proddocs
+
+The above will create a tree of html docs under `/var/www/html/proddocs`. Each
+tag will get its own subdir (e.g. `/var/www/html/proddocs/myprod_v1.0_final`).
+The css and referenced assets will be copied to a 'web_assets' dir for each
+subdir and also to the .../proddocs dir.
+
+The `-w` switch above will strip the `/var/www/html` from the css link so that
+the paths to the css will be correct in the context of the serving of the
+pages via the web server.
 ====
