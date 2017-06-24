@@ -1,73 +1,104 @@
 = Giblish: Generate docs from asciidoc files in a git repo
 
 == Purpose
-The Giblish application is used to parse a directory tree for AsciiDoc files.
-The found asciidoc files are generated into pdf and/or html versions in a
+The Giblish application is used to parse a directory tree in search of AsciiDoc
+files. The found asciidoc files are generated into pdf or html versions in a
 directory tree that mimics the source file organization but with a user
-configurable top dir.
+configurable destination dir and an index page.
 
-If the directory tree is part of a git repository, the currently checked-out
-git branch name can be used as part of the destination dir naming
-(see examples below)
+If the directory tree is part of a git repository, giblish can generate
+separate html/pdf trees for branches and/or tags that match a user specified
+regexp (see examples below).
+
+== Dependencies and credits
+
+Giblish is basically a convenience wrapper around the awesome asciidoctor and
+asciidoctor-pdf projects. Thank you @mojavelinux and others for making these
+brilliant tools.
 
 == Usage
 ----
-giblish [options] [source_dir_top] [dest_dir_top]
-  Options:
-  -d --dont-touch-existing   tell giblish to not overwrite existing files in the
-                             destination folder. *The default behaviour is to
-                             overwrite existing files*
-  -f --format <format>       the output format, currently html or pdf are supported
-                             *html* is the default
-  -b --build-ref-doc <name>  build a document with references to all generated
-                             documents and put it at $dest_dir_top Default name is
-                             *index.html" for html and *index.pdf* for pdf output.
-  -r --resource-dir <dir>    specify a directory where fonts, themes, css and other
-                             central stuff needed for document generation are located.
-                             The resources are expected to be located in a subfolder
-                             whose name matches the resource type (font, theme
-                             or css). If no resource dir is specified, the asciidoctor
-                             defaults are used.
-  -l --flatten-doctree       do not mimic the directory structure of the source files,
-                             put all generated documents directly under the $dest_dir_top
-                             dir.
-  -g --use-git-info          if the source_dir_top is located within a git repo,
-                             use available git information (such as git branch name)
-                             when generating destination dir names
+ giblish [options] source_dir_top dest_dir_top
+
+Options:
+-h --help                  show this help text
+-v --version               show version nr and exit
+-f --format <format>       the output format, currently html5 or pdf are supported
+                           *html5* is used if -f is not supplied
+-n --no-build-ref          suppress generation of a reference document at the destination
+                           tree root.
+-r --resource-dir <dir>    specify a directory where fonts, themes, css and other
+                           central stuff needed for document generation are located.
+                           The resources are expected to be located in a subfolder
+                           whose name matches the resource type (font, theme
+                           or css). If no resource dir is specified, the asciidoctor
+                           defaults are used.
+-s --style <name>          The style information used when converting the documents
+                           using the -r option for specifying resource directories.
+                           For html this is a name of a css file, for pdf, this is
+                           the name of an yml file. If no style is given 'giblish'
+                           is used as default.
+-w --web-root <path>       Specifies the top dir (DirectoryRoot) of a file system
+                           tree published by a web server. This switch is only used
+                           when generating html. The typical use case is that giblish
+                           is used to generate html docs which are linked to a css.
+                           The css link needs to be relative to the top of the web
+                           tree (DirectoryRoot on Apache) and not the full absolute
+                           path to the css directory.
+-g --git-branches <regExp> if the source_dir_top is located within a git repo,
+                           generate docs for all remote branches that matches
+                           the given regular expression. Each git branch will
+                           be generated to a separate subdir under the destination
+                           root dir.
+-t --git-tags <regExp>     if the source_dir_top is located within a git repo,
+                           generate docs for all tags that matches the given
+                           regular expression. Each tag will be generated to
+                           a separate subdir under the destination root dir.
+-c --local-only            do not try to fetch git info from any remotes of the
+                           repo before generating documents.
+--log-level                set the log level explicitly. Must be one of
+                           debug, info, warn (default), error or fatal.
+
 ----
 
 == Examples
 
-.Generate html tree from asciidoc source files in a git repo
+.Giblish 'hello world'
 ====
-A user wants to generate html documentation from all asciidoc files that exist in
-a git repo and place the resulting html files in a directory tree located under
-'myhtmldoctop'.
+ giblish my_src_root my_dst_root
 
-After checking out the branch in question, giblish can be used as
+The above will convert all .adoc or .ADOC files under the dir `my_src_root` to
+html and place the resulting files under the `my_dst_root` dir. An index page
+named `index.html` is generated in the `my_dst_root` dir containing links and
+some info about the converted files.
 
-    giblish --b -r ./mygitrepotop/adocresources mygitrepotop myhtmldoctop
-
-In this example, giblish requires that a css directory with a valid asciidoctor
-css exists at './mygitrepotop/adocresources/css'
-
-giblish will generate a dirtree with html docs whose top dir is located at
-'myhtmldoctop'. The top dir will also include a master reference file named
-index.html that contains references to all generated documents and information
-about the git branch name used to generate the documentation.
+The default asciidoctor css will be used in the html conversion.
 ====
 
-== Reference page
+.Using a different css
+====
+ giblish -r ./path/to/my/resources -s mylayout my_src_root my_dst_root
 
-The layout of the ref page looks like:
-----
-<Title of Refpage>
+The above will convert all .adoc or .ADOC files under the dir `my_src_root` to
+html and place the resulting files under the `my_dst_root` dir. An index page
+named `index.html` is generated in the `my_dst_root` dir containing links and
+some info about the converted files.
 
-<Header info>
+A css named mylayout.css must be found in the dir
+`<working_dir/path/to/my/resources/css`. The resulting html files will link
+to this css. Fonts and images used from the css must be found under
+`<working_dir/path/to/my/resources/fonts` and
+`<working_dir/path/to/my/resources/images` respectively.
+====
 
-<Description>
+.Generate docs from multiple git branches
+====
+ giblish -g "feature" my_src_root my_dst_root
 
-Document table
-Title | Link | Latest change | Latest Author
-<table entries>
-----
+The above will check-out all branches matching the regexp "feature" and convert
+the .adoc or .ADOC files under the dir `my_src_root` to html and place the
+resulting files under the `my_dst_root/<branch_name>` dir. An index page named
+`index.html` is generated in each `my_dst_root/<branch_name` dir containing links and
+some info about the converted files. A summary page containing links to all
+branches will be generated directly in the `my_dst_root` dir.
+====
