@@ -11,9 +11,9 @@ regexp (see examples below).
 
 == Dependencies and credits
 
-Giblish is basically a convenience wrapper around the awesome asciidoctor and
-asciidoctor-pdf projects. Thank you @mojavelinux and others for making these
-brilliant tools!!
+Giblish is basically a wrapper (with some extra candy) around the awesome
+*asciidoctor* and *asciidoctor-pdf* projects. Thank you @mojavelinux and others for
+making these brilliant tools available!!
 
 == Installation
 
@@ -60,8 +60,11 @@ to this css. Fonts and images used from the css must be found under
 
 The above will check-out all branches matching the regexp "feature" and convert
 the .adoc or .ADOC files under the dir `my_src_root` to html and place the
-resulting files under the `my_dst_root/<branch_name>` dir. An index page named
-`index.html` is generated in each `my_dst_root/<branch_name` dir containing links and
-some info about the converted files. A summary page containing links to all
-branches will be generated directly in the `my_dst_root` dir.
+resulting files under the `my_dst_root/<branch_name>` dir.
+
+An index page named `index.html` is generated in each `my_dst_root/<branch_name`
+dir containing links and some info about the converted files.
+
+A summary page containing links to all branches will be generated directly in
+the `my_dst_root` dir.
 ====
