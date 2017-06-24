@@ -1,4 +1,5 @@
-= Giblish: Generate docs from asciidoc files in a git repo
+= giblish
+Generate docs from asciidoc files in a git repo
 
 == Purpose
 giblish is used to convert a source directory tree containing AsciiDoc files to
