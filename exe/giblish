@@ -2,6 +2,6 @@
 #
 #
 
-require "giblish"
+require_relative "../lib/giblish"
 
 Giblish.application.run

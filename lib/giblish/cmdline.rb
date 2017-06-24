@@ -111,7 +111,7 @@ ENDHELP
       help: false,
       version: false,
       force: true,
-      format: "html5",
+      format: "html",
       flatten: false,
       suppressBuildRef: false,
       localRepoOnly: false,
