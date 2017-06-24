@@ -312,8 +312,10 @@ class GitRepoParser
     if options[:gitBranchRegexp]
       regexp = Regexp.new options[:gitBranchRegexp]
       @user_branches = @git_repo.branches.remote.select do |b|
-        regexp.match b.name
+        # match branches but remove eventual HEAD -> ... entry
+        regexp.match b.name unless b.name =~ /^HEAD/
       end
+      Giblog.logger.debug { "selected git branches: #{@user_branches}" }
 
       # Render the docs from each branch and add info to the
       # summary page
