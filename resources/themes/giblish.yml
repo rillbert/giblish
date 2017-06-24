@@ -1,0 +1,327 @@
+# define colors
+primecolor: [114,165,83]
+primelightcolor: [192,236,188]
+primedarkcolor: [81,109,68]
+secondcolor: [162,101,194]
+secondlightcolor: [239,207,228]
+seconddarkcolor: [134,86,111]
+thirdcolor: [197,124,61]
+thirdlightcolor: [234,224,180]
+thirddarkcolor: [129,93,66]
+linkcolor: [96,151,206]
+linkdarkcolor: [82,102,150]
+white: [255, 255, 255]
+black: [0, 0, 0]
+
+# define fonts
+font:
+  catalog:
+    # The default giblish font
+    giblish:
+      normal: Ubuntu-R.ttf
+      bold: Ubuntu-B.ttf
+      italic: Ubuntu-RI.ttf
+      bold_italic: Ubuntu-BI.ttf
+    # M+ 1p supports Latin, Latin-1 Supplement, Latin Extended, Greek, Cyrillic,
+    # Vietnamese, Japanese & an assortment of symbols
+    # It also provides arrows for ->, <-, => and <= replacements in case these
+    # glyphs are missing from font
+    M+ 1p Fallback:
+      normal: mplus1p-regular-fallback.ttf
+      bold: mplus1p-regular-fallback.ttf
+      italic: mplus1p-regular-fallback.ttf
+      bold_italic: mplus1p-regular-fallback.ttf
+  fallbacks:
+    - M+ 1p Fallback
+main_font_family: giblish
+
+topmargin: 2cm
+rightmargin: 2cm
+bottommargin: 2cm
+leftmargin: 2cm
+# define page properties
+page:
+  background_color: $white
+  layout: portrait
+  margin: [$topmargin, $rightmargin, $bottommargin, $leftmargin]
+  # margin_inner and margin_outer keys are used for recto/verso print margins when media=press
+  margin_inner: 2.2cm
+  margin_outer: 1.4cm
+  size: A4
+base:
+  align: justify
+  # color as hex string (leading # is optional)
+  font_color: 333333
+  # color as RGB array
+  #font_color: [51, 51, 51]
+  # color as CMYK array (approximated)
+  #font_color: [0, 0, 0, 0.92]
+  #font_color: [0, 0, 0, 92%]
+  font_family: $main_font_family
+  # choose one of these font_size/line_height_length combinations
+  #font_size: 14
+  #line_height_length: 20
+  #font_size: 11.25
+  #line_height_length: 18
+  #font_size: 11.2
+  #line_height_length: 16
+  font_size: 10.5
+  line_height_length: 12
+  # correct line height for Noto Serif metrics
+  #line_height_length: 12
+  #font_size: 11.25
+  #line_height_length: 18
+  line_height: $base_line_height_length / $base_font_size
+  font_size_large: round($base_font_size * 1.25)
+  font_size_small: round($base_font_size * 0.85)
+  font_size_min: $base_font_size * 0.75
+  font_style: normal
+  border_color: $primecolor
+  border_radius: 4
+  border_width: 0.25
+# FIXME vertical_rhythm is weird; we should think in terms of ems
+vertical_rhythm: $base_line_height_length * 2 / 3
+# correct line height for Noto Serif metrics (comes with built-in line height)
+#vertical_rhythm: $base_line_height_length
+horizontal_rhythm: $base_line_height_length
+# QUESTION should vertical_spacing be block_spacing instead?
+vertical_spacing: $vertical_rhythm
+link:
+  font_color: $linkcolor
+# literal is currently used for inline monospaced in prose and table cells
+literal:
+  font_color: $seconddarkcolor
+  font_family: M+ 1p Fallback
+menu_caret_content: " <font size=\"1.15em\"><color rgb=\"b12146\">\u203a</color></font> "
+heading:
+  align: left
+  font_color: $primecolor
+  font_color: $base_font_color
+  font_family: $base_font_family
+  font_style: bold
+  # h1 is used for part titles (book doctype only)
+  h1_font_size: floor($base_font_size * 2.6)
+  # h2 is used for chapter titles (book doctype only)
+  h2_font_size: floor($base_font_size * 1.7)
+  h2_font_color: $primecolor
+  h3_font_size: round($base_font_size_large)
+  h3_font_color: $primecolor
+  h4_font_size: $base_font_size_large
+  h4_font_color: $primecolor
+  h5_font_size: $base_font_size
+  h5_font_color: $primecolor
+  h6_font_size: $base_font_size_small
+  h6_font_color: $primecolor
+  #line_height: 1.4
+  # correct line height for Noto Serif metrics (comes with built-in line height)
+  line_height: 1
+  margin_top: $vertical_rhythm * 0.4
+  margin_bottom: $vertical_rhythm * 0.9
+title_page:
+  align: right
+  logo:
+    top: 1%
+    image: image:../images/giblish_logo.png[pdfwidth=20%]
+  title:
+    top: 55%
+    font_size: $heading_h1_font_size
+    font_color: $primecolor
+    line_height: 1.3
+  subtitle:
+    font_size: $heading_h3_font_size
+    font_color: $secondcolor
+    font_style: bold_italic
+    line_height: 1
+  authors:
+    margin_top: $base_font_size * 1.25
+    font_size: $base_font_size_large
+    font_color: 181818
+  revision:
+    margin_top: $base_font_size * 1.25
+block:
+  margin_top: 0
+  margin_bottom: $vertical_rhythm
+caption:
+  align: left
+  font_style: italic
+  font_color: $primecolor
+  # FIXME perhaps set line_height instead of / in addition to margins?
+  margin_inside: $vertical_rhythm / 3
+  #margin_inside: $vertical_rhythm / 4
+  margin_outside: 0
+lead:
+  font_size: $base_font_size_large
+  line_height: 1.4
+abstract:
+  border_color: $primecolor
+  border_width: 2
+  font_color: 5c6266
+  font_size: $base_font_size * 0.9
+  font_style: italic
+  first_line_font_style: bold
+  line_height: $base_line_height
+  padding: [0cm, 5cm, 0cm, 1cm]
+admonition:
+  padding: [0, $horizontal_rhythm, 0, $horizontal_rhythm]
+  border_color: $base_border_color
+  column_rule:
+    color: $primecolor
+    width: $base_border_width * 2
+  label:
+   text_transform: none
+   font_style: bold
+   vertical_align: middle
+  icon:
+    note:
+      name: fa-info-circle
+      stroke_color: $thirdcolor
+    tip:
+      name: fa-wrench
+      stroke_color: $thirdcolor
+    important:
+      name: fa-exclamation-triangle
+      stroke_color: $thirdcolor
+    warning:
+      name: fa-bullhorn
+      stroke_color: $thirdcolor
+    caution:
+      name: fa-life-ring
+      stroke_color: $thirdcolor
+
+blockquote:
+  font_color: $base_font_color
+  font_size: $base_font_size
+  border_color: $base_border_color
+  border_width: $base_border_width * 2
+  padding: [0, $horizontal_rhythm, $block_margin_bottom * -0.75, $horizontal_rhythm + $blockquote_border_width / 2]
+  cite_font_size: $base_font_size_small
+  cite_font_color: 999999
+# code is used for source blocks (perhaps change to source or listing?)
+code:
+  font_color: $base_font_color
+  font_family: $literal_font_family
+  font_size: ceil($base_font_size)
+  padding: $code_font_size
+  line_height: 1.25
+  background_color: f5f5f5
+  border_color: cccccc
+  border_radius: $base_border_radius
+  border_width: 0.75
+conum:
+  font_family: $main_font_family
+  font_color: $literal_font_color
+  font_size: $base_font_size
+  line_height: 4 / 3
+example:
+  border_color: $base_border_color
+  border_radius: $base_border_radius
+  border_width: 0.25
+  background_color: $thirdlightcolor
+  # FIXME reenable margin bottom once margin collapsing is implemented
+  padding: [$vertical_rhythm, $horizontal_rhythm, 0, $horizontal_rhythm]
+image:
+  align: left
+prose:
+  margin_top: $block_margin_top
+  margin_bottom: $block_margin_bottom * 0.9
+sidebar:
+  border_color: $page_background_color
+  border_radius: $base_border_radius
+  border_width: $base_border_width
+  background_color: $primelightcolor
+  # FIXME reenable margin bottom once margin collapsing is implemented
+  padding: [$vertical_rhythm, $vertical_rhythm * 1.25, 0, $vertical_rhythm * 1.25]
+  title:
+    align: center
+    font_color: $heading_font_color
+    font_family: $heading_font_family
+    font_size: $heading_h4_font_size
+    font_style: $heading_font_style
+thematic_break:
+  border_color: $primelightcolor
+  border_style: solid
+  border_width: $base_border_width
+  margin_top: $vertical_rhythm * 0.5
+  margin_bottom: $vertical_rhythm * 2.5
+description_list:
+  term_font_style: bold
+  term_font_color: $giblish_green
+  term_spacing: $vertical_rhythm / 4
+  description_indent: $horizontal_rhythm * 1.25
+outline_list:
+  indent: $horizontal_rhythm * 1.5
+  # NOTE item_spacing applies to list items that do not have complex content
+  item_spacing: $vertical_rhythm / 4
+  marker_font_color: $giblish_green
+table:
+  border_color: $primecolor
+  border_width: $base_border_width * 0.25
+  grid_color: $primecolor
+  body:
+    background_color: $primelightcolor
+    stripe_background_color: $secondlightcolor
+  # HACK accounting for line-height
+  cell_padding: [3, 3, 6, 3]
+  head:
+    background_color: $primecolor
+    font_style: bold
+    font-color: $white
+  foot:
+    background_color: $secondcolor
+    font-color: $white
+    font_style: italic
+toc:
+  font_color: $secondcolor
+  dot_leader_color: $secondcolor
+  #dot_leader_content: '. '
+  indent: $horizontal_rhythm
+  line_height: 1.4
+
+header:
+  # NOTE if background_color is set, background and border will span width of page
+  border_color: $primecolor
+  border_width: 0.25
+  height: $topmargin - 0.25cm
+  line_height: 1
+  padding: [$base_line_height_length / 2, 1, 0, 1]
+  vertical_align: bottom
+  image_vertical_align: 10
+  recto:
+    right:
+      content: image:../images/giblish_logo.png[width=80]
+  verso:
+    left:
+      content: $header_recto_right_content
+
+footer:
+  font_size: $base_font_size_small
+  border_color: $primecolor
+  border_width: 0.25
+  height: $bottommargin - 0.1cm
+  line_height: 1
+  padding: [$base_line_height_length / 2, 1, 0, 1]
+  vertical_align: top
+  #image_vertical_align: <alignment> or <number>
+  # additional attributes for content:
+  # * {page-count}
+  # * {page-number}
+  # * {document-title}
+  # * {document-subtitle}
+  # * {chapter-title}
+  # * {section-title}
+  # * {section-or-chapter-title}
+  recto:
+    #columns: "<50%,0%,>50%"
+    right:
+      #content: '{page-number}'
+      #content: '{section-or-chapter-title} | {page-number}'
+      content: '{document-title} | {page-number}'
+    #center:
+    #  content: '{page-number}'
+  verso:
+    #columns: "<50%,0%,>50%"
+    left:
+      content: '{page-number} | {document-title}'
+      #content: '{page-number} | {chapter-title}'
+    #center:
+    #  content: '{page-number}'

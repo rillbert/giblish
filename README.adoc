@@ -1,0 +1,73 @@
+= Giblish: Generate docs from asciidoc files in a git repo
+
+== Purpose
+The Giblish application is used to parse a directory tree for AsciiDoc files.
+The found asciidoc files are generated into pdf and/or html versions in a
+directory tree that mimics the source file organization but with a user
+configurable top dir.
+
+If the directory tree is part of a git repository, the currently checked-out
+git branch name can be used as part of the destination dir naming
+(see examples below)
+
+== Usage
+----
+giblish [options] [source_dir_top] [dest_dir_top]
+  Options:
+  -d --dont-touch-existing   tell giblish to not overwrite existing files in the
+                             destination folder. *The default behaviour is to
+                             overwrite existing files*
+  -f --format <format>       the output format, currently html or pdf are supported
+                             *html* is the default
+  -b --build-ref-doc <name>  build a document with references to all generated
+                             documents and put it at $dest_dir_top Default name is
+                             *index.html" for html and *index.pdf* for pdf output.
+  -r --resource-dir <dir>    specify a directory where fonts, themes, css and other
+                             central stuff needed for document generation are located.
+                             The resources are expected to be located in a subfolder
+                             whose name matches the resource type (font, theme
+                             or css). If no resource dir is specified, the asciidoctor
+                             defaults are used.
+  -l --flatten-doctree       do not mimic the directory structure of the source files,
+                             put all generated documents directly under the $dest_dir_top
+                             dir.
+  -g --use-git-info          if the source_dir_top is located within a git repo,
+                             use available git information (such as git branch name)
+                             when generating destination dir names
+----
+
+== Examples
+
+.Generate html tree from asciidoc source files in a git repo
+====
+A user wants to generate html documentation from all asciidoc files that exist in
+a git repo and place the resulting html files in a directory tree located under
+'myhtmldoctop'.
+
+After checking out the branch in question, giblish can be used as
+
+    giblish --b -r ./mygitrepotop/adocresources mygitrepotop myhtmldoctop
+
+In this example, giblish requires that a css directory with a valid asciidoctor
+css exists at './mygitrepotop/adocresources/css'
+
+giblish will generate a dirtree with html docs whose top dir is located at
+'myhtmldoctop'. The top dir will also include a master reference file named
+index.html that contains references to all generated documents and information
+about the git branch name used to generate the documentation.
+====
+
+== Reference page
+
+The layout of the ref page looks like:
+----
+<Title of Refpage>
+
+<Header info>
+
+<Description>
+
+Document table
+Title | Link | Latest change | Latest Author
+<table entries>
+----
