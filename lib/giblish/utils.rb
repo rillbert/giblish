@@ -4,15 +4,19 @@ require "fileutils"
 
 class Giblog
   def self.setup
-    if @logger.nil?
-      @logger = Logger.new(STDOUT)
-      @logger.formatter = proc do |_severity, datetime, _progname, msg|
-        "#{datetime.strftime('%H:%M:%S')} - #{msg}\n"
-      end
+    return if defined? @logger
+    @logger = Logger.new(STDOUT)
+    @logger.formatter = proc do |_severity, datetime, _progname, msg|
+      "#{datetime.strftime('%H:%M:%S')} - #{msg}\n"
     end
   end
 
   def self.logger
+    unless defined? @logger
+      puts "!!!! Error: Trying to access logger before setup !!!!"
+      puts caller
+      exit
+    end
     @logger
   end
 end
