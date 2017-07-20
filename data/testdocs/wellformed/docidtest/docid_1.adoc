@@ -1,0 +1,22 @@
+= Testing document ids
+:toc:
+:docid: WF-013
+
+== Purpose
+
+To test the basic functionality of document id references.
+This doc can be referenced as <<:docid:WF-013#This doc>>.
+
+Other valid docid references::
+
+  * << :docid:WF-013#Using space before>>
+  * << :docid: WF-013#Using space and tabs>>
+  * <<:docid:WF-013#>> No title but hash
+  * <<:docid:WF-013>> No title and no hash
+
+Invalid docid references::
+
+ * <<:DOCID:WF-013>> Wrong case
+ * <<:docid:WF-013 No ending signs
+ * <<:docid:WF-0134567890123>> Doc id longer than max chars
+ * <<:docid:W>> Doc id too short
