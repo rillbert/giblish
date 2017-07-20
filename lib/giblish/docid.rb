@@ -4,8 +4,9 @@ require_relative "./utils.rb"
 module Giblish
   # Parse all adoc files for :docid: attributes
   class DocidCollector
-
     attr_reader :docid_cache
+    IDMinLength = 2
+    IDMaxLength = 10
 
     def initialize
       # array with one hash for each discovered docid
@@ -49,31 +50,54 @@ module Giblish
         m = /^:docid: +(.*)$/.match(line)
         if m
           # There is a docid defined, cache the path and doc id
-          Giblog.logger.debug { "found docid: #{m[1].strip}" }
-          @docid_cache[m[1].strip] = path
+          validate_and_add m[1],path
         end
       end
     end
-  end
 
-  class DocRefCache
-    def self.setup
-      if @docref_cache.nil?
-        @docref_cache = []
+    def substitute_ids(src_str)
+      src_str.gsub!(/<<\s*:docid:(.*)>>/) do |_m|
+        replace_doc_id Regexp.last_match(1)
       end
     end
 
-    def self.add_entry(docref, rel_path)
-      @docref_cache[docref] = rel_path
+    private
+
+    # The input string shall contain the expression between
+    # <<:docid:<input_str>>> where the <input_str> is in the form
+    # <id>#RefTitle
+    #
+    # The result shall be a valid ref in the form
+    # <<target_doc.adoc#RefTitle>>
+    def replace_doc_id(input_str)
+      id, ref_title = input_str.split "#"
+      ref_title = "" if ref_title.nil?
+      ref_title.prepend "#"
+
+      if @docid_cache.key? id
+        "<<#{@docid_cache[id]}#{ref_title}>>"
+      else
+        Giblog.logger.error { "Unknown docid: #{id}" }
+        "<<UNKNOWN_DOC#{ref_title}>>"
+      end
     end
 
-    def self.rel_path(docref)
-      puts "looking for path associated with #{docref}..."
-      @docref_cache[docref]
+    def validate_and_add(doc_id, path)
+      id = doc_id.strip
+      Giblog.logger.debug { "found possible docid: #{id}" }
+
+      # make sure the id is within the designated length and
+      # does not contain a '#' symbol
+      if id.length.between?(IDMinLength, IDMaxLength) &&
+         !id.include?("#")
+        # the id is ok
+        @docid_cache[id] = path
+      else
+        Giblog.logger.error { "Invalid docid: #{id}, this will be ignored!" }
+      end
     end
   end
 end
-
 # Usage:
 # This doc references docref:A-1234[A-1234] for info on hippos.
 # class DocRefInlineMacro < Asciidoctor::Extensions::InlineMacroProcessor

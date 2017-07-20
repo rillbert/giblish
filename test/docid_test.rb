@@ -1,5 +1,4 @@
 require "test_helper"
-
 require_relative "../lib/giblish/utils.rb"
 require_relative "../lib/giblish/docid.rb"
 
@@ -21,13 +20,23 @@ class DocidCollectorTest < Minitest::Test
   def test_collect_docids
     idc = Giblish::DocidCollector.new
 
+    src_root_path = @paths.src_root_abs + "wellformed/docidtest"
+
     # traverse the src file tree and collect ids from all
     # .adoc or .ADOC files
-    Find.find(@paths.src_root_abs) do |path|
+    Find.find(src_root_path) do |path|
       ext = File.extname(path)
       idc.parse_file(path) if !ext.empty? && ext.casecmp(".ADOC").zero?
     end
-
     puts idc.docid_cache
+
+    # do pass two and substitute :docid: tags
+    Find.find(src_root_path) do |path|
+      ext = File.extname(path)
+      next if ext.empty? || !ext.casecmp(".ADOC").zero?
+      src_str = File.read(path)
+      processed_str = idc.substitute_ids(src_str)
+      puts processed_str
+    end
   end
 end
