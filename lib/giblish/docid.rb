@@ -29,7 +29,7 @@ module Giblish
     def process_header_lines(path)
       state = "before_header"
       File.foreach(path) do |line|
-        Giblog.logger.debug { "parsing header line #{line}" }
+#        Giblog.logger.debug { "parsing header line #{line}" }
         case state
         when "before_header" then (state = "in_header" if line =~ /^=+.*$/)
         when "in_header" then (state = "done" if line =~ /^\s*$/ || yield(line))
@@ -50,14 +50,18 @@ module Giblish
         m = /^:docid: +(.*)$/.match(line)
         if m
           # There is a docid defined, cache the path and doc id
-          validate_and_add m[1],path
+          validate_and_add m[1], path
         end
       end
     end
 
-    def substitute_ids(src_str)
-      src_str.gsub!(/<<\s*:docid:(.*)>>/) do |_m|
-        replace_doc_id Regexp.last_match(1)
+    def substitute_ids_file(path)
+      substitute_ids(File.read(path), path)
+    end
+
+    def substitute_ids(src_str, src_path)
+      src_str.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
+        replace_doc_id Regexp.last_match(1), src_path
       end
     end
 
@@ -69,13 +73,16 @@ module Giblish
     #
     # The result shall be a valid ref in the form
     # <<target_doc.adoc#RefTitle>>
-    def replace_doc_id(input_str)
-      id, ref_title = input_str.split "#"
+    def replace_doc_id(input_str, src_path)
+      id, ref_title = input_str.split("#").each(&:strip)
       ref_title = "" if ref_title.nil?
       ref_title.prepend "#"
 
       if @docid_cache.key? id
-        "<<#{@docid_cache[id]}#{ref_title}>>"
+        rel_path = @docid_cache[id]
+                   .relative_path_from(Pathname.new(src_path)) +
+                   @docid_cache[id].basename
+        "<<#{rel_path}#{ref_title}>>"
       else
         Giblog.logger.error { "Unknown docid: #{id}" }
         "<<UNKNOWN_DOC#{ref_title}>>"
@@ -91,29 +98,10 @@ module Giblish
       if id.length.between?(IDMinLength, IDMaxLength) &&
          !id.include?("#")
         # the id is ok
-        @docid_cache[id] = path
+        @docid_cache[id] = Pathname(path)
       else
         Giblog.logger.error { "Invalid docid: #{id}, this will be ignored!" }
       end
     end
   end
 end
-# Usage:
-# This doc references docref:A-1234[A-1234] for info on hippos.
-# class DocRefInlineMacro < Asciidoctor::Extensions::InlineMacroProcessor
-#   use_dsl
-#
-#   named :docref
-#   name_positional_attributes "display_text"
-#
-#   def process parent, target, attrs
-#     # puts "parent: #{parent}"
-#     # puts "target: #{target}"
-#     # puts "attrs: #{attrs}"
-#     puts "docref macro called!"
-#     rel_path = Giblish.DocRefCache.rel_path(target)
-#     target = %(<<rel_path#,attrs[display_text]>>)
-#     parent.document.register :links, target
-#     %(#{(create_anchor parent, text, type: :link, target: target).convert}#{suffix})
-#   end
-# end

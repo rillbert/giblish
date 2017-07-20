@@ -34,8 +34,7 @@ class DocidCollectorTest < Minitest::Test
     Find.find(src_root_path) do |path|
       ext = File.extname(path)
       next if ext.empty? || !ext.casecmp(".ADOC").zero?
-      src_str = File.read(path)
-      processed_str = idc.substitute_ids(src_str)
+      processed_str = idc.substitute_ids_file(path)
       puts processed_str
     end
   end
