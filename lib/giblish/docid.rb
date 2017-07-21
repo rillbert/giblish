@@ -69,23 +69,26 @@ module Giblish
 
     # The input string shall contain the expression between
     # <<:docid:<input_str>>> where the <input_str> is in the form
-    # <id>#RefTitle
+    # <id>[#section][,display_str]
     #
     # The result shall be a valid ref in the form
-    # <<target_doc.adoc#RefTitle>>
+    # <<target_doc.adoc#[section][,display_str]>>
     def replace_doc_id(input_str, src_path)
-      id, ref_title = input_str.split("#").each(&:strip)
-      ref_title = "" if ref_title.nil?
-      ref_title.prepend "#"
+      ref, display_str = input_str.split(",").each(&:strip)
+      display_str = "" if display_str.nil?
+      display_str.prepend "," if display_str.length.positive?
+
+      id, section = ref.split "#"
+      section = "" if section.nil?
 
       if @docid_cache.key? id
         rel_path = @docid_cache[id]
                    .relative_path_from(Pathname.new(src_path)) +
                    @docid_cache[id].basename
-        "<<#{rel_path}#{ref_title}>>"
+        "<<#{rel_path}##{section}#{display_str}>>"
       else
         Giblog.logger.error { "Unknown docid: #{id}" }
-        "<<UNKNOWN_DOC#{ref_title}>>"
+        "<<UNKNOWN_DOC#{display_str}>>"
       end
     end
 
