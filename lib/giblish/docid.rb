@@ -63,6 +63,7 @@ module Giblish
       src_str.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
         replace_doc_id Regexp.last_match(1), src_path
       end
+      src_str
     end
 
     private
@@ -83,7 +84,8 @@ module Giblish
 
       if @docid_cache.key? id
         rel_path = @docid_cache[id]
-                   .relative_path_from(Pathname.new(src_path)) +
+                   .dirname
+                   .relative_path_from(Pathname.new(src_path).dirname) +
                    @docid_cache[id].basename
         "<<#{rel_path}##{section}#{display_str}>>"
       else
