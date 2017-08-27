@@ -86,6 +86,7 @@ module Giblish
       src_str.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
         replace_doc_id Regexp.last_match(1), src_path
       end
+      src_str
     end
 
     private
