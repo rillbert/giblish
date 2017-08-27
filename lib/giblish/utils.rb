@@ -65,6 +65,21 @@ module Giblish
       src_abs.relative_path_from(@src_root_abs)
     end
 
+    def adoc_output_file(infile_path, extension)
+      # Get absolute source dir path
+      src_dir_abs = self.class.closest_dir infile_path
+
+      # Get relative path from source root dir
+      src_dir_rel = src_dir_abs.relative_path_from(@src_root_abs)
+
+      # Get the destination path relative the absolute source
+      # root
+      dst_dir_abs = @dst_root_abs.realpath.join(src_dir_rel)
+
+      # return full file path with correct extension
+      dst_dir_abs + get_new_basename(infile_path, extension)
+    end
+
     # Public: Get the path to the directory where to generate the given
     #         file. The path is given as the relative path from the source adoc
     #         file to the desired output directory (required by the Asciidoctor

@@ -5,12 +5,21 @@ require_relative "utils"
 
 module Giblish
   class Application
-    def run
+
+    def run_with_args(args)
+      run args
+    end
+
+    def run_from_cmd_line
+      run ARGV
+    end
+
+    def run(args)
       # setup logging
       Giblog.setup
 
       # Parse cmd line
-      cmdline = CmdLineParser.new ARGV
+      cmdline = CmdLineParser.new args
 
       Giblog.logger.debug { "cmd line args: #{cmdline.args.to_s}" }
 
@@ -21,7 +30,8 @@ module Giblish
           GitRepoParser.new cmdline.args
         else
           tc = TreeConverter.new cmdline.args
-          tc.walk_dirs
+#          tc.walk_dirs
+          tc.walk_dirs_with_docid
         end
       rescue Exception => e
         puts "Error: #{e.message}"

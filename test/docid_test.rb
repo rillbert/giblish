@@ -18,24 +18,31 @@ class DocidCollectorTest < Minitest::Test
   end
 
   def test_collect_docids
-    idc = Giblish::DocidCollector.new
+    args = ["--log-level",
+            "debug",
+            "#{@testdir_path}/../data/testdocs",
+            "#{@testdir_path}/testoutput"]
+    Giblish.application.run_with_args args
 
-    src_root_path = @paths.src_root_abs + "wellformed/docidtest"
-
-    # traverse the src file tree and collect ids from all
-    # .adoc or .ADOC files
-    Find.find(src_root_path) do |path|
-      ext = File.extname(path)
-      idc.parse_file(path) if !ext.empty? && ext.casecmp(".ADOC").zero?
-    end
-    puts idc.docid_cache
-
-    # do pass two and substitute :docid: tags
-    Find.find(src_root_path) do |path|
-      ext = File.extname(path)
-      next if ext.empty? || !ext.casecmp(".ADOC").zero?
-      processed_str = idc.substitute_ids_file(path)
-      puts processed_str
-    end
+#     idc = Giblish::DocidCollector.new
+#
+# #    src_root_path = @paths.src_root_abs + "wellformed/docidtest"
+#     src_root_path = @paths.src_root_abs + "wellformed"
+#
+#     # traverse the src file tree and collect ids from all
+#     # .adoc or .ADOC files
+#     Find.find(src_root_path) do |path|
+#       ext = File.extname(path)
+#       idc.parse_file(path) if !ext.empty? && ext.casecmp(".ADOC").zero?
+#     end
+#     puts idc.docid_cache
+#
+#     # do pass two and substitute :docid: tags
+#     Find.find(src_root_path) do |path|
+#       ext = File.extname(path)
+#       next if ext.empty? || !ext.casecmp(".ADOC").zero?
+#       processed_str = idc.substitute_ids_file(path)
+#       puts processed_str
+#     end
   end
 end

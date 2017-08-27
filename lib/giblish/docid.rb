@@ -1,16 +1,31 @@
 
 require_relative "./utils.rb"
 
+require 'asciidoctor'
+require 'asciidoctor/extensions'
+
 module Giblish
   # Parse all adoc files for :docid: attributes
-  class DocidCollector
-    attr_reader :docid_cache
-    IDMinLength = 2
-    IDMaxLength = 10
+  class DocidCollector < Asciidoctor::Extensions::Preprocessor
+    # Use a class-global docid_cache since asciidoctor creates a new Instance
+    # for each preprocessor hook
+    class << self
+      attr_reader :docid_cache
+      def clear_cache
+        @docid_cache = {}
+      end
+    end
+    @docid_cache = {}
+
+    # The minimum number of characters required for a valid doc id
+    ID_MIN_LENGTH = 2
+
+    # The maximum number of characters required for a valid doc id
+    ID_MAX_LENGTH = 10
 
     def initialize
       # array with one hash for each discovered docid
-      @docid_cache = {}
+#      @docid_cache = {}
     end
 
     # Helper method that provides the user with a way of processing only the
@@ -29,7 +44,6 @@ module Giblish
     def process_header_lines(path)
       state = "before_header"
       File.foreach(path) do |line|
-#        Giblog.logger.debug { "parsing header line #{line}" }
         case state
         when "before_header" then (state = "in_header" if line =~ /^=+.*$/)
         when "in_header" then (state = "done" if line =~ /^\s*$/ || yield(line))
@@ -55,6 +69,15 @@ module Giblish
       end
     end
 
+    def process(_document, reader)
+      reader.lines.each do |line|
+        line.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
+          replace_doc_id Regexp.last_match(1), src_path
+        end
+      end
+      reader
+    end
+
     def substitute_ids_file(path)
       substitute_ids(File.read(path), path)
     end
@@ -66,6 +89,16 @@ module Giblish
     end
 
     private
+
+    def get_rel_path(src_path, doc_id)
+      return "UNKNOWN_DOC" unless @docid_cache.key? doc_id
+
+      rel_path = @docid_cache[doc_id]
+                 .dirname
+                 .relative_path_from(Pathname.new(src_path).dirname) +
+                 @docid_cache[doc_id].basename
+      rel_path.to_s
+    end
 
     # The input string shall contain the expression between
     # <<:docid:<input_str>>> where the <input_str> is in the form
@@ -81,15 +114,7 @@ module Giblish
       id, section = ref.split "#"
       section = "" if section.nil?
 
-      if @docid_cache.key? id
-        rel_path = @docid_cache[id]
-                   .relative_path_from(Pathname.new(src_path)) +
-                   @docid_cache[id].basename
-        "<<#{rel_path}##{section}#{display_str}>>"
-      else
-        Giblog.logger.error { "Unknown docid: #{id}" }
-        "<<UNKNOWN_DOC#{display_str}>>"
-      end
+      "<<#{get_rel_path(src_path, id)}##{section}#{display_str}>>"
     end
 
     def validate_and_add(doc_id, path)
@@ -98,13 +123,25 @@ module Giblish
 
       # make sure the id is within the designated length and
       # does not contain a '#' symbol
-      if id.length.between?(IDMinLength, IDMaxLength) &&
+      if id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) &&
          !id.include?("#")
         # the id is ok
+        if @docid_cache.key? id
+          Giblog.logger.warn { "Found same doc id twice (#{id}). Using last found id."}
+        end
         @docid_cache[id] = Pathname(path)
       else
         Giblog.logger.error { "Invalid docid: #{id}, this will be ignored!" }
       end
     end
   end
+
+  def register_extensions
+    Asciidoctor::Extensions.register do
+      preprocessor DocidCollector
+    end
+  end
+
+  module_function
+
 end
