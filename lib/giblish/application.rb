@@ -21,12 +21,12 @@ module Giblish
       # Parse cmd line
       cmdline = CmdLineParser.new args
 
-      Giblog.logger.debug { "cmd line args: #{cmdline.args.to_s}" }
+      Giblog.logger.debug { "cmd line args: #{cmdline.args}" }
 
       # Convert using given args
       begin
         if cmdline.args[:gitRepoRoot]
-          Giblog.logger.info {"User asked to parse a git repo"}
+          Giblog.logger.info { "User asked to parse a git repo" }
           GitRepoParser.new cmdline.args
         else
           tc = TreeConverter.new cmdline.args
@@ -34,10 +34,22 @@ module Giblish
           tc.walk_dirs_with_docid
         end
       rescue Exception => e
-        puts "Error: #{e.message}"
-        puts "\n"
-        puts "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
-        puts cmdline.usage
+        log_error e
+        exit(1)
+      end
+    end
+
+    private
+
+    def log_error(ex)
+      Giblog.logger.error do
+        <<~ERR_MSG
+          Error: #{ex.message}
+          Backtrace:
+          \t#{ex.backtrace.join("\n\t")}
+
+          cmdline.usage
+        ERR_MSG
       end
     end
   end

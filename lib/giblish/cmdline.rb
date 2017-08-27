@@ -60,12 +60,14 @@ ENDHELP
 
     # handle help and version requests
     if @args[:help]
+      puts USAGE
+      puts ""
       puts HELP
-      exit
+      exit 0
     end
     if @args[:version]
       puts "Giblish v#{Giblish::VERSION}"
-      exit
+      exit 0
     end
 
     # set log level
@@ -96,7 +98,7 @@ ENDHELP
     else
       puts "Invalid log level specified. Run with -h to see supported levels"
       puts USAGE
-      exit
+      exit 1
     end
   end
 
@@ -138,7 +140,7 @@ ENDHELP
       when "-c", "--local-only"   then @args[:localRepoOnly] = true
       when "-s", "--style"        then next_arg = :userStyle
       when "-w", "--web-root"     then next_arg = :webRoot
-      when "--log-level"            then next_arg = :logLevel
+      when "--log-level"          then next_arg = :logLevel
       else
         if next_arg
           @args[next_arg] = arg
@@ -159,7 +161,7 @@ ENDHELP
     end
 
     puts USAGE
-    exit
+    exit 1
   end
 
   def ensure_required_args
@@ -168,7 +170,7 @@ ENDHELP
 
     puts "Error: Too few arguments."
     puts USAGE
-    exit
+    exit 1
   end
 
   def set_gitrepo_root
@@ -185,6 +187,6 @@ ENDHELP
     # We should not get here if everything is koscher...
     puts "Error: Source dir not in a git working dir despite -g or -t option given!"
     puts USAGE
-    exit
+    exit 1
   end
 end
