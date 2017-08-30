@@ -13,6 +13,7 @@ require "asciidoctor-pdf"
 
 require_relative "cmdline"
 require_relative "buildindex"
+require_relative "docid"
 
 # Base class for document converters. It contains a hash of
 # conversion options used by derived classes
@@ -75,8 +76,8 @@ class DocConverter
   #
   # Returns: The resulting Asciidoctor::Document object
   def convert(filepath)
-    unless filepath.is_a?(:Pathname)
-      raise ArgumentError("Trying to invoke convert with non-pathname!")
+    unless filepath.is_a?(Pathname)
+      raise ArgumentError, "Trying to invoke convert with non-pathname!"
     end
 
     Giblog.logger.info { "Processing: #{filepath}" }
@@ -309,7 +310,8 @@ class TreeConverter
     # traverse the src file tree and convert all files that ends with
     # .adoc or .ADOC
     Find.find(@paths.src_root_abs) do |path|
-      to_asciidoc(path) if adocfile? path
+      p = Pathname.new(path)
+      to_asciidoc(p) if adocfile? p
     end
 
     # check if we shall build index or not

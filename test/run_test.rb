@@ -14,9 +14,9 @@ class RunGiblishTest < Minitest::Test
   end
 
   def test_basic_html_conversion
-    g = `lib/giblish.rb ./data/testdocs/wellformed/ testoutput`
+    g = `lib/giblish.rb --log-level debug ./data/testdocs/wellformed/ testoutput`
     puts g
     assert_equal 0, $?.exitstatus
-    # assert_match(/^Giblish v/, g)
+    assert_match(/^Giblish v/, g)
   end
 end

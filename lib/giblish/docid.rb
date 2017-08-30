@@ -7,15 +7,18 @@ require 'asciidoctor/extensions'
 module Giblish
   # Parse all adoc files for :docid: attributes
   class DocidCollector < Asciidoctor::Extensions::Preprocessor
-    # Use a class-global docid_cache since asciidoctor creates a new Instance
+    # Use a class-global docid_cache since asciidoctor creates a new instance
     # for each preprocessor hook
+    @docid_cache = {}
     class << self
-      attr_reader :docid_cache
+      def docid_cache
+        @docid_cache
+      end
+
       def clear_cache
         @docid_cache = {}
       end
     end
-    @docid_cache = {}
 
     # The minimum number of characters required for a valid doc id
     ID_MIN_LENGTH = 2
@@ -23,10 +26,11 @@ module Giblish
     # The maximum number of characters required for a valid doc id
     ID_MAX_LENGTH = 10
 
-    def initialize
-      # array with one hash for each discovered docid
-#      @docid_cache = {}
-    end
+    # Note: I don't know how to hook into the 'initialize' or if I should
+    # let this be, currently it is disabled...
+    # def initialize(*everything)
+    #   super(everything)
+    # end
 
     # Helper method that provides the user with a way of processing only the
     # lines within the asciidoc header block.
@@ -69,10 +73,10 @@ module Giblish
       end
     end
 
-    def process(_document, reader)
+    def process(document, reader)
       reader.lines.each do |line|
         line.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
-          replace_doc_id Regexp.last_match(1), src_path
+          replace_doc_id Regexp.last_match(1), document.attributes["docfile"]
         end
       end
       reader
@@ -91,13 +95,18 @@ module Giblish
 
     private
 
-    def get_rel_path(src_path, doc_id)
-      return "UNKNOWN_DOC" unless @docid_cache.key? doc_id
+    # Helper method to shorten calls to docid_cache from instance methods
+    def docid_cache
+      self.class.docid_cache
+    end
 
-      rel_path = @docid_cache[doc_id]
+    def get_rel_path(src_path, doc_id)
+      return "UNKNOWN_DOC" unless docid_cache.key? doc_id
+
+      rel_path = docid_cache[doc_id]
                  .dirname
                  .relative_path_from(Pathname.new(src_path).dirname) +
-                 @docid_cache[doc_id].basename
+                 docid_cache[doc_id].basename
       rel_path.to_s
     end
 
@@ -127,22 +136,22 @@ module Giblish
       if id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) &&
          !id.include?("#")
         # the id is ok
-        if @docid_cache.key? id
+        if docid_cache.key? id
           Giblog.logger.warn { "Found same doc id twice (#{id}). Using last found id."}
         end
-        @docid_cache[id] = Pathname(path)
+        docid_cache[id] = Pathname(path)
       else
         Giblog.logger.error { "Invalid docid: #{id}, this will be ignored!" }
       end
     end
   end
 
+  # Helper method to register the docid preprocessor extension with
+  # the asciidoctor engine.
   def register_extensions
     Asciidoctor::Extensions.register do
       preprocessor DocidCollector
     end
   end
-
-  module_function
-
+  module_function :register_extensions
 end
