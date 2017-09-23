@@ -33,6 +33,7 @@ module Giblish
 #          tc.walk_dirs
           tc.walk_dirs_with_docid
         end
+        Giblog.logger.info { "Giblish is done!" }
       rescue Exception => e
         log_error e
         exit(1)

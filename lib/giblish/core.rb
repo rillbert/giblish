@@ -189,6 +189,18 @@ class PdfConverter < DocConverter
   def initialize(options)
     super options
 
+    pdf_attrib = setup_pdf_attribs
+
+    backend_options = { backend: "pdf", fileext: "pdf" }
+    add_backend_options backend_options, pdf_attrib
+  end
+
+  private
+
+  def setup_pdf_attribs()
+    # only set this up if user has specified a resource dir
+    return {} unless @paths.resource_dir_abs
+
     pdf_attrib = {
       "pdf-stylesdir" => "#{@paths.resource_dir_abs}/themes",
       "pdf-style" => "giblish.yml",
@@ -201,8 +213,7 @@ class PdfConverter < DocConverter
       pdf_attrib["pdf-style"] =
         /\.(yml|YML)$/ =~ @user_style ? @user_style : "#{@user_style}.yml"
 
-    backend_options = { backend: "pdf", fileext: "pdf" }
-    add_backend_options backend_options, pdf_attrib
+    pdf_attrib
   end
 end
 
