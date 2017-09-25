@@ -33,10 +33,9 @@ Gem::Specification.new do |spec|
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
   spec.add_runtime_dependency "git", "~> 1.3"
-  spec.add_runtime_dependency "asciidoctor", "1.5", ">= 1.5.6.1"
+  spec.add_runtime_dependency "asciidoctor", "~>1.5", ">= 1.5.6.1"
   spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.alpha.16"]
   # needed by asciidoctor-pdf, see instructions at
   # https://github.com/asciidoctor/asciidoctor-pdf/releases
-  spec.add_runtime_dependency "prawn-svg", "0.27", ">= 0.27.1"
-
+  spec.add_runtime_dependency "prawn-svg", "~> 0.27.1"
 end

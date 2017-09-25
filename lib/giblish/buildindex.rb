@@ -51,6 +51,7 @@ class BasicIndexBuilder
   # add more data
   def add_doc(adoc, adoc_stderr)
     Giblog.logger.debug { "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}" }
+    Giblog.logger.debug {"Doc attributes: #{adoc.attributes}"}
 
     info = DocInfo.new
     info.converted = true
@@ -63,8 +64,9 @@ class BasicIndexBuilder
     info.purpose_str = get_purpose_info adoc
 
     # Get the relative path beneath the root dir to the doc
+    d_attr = adoc.attributes
     info.relPath = Pathname.new(
-      adoc.attributes["outfile"]
+      "#{d_attr['outdir']}/#{d_attr['docname']}#{d_attr['docfilesuffix']}"
     ).relative_path_from(
       @paths.dst_root_abs
     )
