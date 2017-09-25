@@ -13,12 +13,12 @@ Other valid docid references::
   * << :docid: WF-013,Using space and tabs>>
   * <<:docid:WF-013#Testing Document ids>> No title but hash and section.
   * <<:docid:WF-013>> No title and no hash
-  * <<:docid:WF-001,Simple adoc>> Another document within the tree.
+  * <<:docid:WF-022,docid_2 adoc>> Another document within the tree.
   * <<:docid:WF-001#Purpose>> Reference a section in another document
 
 Invalid docid references::
 
- * <<:DOCID:WF-013>> Wrong case
+ * <<:DOCID:WF-022>> Wrong case
  * <<:docid:WF-013 No ending signs
  * <<:docid:WF-0134567890123>> Doc id longer than max chars
  * <<:docid:W>> Doc id too short

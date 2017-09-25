@@ -73,6 +73,11 @@ module Giblish
       end
     end
 
+    # This hook is called by Asciidoctor once for each document _before_
+    # Asciidoctor processes the adoc content.
+    #
+    # It replaces references of the format <<:docid: ID-1234,Hello >> with
+    # references to a resolved relative path.
     def process(document, reader)
       reader.lines.each do |line|
         line.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
@@ -124,6 +129,7 @@ module Giblish
       id, section = ref.split "#"
       section = "" if section.nil?
 
+      Giblog.logger.debug { "Replace docid ref in doc #{src_path}..." }
       "<<#{get_rel_path(src_path, id)}##{section}#{display_str}>>"
     end
 

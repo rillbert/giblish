@@ -93,7 +93,6 @@ class DocConverter
 
     Giblog.logger.debug { "converter_options: #{@converter_options}" }
     # do the actual conversion
-    Giblish.register_extensions
     Asciidoctor.convert_file filepath, @converter_options
   end
 
@@ -288,36 +287,10 @@ class TreeConverter
     end
   end
 
-  def walk_dirs_with_docid
-    # pass 1: collect all found doc ids
-    collect_doc_ids
-
-    # pas 2: substitute :docid: tags and convert resulting strings
-    walk_dirs
-    # Find.find(src_root_path) do |path|
-    #   next unless adocfile? path
-    #   processed_str = idc.substitute_ids_file(path)
-    #
-    #   adoc = nil
-    #   begin
-    #     # do the conversion and capture eventual errors that
-    #     # the asciidoctor lib writes to stderr
-    #     adoc_stderr = Giblish.with_captured_stderr do
-    #       adoc = @conversion.convert_str processed_str, path
-    #     end
-    #
-    #     # build the reference index if the user wants it
-    #     @options[:suppressBuildRef] || @index_builder.add_doc(adoc, adoc_stderr)
-    #   rescue Exception => e
-    #     str = "Error when converting doc: #{e.message}\n"
-    #     e.backtrace.each { |l| str << "#{l}\n" }
-    #     Giblog.logger.error { str }
-    #     @options[:suppressBuildRef] || @index_builder.add_doc_fail(filepath, e)
-    #   end
-    # end
-  end
-
   def walk_dirs
+    # pass 1: collect all found doc ids if user wishes
+    collect_doc_ids if @options[:resolveDocid]
+
     # traverse the src file tree and convert all files that ends with
     # .adoc or .ADOC
     Find.find(@paths.src_root_abs) do |path|
@@ -343,6 +316,9 @@ class TreeConverter
   end
 
   def collect_doc_ids
+    # Register the docid preprocessor hook
+    Giblish.register_extensions
+
     # Make sure that no prior docid's are hangning around
     Giblish::DocidCollector.clear_cache
     idc = Giblish::DocidCollector.new
@@ -407,7 +383,7 @@ class GitRepoParser
       end
     end
 
-    # Get the branches the user wants to parse
+    # Get the tags the user wants to parse
     if options[:gitTagRegexp]
       regexp = Regexp.new options[:gitTagRegexp]
       @user_tags = @git_repo.tags.select do |t|
@@ -454,7 +430,6 @@ class GitRepoParser
     # Parse and render docs using given args
     Giblog.logger.info { "Render docs to dir #{options[:dstDirRoot]}" }
     tc = TreeConverter.new options
-#    tc.walk_dirs
-    tc.walk_dirs_with_docid
+    tc.walk_dirs
   end
 end

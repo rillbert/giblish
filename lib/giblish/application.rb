@@ -30,8 +30,7 @@ module Giblish
           GitRepoParser.new cmdline.args
         else
           tc = TreeConverter.new cmdline.args
-#          tc.walk_dirs
-          tc.walk_dirs_with_docid
+          tc.walk_dirs
         end
         Giblog.logger.info { "Giblish is done!" }
       rescue Exception => e

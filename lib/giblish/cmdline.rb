@@ -51,6 +51,11 @@ class CmdLineParser
                              a separate subdir under the destination root dir.
   -c --local-only            do not try to fetch git info from any remotes of the
                              repo before generating documents.
+  -d --resolve-docid         use two passes, the first to collect :docid:
+                             attributes in the doc headers, the second to
+                             generate the documents and use the collected
+                             doc ids to resolve relative paths between the
+                             generated documents
   --log-level                set the log level explicitly. Must be one of
                              debug, info, warn (default), error or fatal.
 ENDHELP
@@ -117,6 +122,7 @@ ENDHELP
       flatten: false,
       suppressBuildRef: false,
       localRepoOnly: false,
+      resolveDocid: false,
       webRoot: false
     }
 
@@ -138,6 +144,7 @@ ENDHELP
       when "-g", "--git-branches" then next_arg = :gitBranchRegexp
       when "-t", "--git-tags"     then next_arg = :gitTagRegexp
       when "-c", "--local-only"   then @args[:localRepoOnly] = true
+      when "-d", "--resolve-docid" then @args[:resolveDocid] = true
       when "-s", "--style"        then next_arg = :userStyle
       when "-w", "--web-root"     then next_arg = :webRoot
       when "--log-level"          then next_arg = :logLevel
