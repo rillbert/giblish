@@ -245,14 +245,14 @@ thematic_break:
   margin_bottom: $vertical_rhythm * 2.5
 description_list:
   term_font_style: bold
-  term_font_color: $giblish_green
+  term_font_color: $primecolor
   term_spacing: $vertical_rhythm / 4
   description_indent: $horizontal_rhythm * 1.25
 outline_list:
   indent: $horizontal_rhythm * 1.5
   # NOTE item_spacing applies to list items that do not have complex content
   item_spacing: $vertical_rhythm / 4
-  marker_font_color: $giblish_green
+  marker_font_color: $primecolor
 table:
   border_color: $primecolor
   border_width: $base_border_width * 0.25
