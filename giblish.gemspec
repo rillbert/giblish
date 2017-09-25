@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["anders.rillbert@kutso.se"]
 
   spec.summary       = %q{A tool for publishing asciidoc docs stored in git repos}
-  spec.description   = %q{TBD...}
+  spec.description   = %q{A tool for publishing asciidoc docs stored in git repos}
   spec.homepage      = "http://www.example.com"
   spec.license       = "MIT"
 
