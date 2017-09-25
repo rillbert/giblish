@@ -34,5 +34,5 @@ Gem::Specification.new do |spec|
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
   spec.add_runtime_dependency "git", "~> 1.3"
   spec.add_runtime_dependency "asciidoctor", "~> 1.5"
-  spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.alpha.15"]
+  spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.alpha.16"]
 end
