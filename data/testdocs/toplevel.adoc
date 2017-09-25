@@ -1,0 +1,19 @@
+= Toplevel document for Giblish test suite
+:toc: left
+:docid: GT-001
+:imagesdir: images
+:numbered:
+
+This is the preamble
+
+== Purpose
+
+This doc tests some aspects of giblish.
+
+== Another section
+
+With some text...
+
+=== A sub-section
+
+With some more text...

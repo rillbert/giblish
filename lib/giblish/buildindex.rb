@@ -41,6 +41,7 @@ class BasicIndexBuilder
   # set up the basic index building info
   def initialize(path_manager)
     @paths = path_manager
+    @nof_missing_titles = 0
     @added_docs = []
     @src_str = ""
   end
@@ -305,6 +306,8 @@ end
 class GitRepoIndexBuilder < BasicIndexBuilder
   def initialize(path_manager, git_repo_root)
     super path_manager
+
+    # initialize state variables
     @git_repo_root = git_repo_root
 
     # no repo root given...
@@ -314,9 +317,6 @@ class GitRepoIndexBuilder < BasicIndexBuilder
       # Make sure that we can "talk" to git if user feeds us
       # a git repo root
       @git_repo = Git.open(@git_repo_root)
-
-      # initialize state variables
-      @nof_missing_titles = 0
     rescue Exception => e
       Giblog.logger.error { "No git repo! exception: #{e.message}" }
     end

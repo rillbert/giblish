@@ -1,0 +1,14 @@
+= A simple Ascidoc document
+Using the author line as sub-title
+:toc:
+:docid: WF-001
+:imagesdir: images
+:numbered:
+
+== Purpose
+
+To provide a barebone, wellformed asciidoc document.
+
+== The gist
+
+This paragraph is the only content.

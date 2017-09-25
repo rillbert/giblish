@@ -13,6 +13,7 @@ require "asciidoctor-pdf"
 
 require_relative "cmdline"
 require_relative "buildindex"
+require_relative "docid"
 
 # Base class for document converters. It contains a hash of
 # conversion options used by derived classes
@@ -42,26 +43,53 @@ class DocConverter
     @converter_options[:backend] = options[:backend]
   end
 
+  def convert_str(input_str, src_path, output_file = nil)
+    unless input_str.is_a?(String)
+      raise ArgumentError("Trying to invoke convert_str with non-string!")
+    end
+
+    # use the same options as when converting all docs
+    # in the tree but make sure Asciidoctor doesn't write to file
+    index_opts = @converter_options.dup
+    index_opts.delete(:to_file)
+    index_opts.delete(:to_dir)
+
+    # load and convert the string using the converter options
+    doc = Asciidoctor.load input_str, index_opts
+    output = doc.convert index_opts
+
+    # determine the correct output path
+    if output_file.nil?
+      output_file = @paths.adoc_output_file(src_path,
+                                            @converter_options[:fileext])
+    end
+
+    # write the converted document to file and return the doc
+    doc.write output, output_file.to_s
+    doc
+  end
+
   # Public: Convert one single adoc file using the specific conversion
   # options.
   #
-  # filepath - a string with the absolute path to the input file to convert
+  # filepath - a pathname with the absolute path to the input file to convert
   #
   # Returns: The resulting Asciidoctor::Document object
   def convert(filepath)
+    unless filepath.is_a?(Pathname)
+      raise ArgumentError, "Trying to invoke convert with non-pathname!"
+    end
+
     Giblog.logger.info { "Processing: #{filepath}" }
 
     # create an asciidoc doc object and convert to requested
     # output using current conversion options
     @converter_options[:to_dir] = @paths.adoc_output_dir(filepath).to_s
-    @converter_options[:base_dir] = Giblish::PathManager.closest_dir(
-      filepath
-    ).to_s
-    @converter_options[:to_file] = Giblish::PathManager.get_new_basename(
-      filepath,
-      @converter_options[:fileext]
-    )
-
+    @converter_options[:base_dir] =
+      Giblish::PathManager.closest_dir(filepath).to_s
+    @converter_options[:to_file] =
+      Giblish::PathManager.get_new_basename(filepath,
+                                            @converter_options[:fileext])
 
     Giblog.logger.debug { "converter_options: #{@converter_options}" }
     # do the actual conversion
@@ -160,6 +188,18 @@ class PdfConverter < DocConverter
   def initialize(options)
     super options
 
+    pdf_attrib = setup_pdf_attribs
+
+    backend_options = { backend: "pdf", fileext: "pdf" }
+    add_backend_options backend_options, pdf_attrib
+  end
+
+  private
+
+  def setup_pdf_attribs()
+    # only set this up if user has specified a resource dir
+    return {} unless @paths.resource_dir_abs
+
     pdf_attrib = {
       "pdf-stylesdir" => "#{@paths.resource_dir_abs}/themes",
       "pdf-style" => "giblish.yml",
@@ -172,20 +212,11 @@ class PdfConverter < DocConverter
       pdf_attrib["pdf-style"] =
         /\.(yml|YML)$/ =~ @user_style ? @user_style : "#{@user_style}.yml"
 
-    backend_options = { backend: "pdf", fileext: "pdf" }
-    add_backend_options backend_options, pdf_attrib
+    pdf_attrib
   end
 end
 
 class TreeConverter
-
-  # def init_dst_root
-  #   # make sure destination dir exists
-  #   Giblog.logger.info do
-  #     "Will generate docs to destination root: #{@paths.dst_root_abs}"
-  #   end
-  #   Dir.exist?(@paths.dst_root_abs) || FileUtils.mkdir_p(@paths.dst_root_abs)
-  # end
 
   # Required options:
   #  srcDirRoot
@@ -243,7 +274,7 @@ class TreeConverter
       # do the conversion and capture eventual errors that
       # the asciidoctor lib writes to stderr
       adoc_stderr = Giblish.with_captured_stderr do
-        adoc = @conversion.convert(filepath)
+        adoc = @conversion.convert filepath
       end
 
       # build the reference index if the user wants it
@@ -251,17 +282,20 @@ class TreeConverter
     rescue Exception => e
       str = "Error when converting doc: #{e.message}\n"
       e.backtrace.each { |l| str << "#{l}\n" }
-      Giblog.logger.warn { str }
+      Giblog.logger.error { str }
       @options[:suppressBuildRef] || @index_builder.add_doc_fail(filepath, e)
     end
   end
 
   def walk_dirs
+    # pass 1: collect all found doc ids if user wishes
+    collect_doc_ids if @options[:resolveDocid]
+
     # traverse the src file tree and convert all files that ends with
     # .adoc or .ADOC
     Find.find(@paths.src_root_abs) do |path|
-      ext = File.extname(path)
-      to_asciidoc(path) if !ext.empty? && ext.casecmp(".ADOC").zero?
+      p = Pathname.new(path)
+      to_asciidoc(p) if adocfile? p
     end
 
     # check if we shall build index or not
@@ -274,6 +308,30 @@ class TreeConverter
     @index_builder = nil
     GC.start
   end
+
+  private
+
+  def adocfile?(path)
+    path.extname.casecmp(".ADOC").zero?
+  end
+
+  def collect_doc_ids
+    # Register the docid preprocessor hook
+    Giblish.register_extensions
+
+    # Make sure that no prior docid's are hangning around
+    Giblish::DocidCollector.clear_cache
+    idc = Giblish::DocidCollector.new
+
+    # traverse the src file tree and collect ids from all
+    # .adoc or .ADOC files
+    Find.find(@paths.src_root_abs) do |path|
+      p = Pathname.new(path)
+      idc.parse_file(p) if adocfile? p
+    end
+    idc
+  end
+
 end
 
 class GitRepoParser
@@ -325,7 +383,7 @@ class GitRepoParser
       end
     end
 
-    # Get the branches the user wants to parse
+    # Get the tags the user wants to parse
     if options[:gitTagRegexp]
       regexp = Regexp.new options[:gitTagRegexp]
       @user_tags = @git_repo.tags.select do |t|

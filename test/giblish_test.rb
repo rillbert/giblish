@@ -15,13 +15,6 @@ class GiblishAdminTest < Minitest::Test
   def test_that_it_has_a_version_number
     refute_nil ::Giblish::VERSION
   end
-
-  # def test_basic_html5_conversion
-  #   opts = { srcDirRoot: ".",
-  #            dstDirRoot: "#{@testdir_path}/testoutput" }
-  #   hc = HtmlConverter.new(opts)
-  #   hc.convert("#{@testdir_path}/../README.adoc")
-  # end
 end
 
 class PathManagerTest < Minitest::Test

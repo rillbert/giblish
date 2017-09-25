@@ -1,0 +1,8 @@
+= Docid test doc 2
+:toc: left
+:numbered:
+:docid: WF-022
+
+== Purpose
+
+To test that Giblish can use <<:docid: WF-013, doc-id references>> to refer to external documents.

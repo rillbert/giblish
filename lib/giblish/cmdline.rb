@@ -51,6 +51,11 @@ class CmdLineParser
                              a separate subdir under the destination root dir.
   -c --local-only            do not try to fetch git info from any remotes of the
                              repo before generating documents.
+  -d --resolve-docid         use two passes, the first to collect :docid:
+                             attributes in the doc headers, the second to
+                             generate the documents and use the collected
+                             doc ids to resolve relative paths between the
+                             generated documents
   --log-level                set the log level explicitly. Must be one of
                              debug, info, warn (default), error or fatal.
 ENDHELP
@@ -60,12 +65,14 @@ ENDHELP
 
     # handle help and version requests
     if @args[:help]
+      puts USAGE
+      puts ""
       puts HELP
-      exit
+      exit 0
     end
     if @args[:version]
       puts "Giblish v#{Giblish::VERSION}"
-      exit
+      exit 0
     end
 
     # set log level
@@ -96,7 +103,7 @@ ENDHELP
     else
       puts "Invalid log level specified. Run with -h to see supported levels"
       puts USAGE
-      exit
+      exit 1
     end
   end
 
@@ -115,6 +122,7 @@ ENDHELP
       flatten: false,
       suppressBuildRef: false,
       localRepoOnly: false,
+      resolveDocid: false,
       webRoot: false
     }
 
@@ -136,9 +144,10 @@ ENDHELP
       when "-g", "--git-branches" then next_arg = :gitBranchRegexp
       when "-t", "--git-tags"     then next_arg = :gitTagRegexp
       when "-c", "--local-only"   then @args[:localRepoOnly] = true
+      when "-d", "--resolve-docid" then @args[:resolveDocid] = true
       when "-s", "--style"        then next_arg = :userStyle
       when "-w", "--web-root"     then next_arg = :webRoot
-      when "--log-level"            then next_arg = :logLevel
+      when "--log-level"          then next_arg = :logLevel
       else
         if next_arg
           @args[next_arg] = arg
@@ -159,7 +168,7 @@ ENDHELP
     end
 
     puts USAGE
-    exit
+    exit 1
   end
 
   def ensure_required_args
@@ -168,7 +177,7 @@ ENDHELP
 
     puts "Error: Too few arguments."
     puts USAGE
-    exit
+    exit 1
   end
 
   def set_gitrepo_root
@@ -185,6 +194,6 @@ ENDHELP
     # We should not get here if everything is koscher...
     puts "Error: Source dir not in a git working dir despite -g or -t option given!"
     puts USAGE
-    exit
+    exit 1
   end
 end

@@ -18,5 +18,5 @@ module Giblish
 end
 
 if __FILE__ == $PROGRAM_NAME
-  Giblish.application.run
+  Giblish.application.run_from_cmd_line
 end

@@ -4,15 +4,19 @@ require "fileutils"
 
 class Giblog
   def self.setup
-    if @logger.nil?
-      @logger = Logger.new(STDOUT)
-      @logger.formatter = proc do |_severity, datetime, _progname, msg|
-        "#{datetime.strftime('%H:%M:%S')} - #{msg}\n"
-      end
+    return if defined? @logger
+    @logger = Logger.new(STDOUT)
+    @logger.formatter = proc do |_severity, datetime, _progname, msg|
+      "#{datetime.strftime('%H:%M:%S')} - #{msg}\n"
     end
   end
 
   def self.logger
+    unless defined? @logger
+      puts "!!!! Error: Trying to access logger before setup !!!!"
+      puts caller
+      exit
+    end
     @logger
   end
 end
@@ -59,6 +63,21 @@ module Giblish
 
       # Get relative path from source root dir
       src_abs.relative_path_from(@src_root_abs)
+    end
+
+    def adoc_output_file(infile_path, extension)
+      # Get absolute source dir path
+      src_dir_abs = self.class.closest_dir infile_path
+
+      # Get relative path from source root dir
+      src_dir_rel = src_dir_abs.relative_path_from(@src_root_abs)
+
+      # Get the destination path relative the absolute source
+      # root
+      dst_dir_abs = @dst_root_abs.realpath.join(src_dir_rel)
+
+      # return full file path with correct extension
+      dst_dir_abs + get_new_basename(infile_path, extension)
     end
 
     # Public: Get the path to the directory where to generate the given
