@@ -26,8 +26,7 @@ class RunGiblishTest < Minitest::Test
   end
 
   def test_basic_docid_resolution
-    g = `lib/giblish.rb -d --log-level debug ./data/testdocs/wellformed/docidtest testoutput`
-    puts g
+    g = `lib/giblish.rb -d --log-level info ./data/testdocs/wellformed/docidtest testoutput`
     assert_equal 0, $?.exitstatus
     assert_match(/Giblish is done!$/, g)
   end

@@ -4,4 +4,4 @@
 
 require_relative "../lib/giblish"
 
-Giblish.application.run
+Giblish.application.run_from_cmd_line
