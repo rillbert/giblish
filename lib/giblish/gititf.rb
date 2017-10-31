@@ -21,7 +21,7 @@ module Giblish
     end
 
     def file_log(filename)
-      o, e, s = exec_cmd("log", %w[--follow --], filename)
+      o, e, s = exec_cmd("log", %w[--follow --date=iso --], filename)
       raise "Failed to get file log for #{filename}!!\n#{e}" if s.exitstatus != 0
 
       process_log_output(o)
@@ -29,17 +29,41 @@ module Giblish
 
     private
 
+    # Process the log output from git
+    # (This is copied to 90% from the ruby-git gem)
     def process_log_output(output)
-      tokens = { "commit" => :commit, "Author:" => :author }
+      in_message = false
+      hsh_array = []
+      hsh = nil
 
-      output.each_line do |l|
-        if l.empty?
-          token = message:
+      output.each_line do |line|
+        line = line.chomp
+
+        if line[0].nil?
+          in_message = !in_message
+          next
         end
-        token, value = l.split
 
-        puts ":#{l.chomp}:"
+        if in_message
+          hsh["message"] << "#{line[4..-1]}\n"
+          next
+        end
+
+        key, *value = line.split
+        key = key.sub(":", "").downcase
+        value = value.join(" ")
+
+        case key
+        when "commit"
+          hsh_array << hsh if hsh
+          hsh = { "sha" => value, "message" => "", "parent" => [] }
+        when "parent"
+          hsh["parent"] << value
+        else
+          hsh[key] = value
+        end
       end
+      hsh_array << hsh if hsh
     end
 
     def exec_cmd(cmd, flags, args)
@@ -50,14 +74,8 @@ module Giblish
       flag_str = flags.join(" ")
       git_cmd = "git #{gd_flag} #{wt_flag} #{cmd} #{flag_str} #{args}"
       puts "running: #{git_cmd}"
-      # Open3.capture2(git_cmd.to_s)
-      Open3.capture3(git_cmd.to_s,:binmode=>true)
+      Open3.capture3(git_cmd.to_s)
     end
-
-    # def commit_info(repo_root, file_path)
-    #    o, _ = Open3.capture2(%Q[git --git-dir=#{repo_root}/.git log --date=short --format='- { !ruby/symbol author: %an, !ruby/symbol date: %ad, !ruby/symbol hash: %h, !ruby/symbol subject: %f }' -- #{file_path.to_s.sub(/#{repo_root}\//, '')}])
-    #    YAML.parse o
-    #  end
   end
 end
 
@@ -65,5 +83,12 @@ end
 if __FILE__ == $PROGRAM_NAME
   # gi = Giblish::GitItf.new(".")
   gi = Giblish::GitItf.new("../VironovaSW/Documents/process")
-  gi.file_log("Analyzer/Vironova.Analyzer/MainForm.cs")
+  h = gi.file_log("Analyzer/Vironova.Analyzer/MainForm.cs")
+  h.each do |i|
+    p "c: #{i["sha"]}"
+    p "d: #{i["date"]}"
+    p "a: #{i["author"]}"
+    p "p: #{i["parent"]}"
+    p "m: #{i['message']}"
+  end
 end
