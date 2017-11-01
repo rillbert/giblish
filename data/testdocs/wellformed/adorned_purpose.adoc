@@ -1,0 +1,17 @@
+= Testing the 'purpose' section
+:toc:
+:docid: WF-002
+:numbered:
+
+== Purpose
+
+To test how asciidoc formatting in the *_purpose_* section are shown in the index page.
+
+List item::
+Item one
+
+ * Unordered item 1
+ * Unordered item 2
+
+ . Ordered item 1
+ . Ordered item 2
