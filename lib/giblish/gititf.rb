@@ -20,6 +20,13 @@ module Giblish
       @git_dir = @repo_root + ".git"
     end
 
+    # Get the log history of the supplied file as an array of
+    # hashes, each entry has keys:
+    # sha
+    # date
+    # author
+    # parent
+    # message
     def file_log(filename)
       o, e, s = exec_cmd("log", %w[--follow --date=iso --], filename)
       raise "Failed to get file log for #{filename}!!\n#{e}" if s.exitstatus != 0
@@ -59,6 +66,12 @@ module Giblish
           hsh = { "sha" => value, "message" => "", "parent" => [] }
         when "parent"
           hsh["parent"] << value
+        when "author"
+          tmp = value.split("<")
+          hsh["author"] = tmp[0].strip
+          hsh["email"] = tmp[1].sub(">","").strip
+        when "date"
+          hsh["date"] = DateTime.parse(value)
         else
           hsh[key] = value
         end
@@ -66,6 +79,8 @@ module Giblish
       hsh_array << hsh if hsh
     end
 
+    # Execute engine for git commands,
+    # Returns same as capture3 (stdout, stderr, Process.Status)
     def exec_cmd(cmd, flags, args)
       # always add the git dir to the cmd to ensure that git is executed
       # within the expected repo
@@ -88,6 +103,7 @@ if __FILE__ == $PROGRAM_NAME
     p "c: #{i["sha"]}"
     p "d: #{i["date"]}"
     p "a: #{i["author"]}"
+    p "e: #{i["email"]}"
     p "p: #{i["parent"]}"
     p "m: #{i['message']}"
   end
