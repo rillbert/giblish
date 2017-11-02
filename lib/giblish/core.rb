@@ -237,9 +237,12 @@ class TreeConverter
     # prepare the index page if requested
     unless @options[:suppressBuildRef]
       @index_builder = if @options[:gitRepoRoot]
-                         GitRepoIndexBuilder.new(@paths, options[:gitRepoRoot])
+                         GitRepoIndexBuilder.new(@paths,
+                                                 options[:resolveDocid],
+                                                 options[:gitRepoRoot])
                        else
-                         SimpleIndexBuilder.new(@paths)
+                         SimpleIndexBuilder.new(@paths,
+                                                options[:resolveDocid])
                        end
     end
 
@@ -289,8 +292,9 @@ class TreeConverter
   end
 
   def walk_dirs
-    # pass 1: collect all found doc ids if user wishes
-    collect_doc_ids if @options[:resolveDocid]
+    # collect all doc ids and enable replacement of known doc ids with
+    # valid references to adoc files
+    manage_doc_ids if @options[:resolveDocid]
 
     # traverse the src file tree and convert all files that ends with
     # .adoc or .ADOC
@@ -312,11 +316,15 @@ class TreeConverter
 
   private
 
+  # predicate that decides if a path is a asciidoc file or not
   def adocfile?(path)
     path.extname.casecmp(".ADOC").zero? && path.file?
   end
 
-  def collect_doc_ids
+  # Register the asciidoctor extension that handles doc ids and traverse
+  # the source tree to collect all :docid: attributes found in document
+  # headers.
+  def manage_doc_ids
     # Register the docid preprocessor hook
     Giblish.register_extensions
 
@@ -332,7 +340,6 @@ class TreeConverter
     end
     idc
   end
-
 end
 
 class GitRepoParser

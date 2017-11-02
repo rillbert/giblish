@@ -1,7 +1,9 @@
 # coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
+
+lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'giblish/version'
+
+require "giblish/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "giblish"
@@ -9,10 +11,11 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Anders Rillbert"]
   spec.email         = ["anders.rillbert@kutso.se"]
 
-  spec.summary       = %q{A tool for publishing asciidoc docs stored in git repos}
-  spec.description   = %q{A tool for publishing asciidoc docs stored in git repos}
-  spec.homepage      = "http://www.example.com"
+  spec.summary       = "A tool for publishing asciidoc docs stored in git repos"
+  spec.description   = "A tool for publishing asciidoc docs stored in git repos"
+  spec.homepage      = "https://github.com/rillbert/giblish"
   spec.license       = "MIT"
+  spec.required_ruby_version = ">= 2.3"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
   # delete this section to allow pushing this gem to any host.
