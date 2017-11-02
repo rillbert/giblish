@@ -1,22 +1,18 @@
 require "open3"
-
 require_relative "utils"
 
 module Giblish
-  class GitCommit
-    attr_writer :commit
-    attr_writer :author
-    attr_writer :message
-  end
-
+  # A home-grown interface class to git. Used for situations when the
+  # 'official' ruby git gem does not support an operation that is needed.
   class GitItf
-
     attr_reader :repo_root
     attr_reader :git_dir
 
     def initialize(path)
       @repo_root = Giblish::PathManager.find_gitrepo_root(path)
-      raise ArgumentError("The path: @{path} is not within a git repo!") if @repo_root.nil?
+      if @repo_root.nil?
+        raise ArgumentError("The path: @{path} is not within a git repo!")
+      end
       @git_dir = @repo_root + ".git"
     end
 
@@ -25,11 +21,12 @@ module Giblish
     # sha
     # date
     # author
+    # email
     # parent
     # message
     def file_log(filename)
       o, e, s = exec_cmd("log", %w[--follow --date=iso --], filename)
-      raise "Failed to get file log for #{filename}!!\n#{e}" if s.exitstatus != 0
+      raise "Failed to get git log for #{filename}!!\n#{e}" if s.exitstatus != 0
 
       process_log_output(o)
     end
@@ -69,7 +66,7 @@ module Giblish
         when "author"
           tmp = value.split("<")
           hsh["author"] = tmp[0].strip
-          hsh["email"] = tmp[1].sub(">","").strip
+          hsh["email"] = tmp[1].sub(">", "").strip
         when "date"
           hsh["date"] = DateTime.parse(value)
         else
@@ -88,23 +85,8 @@ module Giblish
       wt_flag = "--work-tree=#{@repo_root}"
       flag_str = flags.join(" ")
       git_cmd = "git #{gd_flag} #{wt_flag} #{cmd} #{flag_str} #{args}"
-      Giblog.logger.debug { "running: #{git_cmd}" }
+      Giblog.debug { "running: #{git_cmd}" }
       Open3.capture3(git_cmd.to_s)
     end
-  end
-end
-
-# ../VironovaSW/Documents/process/product_pipeline.adoc
-if __FILE__ == $PROGRAM_NAME
-  # gi = Giblish::GitItf.new(".")
-  gi = Giblish::GitItf.new("../VironovaSW/Documents/process")
-  h = gi.file_log("Analyzer/Vironova.Analyzer/MainForm.cs")
-  h.each do |i|
-    p "c: #{i["sha"]}"
-    p "d: #{i["date"]}"
-    p "a: #{i["author"]}"
-    p "e: #{i["email"]}"
-    p "p: #{i["parent"]}"
-    p "m: #{i['message']}"
   end
 end
