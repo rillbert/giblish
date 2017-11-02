@@ -93,7 +93,7 @@ module Giblish
     def adoc_output_dir(infile_path)
       # Get absolute source dir path
       src_abs = self.class.closest_dir infile_path
-
+      p "src: #{src_abs}"
       # Get relative path from source root dir
       src_rel = src_abs.relative_path_from(@src_root_abs)
 
@@ -130,7 +130,7 @@ module Giblish
       if sr.exist?
         sr.directory? ? sr.realpath : sr.dirname.realpath
       else
-        sr.ascend.expand_path
+        sr.parent.expand_path
       end
     end
 
