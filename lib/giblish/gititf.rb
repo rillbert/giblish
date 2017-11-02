@@ -88,7 +88,7 @@ module Giblish
       wt_flag = "--work-tree=#{@repo_root}"
       flag_str = flags.join(" ")
       git_cmd = "git #{gd_flag} #{wt_flag} #{cmd} #{flag_str} #{args}"
-      puts "running: #{git_cmd}"
+      Giblog.logger.debug { "running: #{git_cmd}" }
       Open3.capture3(git_cmd.to_s)
     end
   end

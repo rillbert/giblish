@@ -93,6 +93,7 @@ class DocConverter
 
     Giblog.logger.debug { "converter_options: #{@converter_options}" }
     # do the actual conversion
+
     Asciidoctor.convert_file filepath, @converter_options
   end
 
@@ -312,7 +313,7 @@ class TreeConverter
   private
 
   def adocfile?(path)
-    path.extname.casecmp(".ADOC").zero?
+    path.extname.casecmp(".ADOC").zero? && path.file?
   end
 
   def collect_doc_ids

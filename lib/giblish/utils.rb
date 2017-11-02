@@ -93,7 +93,7 @@ module Giblish
     def adoc_output_dir(infile_path)
       # Get absolute source dir path
       src_abs = self.class.closest_dir infile_path
-      p "src: #{src_abs}"
+
       # Get relative path from source root dir
       src_rel = src_abs.relative_path_from(@src_root_abs)
 
@@ -151,12 +151,12 @@ module Giblish
   end
 
   def with_captured_stderr
-    old_stdout = $stderr
+    old_stderr = $stderr
     $stderr = StringIO.new("", "w")
     yield
     $stderr.string
   ensure
-    $stderr = old_stdout
+    $stderr = old_stderr
   end
   module_function :with_captured_stderr
 
