@@ -5,6 +5,7 @@ require "pathname"
 require "git"
 require_relative "cmdline"
 require_relative "pathtree"
+require_relative "gititf"
 
 # Container class for bundling together the data we cache for
 # each asciidoc file we come across
@@ -331,13 +332,22 @@ class GitRepoIndexBuilder < BasicIndexBuilder
     info.srcFile = Pathname.new(info.srcFile).relative_path_from(@git_repo_root).to_s
 
     # Get the commit history of the doc
-    @git_repo.log(50).object("*#{info.srcFile}").each do |l|
+    # (use a homegrown git log to get 'follow' flag)
+    gi = Giblish::GitItf.new(@git_repo_root)
+    gi.file_log(info.srcFile.to_s).each do |i|
       h = DocInfo::DocHistory.new
-      h.date = l.date
-      h.message = l.message
-      h.author = l.author.name
+      h.date = i["date"]
+      h.message = i["message"]
+      h.author = i["author"]
       info.history << h
     end
+    # @git_repo.log(50).object("*#{info.srcFile}").each do |l|
+    #   h = DocInfo::DocHistory.new
+    #   h.date = l.date
+    #   h.message = l.message
+    #   h.author = l.author.name
+    #   info.history << h
+    # end
   end
 
   protected

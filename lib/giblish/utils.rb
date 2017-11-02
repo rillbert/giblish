@@ -130,7 +130,7 @@ module Giblish
       if sr.exist?
         sr.directory? ? sr.realpath : sr.dirname.realpath
       else
-        sr.ascend.expand_path
+        sr.parent.expand_path
       end
     end
 
@@ -151,12 +151,12 @@ module Giblish
   end
 
   def with_captured_stderr
-    old_stdout = $stderr
+    old_stderr = $stderr
     $stderr = StringIO.new("", "w")
     yield
     $stderr.string
   ensure
-    $stderr = old_stdout
+    $stderr = old_stderr
   end
   module_function :with_captured_stderr
 

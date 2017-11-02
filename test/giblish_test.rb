@@ -27,7 +27,7 @@ class PathManagerTest < Minitest::Test
   end
 
   def test_src_rel
-    # Instanciate a path manager with well source root == .../giblish and
+    # Instanciate a path manager with source root == .../giblish and
     # destination root == .../giblish/test/testoutput
     out = Giblish::PathManager.new("#{@testdir_path}/..",
                                    "#{@testdir_path}/testoutput")
@@ -44,11 +44,11 @@ class PathManagerTest < Minitest::Test
       out.reldir_from_src_root("#{@testdir_path}/../lib/giblish/file.adoc")
     )
     assert_equal(
-      Pathname.new("test"),
+      Pathname.new("testoutput/test"),
       out.adoc_output_dir("#{@testdir_path}/mytest.adoc")
     )
     assert_equal(
-      Pathname.new("test"),
+      Pathname.new("testoutput/test"),
       out.adoc_output_dir(@testdir_path)
     )
   end
