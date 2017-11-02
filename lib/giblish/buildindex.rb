@@ -40,11 +40,12 @@ end
 # Base class with common functionality for all index builders
 class BasicIndexBuilder
   # set up the basic index building info
-  def initialize(path_manager)
+  def initialize(path_manager, handle_docid = false)
     @paths = path_manager
     @nof_missing_titles = 0
     @added_docs = []
     @src_str = ""
+    @manage_docid = handle_docid
   end
 
   # creates a DocInfo instance, fills it with basic info and
@@ -58,9 +59,6 @@ class BasicIndexBuilder
     info.converted = true
     info.stderr = adoc_stderr
 
-    # Get the doc id if it exists
-    info.doc_id = adoc.attributes["docid"]
-
     # Get the purpose info if it exists
     info.purpose_str = get_purpose_info adoc
 
@@ -72,9 +70,19 @@ class BasicIndexBuilder
       @paths.dst_root_abs
     )
 
-    # Get the source file path and title
+    # Get the doc id if it exists
+    info.doc_id = adoc.attributes["docid"]
+
+    # Get the source file path
     info.srcFile = adoc.attributes["docfile"]
-    info.title = adoc.doctitle
+
+    # If a docid exists, set titel to docid - title if we care about
+    # doc ids.
+    info.title = if !info.doc_id.nil? && @manage_docid
+                   "#{info.doc_id} - #{adoc.doctitle}"
+                 else
+                   adoc.doctitle
+                 end
 
     # Cache the created DocInfo
     @added_docs << info
@@ -132,6 +140,8 @@ class BasicIndexBuilder
                   (section.level == 1) &&
                   (section.name =~ /^Purpose$/)
       purpose_str = "Purpose::\n\n"
+
+      # filter out 'odd' text, such as lists etc...
       section.blocks.each do |bb|
         next unless bb.is_a?(Asciidoctor::Block)
         purpose_str << "#{bb.source}\n+\n"
@@ -295,8 +305,8 @@ end
 
 # A simple index generator that shows a table with the generated documents
 class SimpleIndexBuilder < BasicIndexBuilder
-  def initialize(path_manager)
-    super path_manager
+  def initialize(path_manager, manage_docid = false)
+    super path_manager, manage_docid
   end
 
   def add_doc(adoc, adoc_stderr)
@@ -307,8 +317,8 @@ end
 # Builds an index of the generated documents and includes some git metadata
 # repository
 class GitRepoIndexBuilder < BasicIndexBuilder
-  def initialize(path_manager, git_repo_root)
-    super path_manager
+  def initialize(path_manager, manage_docid, git_repo_root)
+    super path_manager, manage_docid
 
     # initialize state variables
     @git_repo_root = git_repo_root
