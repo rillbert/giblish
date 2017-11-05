@@ -1,5 +1,5 @@
 
-require_relative "./utils.rb"
+require_relative "./utils"
 
 require 'asciidoctor'
 require 'asciidoctor/extensions'
