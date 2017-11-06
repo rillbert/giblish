@@ -81,8 +81,8 @@ module Giblish
     def exec_cmd(cmd, flags, args)
       # always add the git dir to the cmd to ensure that git is executed
       # within the expected repo
-      gd_flag = "--git-dir=#{@git_dir}"
-      wt_flag = "--work-tree=#{@repo_root}"
+      gd_flag = "--git-dir=\"#{@git_dir}\""
+      wt_flag = "--work-tree=\"#{@repo_root}\""
       flag_str = flags.join(" ")
       git_cmd = "git #{gd_flag} #{wt_flag} #{cmd} #{flag_str} #{args}"
       Giblog.logger.debug { "running: #{git_cmd}" }
