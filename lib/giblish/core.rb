@@ -119,7 +119,8 @@ class DocConverter
   #                   that the derived class supports
   def add_backend_options(backend_opts, backend_attribs)
     @converter_options = @converter_options.merge(backend_opts)
-    @converter_options[:attributes].merge(backend_attribs)
+    @converter_options[:attributes] =
+      @converter_options[:attributes].merge(backend_attribs)
   end
 end
 
@@ -162,7 +163,7 @@ class HtmlConverter < DocConverter
     @user_style &&
       attrib["stylesheet"] =
         /\.(css|CSS)$/ =~ @user_style ? @user_style : "#{@user_style}.css"
-
+    Giblog.logger.debug {"stylesheet attributes: #{attrib}"}
     attrib
   end
 
