@@ -1,0 +1,38 @@
+= Simple Source highlighting
+giblish test suite
+
+== Purpose
+
+To check that source code is correctly highlighted when generating docs.
+
+== Examples
+
+
+[source,ruby]
+.A ruby example
+....
+require 'asciidoctor'
+#Some comment
+a = Asciidoctor::load("mydoc.txt")
+....
+
+[source,cs]
+.A C# example
+----
+class MyFancyClass
+{
+  ///
+  /// Documentation goes here...
+  public MyFancyClass()
+  {
+    var x = DoIt();
+  }
+}
+----
+
+[source,bash]
+.A Bash Example
+----
+myVar="${?}"
+git pull ${myVar}
+----

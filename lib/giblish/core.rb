@@ -25,6 +25,13 @@ class DocConverter
     mkdirs: true
   }.freeze
 
+  # the giblish attribute defaults used if nothing else
+  # is required by the user
+  DEFAULT_ATTRIBUTES = {
+    "source-highlighter" => "rouge",
+    "xrefstyle" => "short"
+  }.freeze
+
   # setup common options that are used regardless of the
   # specific output format used
   attr_reader :converter_options
@@ -40,6 +47,7 @@ class DocConverter
 
     @user_style = options[:userStyle]
     @converter_options = COMMON_CONVERTER_OPTS.dup
+    @converter_options[:attributes] = DEFAULT_ATTRIBUTES.dup
     @converter_options[:backend] = options[:backend]
   end
 
@@ -111,7 +119,7 @@ class DocConverter
   #                   that the derived class supports
   def add_backend_options(backend_opts, backend_attribs)
     @converter_options = @converter_options.merge(backend_opts)
-    @converter_options[:attributes] = backend_attribs
+    @converter_options[:attributes].merge(backend_attribs)
   end
 end
 
@@ -123,6 +131,9 @@ class HtmlConverter < DocConverter
   #         :resourceDir
   def initialize(options)
     super options
+
+    # require access to asciidoc-rouge
+    require "asciidoctor-rouge"
 
     # handle needed assets for the styling (css et al)
     html_attrib = setup_web_assets options[:webRoot]
