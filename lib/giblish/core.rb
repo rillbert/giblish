@@ -14,6 +14,8 @@ require "asciidoctor-pdf"
 require_relative "cmdline"
 require_relative "buildindex"
 require_relative "docid"
+require_relative "docinfo"
+require_relative "buildgraph"
 
 # Base class for document converters. It contains a hash of
 # conversion options used by derived classes
@@ -136,6 +138,8 @@ class HtmlConverter < DocConverter
     # require access to asciidoc-rouge
     require "asciidoctor-rouge"
 
+    require "asciidoctor-diagram"
+
     # handle needed assets for the styling (css et al)
     html_attrib = setup_web_assets options[:webRoot]
 
@@ -243,31 +247,29 @@ class TreeConverter
       @options[:dstDirRoot],
       @options[:resourceDir]
     )
-
-    # init_dst_root
-
-    # prepare the index page if requested
-    unless @options[:suppressBuildRef]
-      @index_builder = if @options[:gitRepoRoot]
-                         GitRepoIndexBuilder.new(@paths,
-                                                 options[:resolveDocid],
-                                                 options[:gitRepoRoot])
-                       else
-                         SimpleIndexBuilder.new(@paths,
-                                                options[:resolveDocid])
-                       end
-    end
-
-    @conversion =
-      case options[:format]
-      when "html" then HtmlConverter.new options
-      when "pdf" then PdfConverter.new options
-      else
-        raise ArgumentError, "Unknown conversion format: #{options[:format]}"
-      end
+    @processed_docs = []
+    @conversion = converter_factory
   end
 
-  def generate_index(src_str, dst_dir)
+  def generate_graph(src_str, dst_dir)
+    puts src_str
+    # use the same options as when converting all docs
+    # in the tree but make sure we don't write to file
+    index_opts = @conversion.converter_options.dup
+    index_opts.delete(:to_file)
+    index_opts.delete(:to_dir)
+
+    # load and convert the document using the converter options
+    doc = Asciidoctor.load src_str, index_opts
+    output = doc.convert index_opts
+
+    # write the converted document to the output file located at the
+    # destination root
+    index_filepath = dst_dir + "graph.#{index_opts[:fileext]}"
+    doc.write output, index_filepath.to_s
+  end
+
+  def generate_file(src_str, dst_dir, basename)
     # use the same options as when converting all docs
     # in the tree but make sure we don't write to file
     index_opts = @conversion.converter_options.dup
@@ -280,27 +282,31 @@ class TreeConverter
 
     # write the converted document to an index file located at the
     # destination root
-    index_filepath = dst_dir + "index.#{index_opts[:fileext]}"
+    index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
     doc.write output, index_filepath.to_s
   end
 
-  def to_asciidoc(filepath)
-    adoc = nil
-    begin
-      # do the conversion and capture eventual errors that
-      # the asciidoctor lib writes to stderr
-      adoc_stderr = Giblish.with_captured_stderr do
-        adoc = @conversion.convert filepath
-      end
-
-      # build the reference index if the user wants it
-      @options[:suppressBuildRef] || @index_builder.add_doc(adoc, adoc_stderr)
-    rescue Exception => e
-      str = "Error when converting doc: #{e.message}\n"
-      e.backtrace.each { |l| str << "#{l}\n" }
-      Giblog.logger.error { str }
-      @options[:suppressBuildRef] || @index_builder.add_doc_fail(filepath, e)
+  # creates a DocInfo instance, fills it with basic info and
+  # returns the filled in instance so that derived implementations can
+  # add more data
+  def add_doc(adoc, adoc_stderr)
+    Giblog.logger.debug do
+      "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}"
     end
+    Giblog.logger.debug { "Doc attributes: #{adoc.attributes}" }
+
+    @processed_docs << DocInfo.new(adoc, @paths.dst_root_abs, adoc_stderr)
+  end
+
+  def add_doc_fail(filepath, exception)
+    info = DocInfo.new
+
+    # the only info we have is the source file name
+    info.converted = false
+    info.src_file = filepath
+    info.error_msg = exception.message
+
+    @processed_docs << info
   end
 
   def walk_dirs
@@ -319,14 +325,65 @@ class TreeConverter
     return if @options[:suppressBuildRef]
 
     # build a reference index
-    generate_index @index_builder.index_source, @paths.dst_root_abs
+    ib = index_builder_factory
+    generate_file ib.index_source, @paths.dst_root_abs, "index"
+
+    # build a dependency graph
+    gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths
+    puts gb.source
+    generate_file gb.source, @paths.dst_root_abs, "graph"
 
     # clean up adoc resources
-    @index_builder = nil
+    # @index_builder = nil
     GC.start
   end
 
   private
+
+  # get the correct index builder type depending on supplied
+  # user options
+  def index_builder_factory
+    raise "Internal logic error!" if @options[:suppressBuildRef]
+
+    # prepare the index page if requested
+    if @options[:gitRepoRoot]
+      GitRepoIndexBuilder.new(@processed_docs, @paths,
+                              @options[:resolveDocid], @options[:gitRepoRoot])
+    else
+      SimpleIndexBuilder.new(@processed_docs, @paths,
+                             @options[:resolveDocid])
+    end
+  end
+
+  # get the correct converter type
+  def converter_factory
+    case @options[:format]
+    when "html" then HtmlConverter.new @options
+    when "pdf" then PdfConverter.new @options
+    else
+      raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
+    end
+  end
+
+  # convert a single adoc doc to whatever the user wants
+  def to_asciidoc(filepath)
+    adoc = nil
+    begin
+      # do the conversion and capture eventual errors that
+      # the asciidoctor lib writes to stderr
+      adoc_stderr = Giblish.with_captured_stderr do
+        adoc = @conversion.convert filepath
+      end
+
+      add_doc(adoc, adoc_stderr)
+    rescue Exception => e
+      str = "Error when converting doc: #{e.message}\n"
+      e.backtrace.each { |l| str << "#{l}\n" }
+      Giblog.logger.error { str }
+
+      add_doc_fail(filepath, e)
+    end
+  end
 
   # predicate that decides if a path is a asciidoc file or not
   def adocfile?(path)
@@ -420,7 +477,7 @@ class GitRepoParser
 
     # Render the summary page
     tc = TreeConverter.new options
-    tc.generate_index @index_builder.index_source, @paths.dst_root_abs
+    tc.generate_file @index_builder.index_source, @paths.dst_root_abs, "index"
 
     # clean up
     @index_builder = nil

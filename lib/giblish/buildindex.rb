@@ -6,100 +6,17 @@ require "git"
 require_relative "cmdline"
 require_relative "pathtree"
 require_relative "gititf"
-
-# Container class for bundling together the data we cache for
-# each asciidoc file we come across
-class DocInfo
-  # Cache git info
-  class DocHistory
-    attr_accessor :date
-    attr_accessor :author
-    attr_accessor :message
-  end
-
-  attr_accessor :converted
-  attr_accessor :title
-  attr_accessor :doc_id
-  attr_accessor :purpose_str
-  attr_accessor :status
-  attr_accessor :relPath
-  attr_accessor :srcFile
-  attr_accessor :history
-  attr_accessor :error_msg
-  attr_accessor :stderr
-
-  def initialize
-    @history = []
-  end
-
-  def to_s
-    "DocInfo: title: #{@title} srcFile: #{@srcFile}"
-  end
-end
+require_relative "docinfo"
 
 # Base class with common functionality for all index builders
 class BasicIndexBuilder
   # set up the basic index building info
-  def initialize(path_manager, handle_docid = false)
+  def initialize(processed_docs, path_manager, handle_docid = false)
     @paths = path_manager
     @nof_missing_titles = 0
-    @added_docs = []
+    @processed_docs = processed_docs
     @src_str = ""
     @manage_docid = handle_docid
-  end
-
-  # creates a DocInfo instance, fills it with basic info and
-  # returns the filled in instance so that derived implementations can
-  # add more data
-  def add_doc(adoc, adoc_stderr)
-    Giblog.logger.debug { "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}" }
-    Giblog.logger.debug {"Doc attributes: #{adoc.attributes}"}
-
-    info = DocInfo.new
-    info.converted = true
-    info.stderr = adoc_stderr
-
-    # Get the purpose info if it exists
-    info.purpose_str = get_purpose_info adoc
-
-    # Get the relative path beneath the root dir to the doc
-    d_attr = adoc.attributes
-    info.relPath = Pathname.new(
-      "#{d_attr['outdir']}/#{d_attr['docname']}#{d_attr['docfilesuffix']}"
-    ).relative_path_from(
-      @paths.dst_root_abs
-    )
-
-    # Get the doc id if it exists
-    info.doc_id = adoc.attributes["docid"]
-
-    # Get the source file path
-    info.srcFile = adoc.attributes["docfile"]
-
-    # If a docid exists, set titel to docid - title if we care about
-    # doc ids.
-    info.title = if !info.doc_id.nil? && @manage_docid
-                   "#{info.doc_id} - #{adoc.doctitle}"
-                 else
-                   adoc.doctitle
-                 end
-
-    # Cache the created DocInfo
-    @added_docs << info
-    info
-  end
-
-  def add_doc_fail(filepath, exception)
-    info = DocInfo.new
-
-    # the only info we have is the source file name
-    info.converted = false
-    info.srcFile = filepath
-    info.error_msg = exception.message
-
-    # Cache the DocInfo
-    @added_docs << info
-    info
   end
 
   def index_source
@@ -132,24 +49,6 @@ class BasicIndexBuilder
 
   private
 
-  def get_purpose_info(adoc)
-    # Get the 'Purpose' section if it exists
-    purpose_str = ""
-    adoc.blocks.each do |section|
-      next unless section.is_a?(Asciidoctor::Section) &&
-                  (section.level == 1) &&
-                  (section.name =~ /^Purpose$/)
-      purpose_str = "Purpose::\n\n"
-
-      # filter out 'odd' text, such as lists etc...
-      section.blocks.each do |bb|
-        next unless bb.is_a?(Asciidoctor::Block)
-        purpose_str << "#{bb.source}\n+\n"
-      end
-    end
-    purpose_str
-  end
-
   def generate_conversion_info(d)
     return "" if d.stderr.empty?
     # extract conversion warnings from asciddoctor std err
@@ -167,14 +66,22 @@ class BasicIndexBuilder
   # Private: Return adoc elements for displaying a clickable title
   # and a 'details' ref that points to a section that uses the title as an id.
   #
-  # Returns [ clickableTitleStr, clickableDetailsStr ]
+  # Returns [ title, clickableTitleStr, clickableDetailsStr ]
   def format_title_and_ref(doc_info)
     unless doc_info.title
       @nof_missing_titles += 1
       doc_info.title = "NO TITLE FOUND (#{@nof_missing_titles}) !"
     end
-    return "<<#{doc_info.relPath}#,#{doc_info.title}>>",
-    "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"
+
+    # Manipulate the doc title if we have a doc id
+    title = if !doc_info.doc_id.nil? && @manage_docid
+              "#{doc_info.doc_id} - #{doc_info.title}"
+            else
+              doc_info.title
+            end
+
+    [title, "<<#{doc_info.rel_path}#,#{title}>>",
+     "<<#{Giblish.to_valid_id(title)},details>>\n"]
   end
 
   # Generate an adoc string that will display as
@@ -183,14 +90,14 @@ class BasicIndexBuilder
   # identified with the doc's title respectively.
   def tree_entry_converted(prefix_str, doc_info)
     # Get the elements of the entry
-    doc_title, doc_details = format_title_and_ref doc_info
+    doc_title, doc_link, doc_details = format_title_and_ref doc_info
     warning_label = doc_info.stderr.empty? ? "" : "(warn)"
 
     # Calculate padding to get (warn) and details aligned between entries
     padding = 80
-    [doc_info.title, prefix_str, warning_label].each { |p| padding -= p.length }
+    [doc_title, prefix_str, warning_label].each { |p| padding -= p.length }
     padding = 0 unless padding.positive?
-    "#{prefix_str} #{doc_title}#{' ' * padding}#{warning_label} #{doc_details}"
+    "#{prefix_str} #{doc_link}#{' ' * padding}#{warning_label} #{doc_details}"
   end
 
   def tree_entry_string(level, node)
@@ -206,15 +113,15 @@ class BasicIndexBuilder
       tree_entry_converted prefix_str, d
     else
       # no converted file exists, show what we know
-      "#{prefix_str} FAIL: #{d.srcFile}      <<#{d.srcFile},details>>\n"
+      "#{prefix_str} FAIL: #{d.src_file}      <<#{d.src_file},details>>\n"
     end
   end
 
   def generate_tree
     # build up tree of paths
     root = PathTree.new
-    @added_docs.each do |d|
-      root.add_path(d.relPath.to_s, d)
+    @processed_docs.each do |d|
+      root.add_path(d.rel_path.to_s, d)
     end
 
     # output tree intro
@@ -245,11 +152,11 @@ class BasicIndexBuilder
 
   def generate_detail_fail(d)
     <<~FAIL_INFO
-      === #{d.srcFile}
+      === #{d.src_file}
 
       Source file::
 
-      #{d.srcFile}
+      #{d.src_file}
 
       Error detail::
       #{d.stderr}
@@ -261,16 +168,21 @@ class BasicIndexBuilder
 
   def generate_detail(d)
     # Generate detail info
+    purpose_str = if d.purpose_str.nil?
+                    ""
+                  else
+                    "Purpose::\n#{d.purpose_str}"
+                  end
     <<~DETAIL_SRC
       [[#{Giblish.to_valid_id(d.title)}]]
       === #{d.title}
 
-      #{d.purpose_str}
+      #{purpose_str}
 
       #{generate_conversion_info d}
 
       Source file::
-      #{d.srcFile}
+      #{d.src_file}
 
       #{generate_history_info d}
 
@@ -281,8 +193,8 @@ class BasicIndexBuilder
 
   def generate_details
     root = PathTree.new
-    @added_docs.each do |d|
-      root.add_path(d.relPath.to_s, d)
+    @processed_docs.each do |d|
+      root.add_path(d.rel_path.to_s, d)
     end
 
     details_str = "== Document details\n\n"
@@ -305,20 +217,16 @@ end
 
 # A simple index generator that shows a table with the generated documents
 class SimpleIndexBuilder < BasicIndexBuilder
-  def initialize(path_manager, manage_docid = false)
-    super path_manager, manage_docid
-  end
-
-  def add_doc(adoc, adoc_stderr)
-    super(adoc, adoc_stderr)
+  def initialize(processed_docs, path_manager, manage_docid = false)
+    super processed_docs, path_manager, manage_docid
   end
 end
 
 # Builds an index of the generated documents and includes some git metadata
 # repository
 class GitRepoIndexBuilder < BasicIndexBuilder
-  def initialize(path_manager, manage_docid, git_repo_root)
-    super path_manager, manage_docid
+  def initialize(processed_docs, path_manager, manage_docid, git_repo_root)
+    super processed_docs, path_manager, manage_docid
 
     # initialize state variables
     @git_repo_root = git_repo_root
@@ -338,20 +246,20 @@ class GitRepoIndexBuilder < BasicIndexBuilder
   def add_doc(adoc, adoc_stderr)
     info = super(adoc, adoc_stderr)
 
-    # Redefine the srcFile to mean the relative path to the git repo root
-    info.srcFile = Pathname.new(info.srcFile).relative_path_from(@git_repo_root).to_s
+    # Redefine the src_file to mean the relative path to the git repo root
+    info.src_file = Pathname.new(info.src_file).relative_path_from(@git_repo_root).to_s
 
     # Get the commit history of the doc
     # (use a homegrown git log to get 'follow' flag)
     gi = Giblish::GitItf.new(@git_repo_root)
-    gi.file_log(info.srcFile.to_s).each do |i|
+    gi.file_log(info.src_file.to_s).each do |i|
       h = DocInfo::DocHistory.new
       h.date = i["date"]
       h.message = i["message"]
       h.author = i["author"]
       info.history << h
     end
-    # @git_repo.log(50).object("*#{info.srcFile}").each do |l|
+    # @git_repo.log(50).object("*#{info.src_file}").each do |l|
     #   h = DocInfo::DocHistory.new
     #   h.date = l.date
     #   h.message = l.message

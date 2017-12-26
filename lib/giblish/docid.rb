@@ -1,18 +1,26 @@
 
 require_relative "./utils"
-
-require 'asciidoctor'
-require 'asciidoctor/extensions'
+require "asciidoctor"
+require "asciidoctor/extensions"
 
 module Giblish
   # Parse all adoc files for :docid: attributes
   class DocidCollector < Asciidoctor::Extensions::Preprocessor
     # Use a class-global docid_cache since asciidoctor creates a new instance
     # for each preprocessor hook
+    # a hash of {doc_id => Pathname(src_path)}
     @docid_cache = {}
+
+    # A class-global hash of {src_path => [target doc_ids] }
+    @docid_deps = {}
+
     class << self
       def docid_cache
         @docid_cache
+      end
+
+      def docid_deps
+        @docid_deps
       end
 
       def clear_cache
@@ -31,6 +39,73 @@ module Giblish
     # def initialize(*everything)
     #   super(everything)
     # end
+
+    # Check if a :docid: <id> entry exists in the header.
+    # According to http://www.methods.co.nz/asciidoc/userguide.html#X95
+    # the header is optional, but if it exists it:
+    # - must start with a titel (=+ <My Title>)
+    # - ends with one or more blank lines
+    # - does not contain any blank line
+    def parse_file(path)
+      Giblog.logger.debug { "parsing file #{path} for docid..." }
+      process_header_lines(path) do |line|
+        m = /^:docid: +(.*)$/.match(line)
+        if m
+          # There is a docid defined, cache the path and doc id
+          validate_and_add m[1], path
+        end
+      end
+    end
+
+    # add a new source document to the docid_deps
+    def add_source_dep(src_path)
+      return if docid_deps.key? src_path
+      docid_deps[src_path] = []
+    end
+
+    # This hook is called by Asciidoctor once for each document _before_
+    # Asciidoctor processes the adoc content.
+    #
+    # It replaces references of the format <<:docid: ID-1234,Hello >> with
+    # references to a resolved relative path.
+    def process(document, reader)
+      # Add doc as a source dependency for doc ids
+      src_path = document.attributes["docfile"]
+
+      # Note: the nil check is there to prevent us adding generated
+      # asciidoc docs that does not exist in the file system (e.g. the
+      # generated index pages). This is a bit hackish and should maybe be
+      # done differently
+      return if src_path.nil?
+
+      add_source_dep src_path
+
+      # Convert all docid refs to valid relative refs
+      reader.lines.each do |line|
+        line.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
+          # parse the ref
+          target_id, section, display_str =
+            parse_doc_id_ref Regexp.last_match(1)
+
+          # The result is a valid ref in the form
+          # <<target_doc.adoc#[section][,display_str]>>
+          Giblog.logger.debug { "Replace docid ref in doc #{src_path}..." }
+          if docid_cache.key? target_id
+            # add the referenced doc id as a target dependency of this document
+            docid_deps[src_path] << target_id
+            docid_deps[src_path] = docid_deps[src_path].uniq
+            
+            # resolve the doc id ref to a valid relative path
+            "<<#{get_rel_path(src_path, target_id)}##{section}#{display_str}>>"
+          else
+            "<<UNKNOWN_DOC, Could not resolve doc id reference !!!>>"
+          end
+        end
+      end
+      reader
+    end
+
+    private
 
     # Helper method that provides the user with a way of processing only the
     # lines within the asciidoc header block.
@@ -56,57 +131,21 @@ module Giblish
       end
     end
 
-    # Check if a :docid: <id> entry exists in the header.
-    # According to http://www.methods.co.nz/asciidoc/userguide.html#X95
-    # the header is optional, but if it exists it:
-    # - must start with a titel (=+ <My Title>)
-    # - ends with one or more blank lines
-    # - does not contain any blank line
-    def parse_file(path)
-      Giblog.logger.debug { "parsing file #{path} for docid..." }
-      process_header_lines(path) do |line|
-        m = /^:docid: +(.*)$/.match(line)
-        if m
-          # There is a docid defined, cache the path and doc id
-          validate_and_add m[1], path
-        end
-      end
-    end
-
-    # This hook is called by Asciidoctor once for each document _before_
-    # Asciidoctor processes the adoc content.
-    #
-    # It replaces references of the format <<:docid: ID-1234,Hello >> with
-    # references to a resolved relative path.
-    def process(document, reader)
-      reader.lines.each do |line|
-        line.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
-          replace_doc_id Regexp.last_match(1), document.attributes["docfile"]
-        end
-      end
-      reader
-    end
-
-    def substitute_ids_file(path)
-      substitute_ids(File.read(path), path)
-    end
-
-    def substitute_ids(src_str, src_path)
-      src_str.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
-        replace_doc_id Regexp.last_match(1), src_path
-      end
-      src_str
-    end
-
-    private
-
     # Helper method to shorten calls to docid_cache from instance methods
     def docid_cache
       self.class.docid_cache
     end
 
+    def docid_deps
+      self.class.docid_deps
+    end
+
+    # Get the relative path from the src doc to the
+    # doc with the given doc id
     def get_rel_path(src_path, doc_id)
-      return "UNKNOWN_DOC" unless docid_cache.key? doc_id
+      unless docid_cache.key? doc_id
+        raise ArgumentError("unknown doc id: #{doc_id}")
+      end
 
       rel_path = docid_cache[doc_id]
                  .dirname
@@ -115,13 +154,12 @@ module Giblish
       rel_path.to_s
     end
 
-    # The input string shall contain the expression between
+    # input_str shall be the expression between
     # <<:docid:<input_str>>> where the <input_str> is in the form
     # <id>[#section][,display_str]
     #
-    # The result shall be a valid ref in the form
-    # <<target_doc.adoc#[section][,display_str]>>
-    def replace_doc_id(input_str, src_path)
+    # returns an array with [id, section, display_str]
+    def parse_doc_id_ref(input_str)
       ref, display_str = input_str.split(",").each(&:strip)
       display_str = "" if display_str.nil?
       display_str.prepend "," if display_str.length.positive?
@@ -129,28 +167,32 @@ module Giblish
       id, section = ref.split "#"
       section = "" if section.nil?
 
-      Giblog.logger.debug { "Replace docid ref in doc #{src_path}..." }
-      "<<#{get_rel_path(src_path, id)}##{section}#{display_str}>>"
+      [id, section, display_str]
+    end
+
+    # make sure the id is within the designated length and
+    # does not contain a '#' symbol
+    def doc_id_ok?(doc_id)
+      (doc_id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) &&
+         !doc_id.include?("#"))
     end
 
     def validate_and_add(doc_id, path)
       id = doc_id.strip
       Giblog.logger.debug { "found possible docid: #{id}" }
 
-      # make sure the id is within the designated length and
-      # does not contain a '#' symbol
-      if id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) &&
-         !id.include?("#")
-        # the id is ok
-        if docid_cache.key? id
-          Giblog.logger.warn { "Found same doc id twice (#{id}). Using last found id."}
-        end
-        docid_cache[id] = Pathname(path)
-      else
+      unless doc_id_ok? doc_id
         Giblog.logger.error { "Invalid docid: #{id}, this will be ignored!" }
+        return
       end
+
+      if docid_cache.key? id
+        Giblog.logger.warn { "Found same doc id twice (#{id}). Using last found id." }
+      end
+      docid_cache[id] = Pathname(path)
     end
   end
+
 
   # Helper method to register the docid preprocessor extension with
   # the asciidoctor engine.
