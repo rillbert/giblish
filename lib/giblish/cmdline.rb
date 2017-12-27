@@ -18,8 +18,8 @@ class CmdLineParser
  Options:
   -h --help                  show this help text
   -v --version               show version nr and exit
-  -f --format <format>       the output format, currently html5 or pdf are supported
-                             *html5* is used if -f is not supplied
+  -f --format <format>       the output format, currently html or pdf are supported
+                             *html* is used if -f is not supplied
   -n --no-build-ref          suppress generation of a reference document at the destination
                              tree root.
   -r --resource-dir <dir>    specify a directory where fonts, themes, css and other

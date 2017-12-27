@@ -38,15 +38,11 @@ class DocConverter
   # specific output format used
   attr_reader :converter_options
 
-  # Public: Setup common converter options. Required options are:
-  #         :srcDirRoot
-  #         :dstDirRoot
-  #         :resourceDir
-  def initialize(options)
-    @paths = Giblish::PathManager.new(
-      options[:srcDirRoot], options[:dstDirRoot], options[:resourceDir]
-    )
+  # the path manager used by this converter
+  attr_accessor :paths
 
+  def initialize(paths, options)
+    @paths = paths
     @user_style = options[:userStyle]
     @converter_options = COMMON_CONVERTER_OPTS.dup
     @converter_options[:attributes] = DEFAULT_ATTRIBUTES.dup
@@ -132,12 +128,8 @@ end
 
 # Converts asciidoc files to html5 output.
 class HtmlConverter < DocConverter
-  # Public: Setup common converter options. Required options are:
-  #         :srcDirRoot
-  #         :dstDirRoot
-  #         :resourceDir
-  def initialize(options)
-    super options
+  def initialize(paths, options)
+    super paths, options
 
     # require access to asciidoc-rouge
     require "asciidoctor-rouge"
@@ -206,8 +198,8 @@ class HtmlConverter < DocConverter
 end
 
 class PdfConverter < DocConverter
-  def initialize(options)
-    super options
+  def initialize(paths, options)
+    super paths, options
 
     pdf_attrib = setup_pdf_attribs
 
@@ -237,9 +229,9 @@ class PdfConverter < DocConverter
   end
 end
 
-class TreeConverter
+class FileTreeConverter
 
-  attr_reader :conversion
+  attr_reader :converter
   # Required options:
   #  srcDirRoot
   #  dstDirRoot
@@ -253,10 +245,11 @@ class TreeConverter
       @options[:resourceDir]
     )
     @processed_docs = []
-    @conversion = converter_factory
+    @converter = converter_factory
   end
 
-  def walk_dirs
+  def convert
+    puts "options at convert: #{@options}"
     # collect all doc ids and enable replacement of known doc ids with
     # valid references to adoc files
     manage_doc_ids if @options[:resolveDocid]
@@ -273,39 +266,32 @@ class TreeConverter
 
     # build a dependency graph
     gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths
-    ok = @conversion.convert_str gb.source, @paths.dst_root_abs, "graph"
+    ok = @converter.convert_str gb.source, @paths.dst_root_abs, "graph"
 
     # build a reference index
-    ib = index_builder_factory
-    @conversion.convert_str ib.source(ok), @paths.dst_root_abs, "index"
+    ib = index_factory
+    @converter.convert_str ib.source(ok), @paths.dst_root_abs, "index"
 
     # clean up adoc resources
     # @index_builder = nil
     GC.start
   end
 
-  private
+  protected
 
   # get the correct index builder type depending on supplied
   # user options
-  def index_builder_factory
+  def index_factory
     raise "Internal logic error!" if @options[:suppressBuildRef]
-
-    # prepare the index page if requested
-    if @options[:gitRepoRoot]
-      GitRepoIndexBuilder.new(@processed_docs, @paths,
-                              @options[:resolveDocid], @options[:gitRepoRoot])
-    else
-      SimpleIndexBuilder.new(@processed_docs, @paths,
-                             @options[:resolveDocid])
-    end
+    SimpleIndexBuilder.new(@processed_docs, @paths,
+                           @options[:resolveDocid])
   end
 
   # get the correct converter type
   def converter_factory
     case @options[:format]
-    when "html" then HtmlConverter.new @options
-    when "pdf" then PdfConverter.new @options
+    when "html" then HtmlConverter.new @paths, @options
+    when "pdf" then PdfConverter.new @paths, @options
     else
       raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
     end
@@ -320,7 +306,9 @@ class TreeConverter
     end
     Giblog.logger.debug { "Doc attributes: #{adoc.attributes}" }
 
-    @processed_docs << DocInfo.new(adoc, @paths.dst_root_abs, adoc_stderr)
+    info = DocInfo.new(adoc: adoc, dst_root_abs: @paths.dst_root_abs, adoc_stderr: adoc_stderr)
+    @processed_docs << info
+    info
   end
 
   def add_doc_fail(filepath, exception)
@@ -332,7 +320,10 @@ class TreeConverter
     info.error_msg = exception.message
 
     @processed_docs << info
+    info
   end
+
+  private
 
   # convert a single adoc doc to whatever the user wants
   def to_asciidoc(filepath)
@@ -341,7 +332,7 @@ class TreeConverter
       # do the conversion and capture eventual errors that
       # the asciidoctor lib writes to stderr
       adoc_stderr = Giblish.with_captured_stderr do
-        adoc = @conversion.convert filepath
+        adoc = @converter.convert filepath
       end
 
       add_doc(adoc, adoc_stderr)
@@ -380,102 +371,128 @@ class TreeConverter
   end
 end
 
-class GitRepoParser
-  def initialize(options)
-    @options = options
-    @paths = Giblish::PathManager.new(
-      @options[:srcDirRoot],
-      @options[:dstDirRoot],
-      @options[:resourceDir]
-    )
-    @git_repo_root = options[:gitRepoRoot]
+class GitRepoConverter < FileTreeConverter
 
+  def initialize(options)
+    super(options)
+    # cache the top of the tree since we need to redefine the
+    # paths per branch/tag later on.
+    @master_paths = @paths.dup
+    @git_repo_root = options[:gitRepoRoot]
+    @git_repo = init_git_repo @git_repo_root, options[:localRepoOnly]
+    @user_branches = select_user_branches(options[:gitBranchRegexp])
+    @user_tags = select_user_tags(options[:gitTagRegexp])
+  end
+
+  # Render the docs from each branch/tag and add info to the
+  # summary page
+  def convert
+    (@user_branches + @user_tags).each do |co|
+      convert_one_checkout co
+    end
+
+    # Render the summary page
+    index_builder = GitSummaryIndexBuilder.new @git_repo,
+                                               @user_branches,
+                                               @user_tags
+    @converter.convert_str index_builder.source, @master_paths.dst_root_abs, "index"
+    # clean up
+    GC.start
+  end
+
+  protected
+
+  def index_factory
+    GitRepoIndexBuilder.new(@processed_docs, @paths,
+                            @options[:resolveDocid], @options[:gitRepoRoot])
+  end
+
+  def add_doc(adoc, adoc_stderr)
+    info = super(adoc, adoc_stderr)
+
+    # Get the commit history of the doc
+    # (use a homegrown git log to get 'follow' flag)
+    gi = Giblish::GitItf.new(@git_repo_root)
+    gi.file_log(info.src_file.to_s).each do |i|
+      h = DocInfo::DocHistory.new
+      h.date = i["date"]
+      h.message = i["message"]
+      h.author = i["author"]
+      info.history << h
+    end
+  end
+
+  private
+
+  def init_git_repo(git_repo_root, local_only)
     # Sanity check git repo root
-    @git_repo_root || raise(ArgumentError("No git repo root dir given"))
+    git_repo_root || raise(ArgumentError("No git repo root dir given"))
 
     # Connect to the git repo
     begin
-      @git_repo = Git.open(@git_repo_root)
+      git_repo = Git.open(git_repo_root)
     rescue Exception => e
-      raise "Could not find a git repo at #{@git_repo_root} !"\
+      raise "Could not find a git repo at #{git_repo_root} !"\
             "\n\n(#{e.message})"
     end
 
     # fetch all remote refs if ok with user
     begin
-      @git_repo.fetch unless options[:localRepoOnly]
+      git_repo.fetch unless local_only
     rescue Exception => e
       raise "Could not fetch from origin"\
             "(do you need '--local-only'?)!\n\n(#{e.message})"
     end
-
-    # initialize summary builder
-    @index_builder = GitSummaryIndexBuilder.new @git_repo
-
-    # Get the branches the user wants to parse
-    if options[:gitBranchRegexp]
-      regexp = Regexp.new options[:gitBranchRegexp]
-      @user_branches = @git_repo.branches.remote.select do |b|
-        # match branches but remove eventual HEAD -> ... entry
-        regexp.match b.name unless b.name =~ /^HEAD/
-      end
-      Giblog.logger.debug { "selected git branches: #{@user_branches}" }
-
-      # Render the docs from each branch and add info to the
-      # summary page
-      @user_branches.each do |b|
-        render_one_branch b, @options
-        @index_builder.add_branch b
-      end
-    end
-
-    # Get the tags the user wants to parse
-    if options[:gitTagRegexp]
-      regexp = Regexp.new options[:gitTagRegexp]
-      @user_tags = @git_repo.tags.select do |t|
-        regexp.match t.name
-      end
-
-      # Render the docs from each branch and add info to the
-      # summary page
-      @user_tags.each do |t|
-        render_one_branch t, @options, true
-        @index_builder.add_tag t
-      end
-    end
-
-    # Render the summary page
-    tc = TreeConverter.new options
-    tc.conversion.convert_str @index_builder.source, @paths.dst_root_abs, "index"
-
-    # clean up
-    @index_builder = nil
-    GC.start
+    git_repo
   end
 
-  def render_one_branch(b, opts, is_tag = false)
-    # work with local options
-    options = opts.dup
+  # Get the branches/tags the user wants to parse
+  def select_user_branches(checkout_regexp)
+    return unless @options[:gitBranchRegexp]
 
-    # check out the branch in question and make sure it is
-    # up-to-date
-    Giblog.logger.info { "Checking out #{b.name}" }
-    @git_repo.checkout b.name
+    regexp = Regexp.new checkout_regexp
+    user_checkouts = @git_repo.branches.remote.select do |b|
+      # match branches but remove eventual HEAD -> ... entry
+      regexp.match b.name unless b.name =~ /^HEAD/
+    end
+    Giblog.logger.debug { "selected git branches: #{user_checkouts}" }
+    user_checkouts
+  end
+
+  def select_user_tags(tag_regexp)
+    return [] unless tag_regexp
+
+    regexp = Regexp.new @options[:gitTagRegexp]
+    tags = @git_repo.tags.select do |t|
+      regexp.match t.name
+    end
+    tags
+  end
+
+  def convert_one_checkout(co)
+    # determine if we are called with a tag or a branch
+    is_tag = (co.respond_to?(:tag?) && co.tag?)
+
+    Giblog.logger.info { "Checking out #{co.name}" }
+    @git_repo.checkout co.name
 
     unless is_tag
-      Giblog.logger.info { "Merging with origin/#{b.name}" }
-      @git_repo.merge "origin/#{b.name}"
+      # if this is a branch, make sure it is up-to-date
+      Giblog.logger.debug { "Merging with origin/#{co.name}" }
+      @git_repo.merge "origin/#{co.name}"
     end
 
-    # assign a branch-unique dst-dir
-    dir_name = b.name.tr("/", "_") << "/"
+    # assign a checkout-unique dst-dir
+    dir_name = co.name.tr("/", "_") << "/"
 
-    # Assign the branch specific dir as new destination root
-    options[:dstDirRoot] = @paths.dst_root_abs.realpath.join(dir_name).to_s
+    # Update needed base class members before converting a new checkout
+    @processed_docs = []
+    @paths.dst_root_abs = @master_paths.dst_root_abs.realpath.join(dir_name)
+    # @converter.paths = @paths
 
-    # Parse and render docs using given args
-    Giblog.logger.info { "Render docs to dir #{options[:dstDirRoot]}" }
-    tc = TreeConverter.new options
-    tc.walk_dirs
+    # Parse and convert docs using given args
+    Giblog.logger.info { "Convert docs into dir #{@paths.dst_root_abs}" }
+    # parent_convert
+    FileTreeConverter.instance_method(:convert).bind(self).call
   end
 end

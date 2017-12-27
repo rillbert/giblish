@@ -27,10 +27,11 @@ module Giblish
       begin
         if cmdline.args[:gitRepoRoot]
           Giblog.logger.info { "User asked to parse a git repo" }
-          GitRepoParser.new cmdline.args
+          gc = GitRepoConverter.new cmdline.args
+          gc.convert
         else
-          tc = TreeConverter.new cmdline.args
-          tc.walk_dirs
+          tc = FileTreeConverter.new cmdline.args
+          tc.convert
         end
         Giblog.logger.info { "Giblish is done!" }
       rescue Exception => e

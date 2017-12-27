@@ -41,14 +41,16 @@ module Giblish
     def initialize(src_root, dst_root, resource_dir = nil)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
+      self.dst_root_abs = dst_root
+      # Make sure that the resource dir exists if user gives a path to it
+      resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
+    end
 
+    def dst_root_abs=(dst_root)
       # Make sure that the destination root exists and expand it to an
       # absolute path
       Pathname.new(dst_root).mkpath
       @dst_root_abs = Pathname.new(dst_root).realpath
-
-      # Make sure that the resource dir exists if user gives a path to it
-      resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
     end
 
     # Public: Get the relative path from the source root dir to the

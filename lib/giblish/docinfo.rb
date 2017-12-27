@@ -21,29 +21,26 @@ class DocInfo
   attr_accessor :error_msg
   attr_accessor :stderr
 
-  def initialize
-    @history = []
-  end
-
-  def initialize(adoc, dst_root_abs, adoc_stderr = "")
+  def initialize(adoc: nil, dst_root_abs: nil, adoc_stderr: "")
     @history = []
     @converted = true
     @stderr = adoc_stderr
+    return unless adoc
 
     # Get the purpose info if it exists
     @purpose_str = get_purpose_info adoc
 
+    # fill in doc meta data
     d_attr = adoc.attributes
+    @doc_id = d_attr["docid"]
+    @src_file = d_attr["docfile"]
+    @title = adoc.doctitle
+    return if dst_root_abs.nil?
+
     # Get the relative path beneath the root dir to the doc
     @rel_path = Pathname.new(
       "#{d_attr['outdir']}/#{d_attr['docname']}#{d_attr['docfilesuffix']}"
-    ).relative_path_from(
-      dst_root_abs
-    )
-
-    @doc_id = adoc.attributes["docid"]
-    @src_file = adoc.attributes["docfile"]
-    @title = adoc.doctitle
+    ).relative_path_from(dst_root_abs)
   end
 
   def to_s
