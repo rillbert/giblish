@@ -2,22 +2,25 @@
 #
 
 module Giblish
-  # Needed indata
+  # Builds an asciidoc page with an svg image with a
+  # digraph showing how documents reference each other.
   #
-  # - hash of doc-id deps
-  # - doc title
-  # - relative path from graph to generated doc
+  # Graphviz is used as the graph generator and must be available
+  # as a valid engine via asciidoctor-diagram for this class to work.
   class GraphBuilderGraphviz
+    # Supported options:
+    # :extension - file extension for URL links (default is .html)
     def initialize(processed_docs, paths, options = {})
       @processed_docs = processed_docs
       @paths = paths
       @options = options.dup
-
+      @extension = options.key?(:extension) ? options.key?[:extension] : ".html"
       @docid_cache = DocidCollector.docid_cache
       @docid_deps =  DocidCollector.docid_deps
       @dep_graph = build_dep_graph
     end
 
+    # get the asciidoc source for the document.
     def source
       <<~DOC_STR
         #{generate_header}
@@ -61,7 +64,8 @@ module Giblish
     def generate_labels
       label_str = ""
       @dep_graph.each_key do |info|
-        label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\", URL=\"http://www.svd.se\" target=\"_blank\"]\n"
+        rp = info.rel_path.sub_ext(@extension)
+        label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\", URL=\"#{rp}\" target=\"_blank\"]\n"
       end
       label_str
     end

@@ -53,32 +53,6 @@ class DocConverter
     @converter_options[:backend] = options[:backend]
   end
 
-  def convert_str(input_str, src_path, output_file = nil)
-    unless input_str.is_a?(String)
-      raise ArgumentError("Trying to invoke convert_str with non-string!")
-    end
-
-    # use the same options as when converting all docs
-    # in the tree but make sure Asciidoctor doesn't write to file
-    index_opts = @converter_options.dup
-    index_opts.delete(:to_file)
-    index_opts.delete(:to_dir)
-
-    # load and convert the string using the converter options
-    doc = Asciidoctor.load input_str, index_opts
-    output = doc.convert index_opts
-
-    # determine the correct output path
-    if output_file.nil?
-      output_file = @paths.adoc_output_file(src_path,
-                                            @converter_options[:fileext])
-    end
-
-    # write the converted document to file and return the doc
-    doc.write output, output_file.to_s
-    doc
-  end
-
   # Public: Convert one single adoc file using the specific conversion
   # options.
   #
@@ -105,6 +79,36 @@ class DocConverter
     # do the actual conversion
 
     Asciidoctor.convert_file filepath, @converter_options
+  end
+
+  # converts the supplied string to the file
+  # dst_dir/basename.<backend-ext>
+  #
+  # the supplied string must pass asciidoctor without
+  # any error to stderr, otherwise, nothing will be written
+  # to disk.
+  # returns 'true' if a file was written, 'false' if not
+  def convert_str(src_str, dst_dir, basename)
+    # use the same options as when converting all docs
+    # in the tree but make sure we don't write to file
+    index_opts = @converter_options.dup
+    index_opts.delete_if { |k, _v| %i[to_file to_dir].include? k }
+
+    # load and convert the document using the converter options
+    doc = nil, output = nil
+    adoc_stderr = Giblish.with_captured_stderr do
+      doc = Asciidoctor.load src_str, index_opts
+      output = doc.convert index_opts
+    end
+    # if we get anything from asciidoctor to stderr,
+    # consider this a failure and do not emit a file.
+    return false unless adoc_stderr.length.zero?
+
+    # write the converted document to an index file located at the
+    # destination root
+    index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
+    doc.write output, index_filepath.to_s
+    true
   end
 
   protected
@@ -235,6 +239,7 @@ end
 
 class TreeConverter
 
+  attr_reader :conversion
   # Required options:
   #  srcDirRoot
   #  dstDirRoot
@@ -249,64 +254,6 @@ class TreeConverter
     )
     @processed_docs = []
     @conversion = converter_factory
-  end
-
-  def generate_graph(src_str, dst_dir)
-    puts src_str
-    # use the same options as when converting all docs
-    # in the tree but make sure we don't write to file
-    index_opts = @conversion.converter_options.dup
-    index_opts.delete(:to_file)
-    index_opts.delete(:to_dir)
-
-    # load and convert the document using the converter options
-    doc = Asciidoctor.load src_str, index_opts
-    output = doc.convert index_opts
-
-    # write the converted document to the output file located at the
-    # destination root
-    index_filepath = dst_dir + "graph.#{index_opts[:fileext]}"
-    doc.write output, index_filepath.to_s
-  end
-
-  def generate_file(src_str, dst_dir, basename)
-    # use the same options as when converting all docs
-    # in the tree but make sure we don't write to file
-    index_opts = @conversion.converter_options.dup
-    index_opts.delete(:to_file)
-    index_opts.delete(:to_dir)
-
-    # load and convert the document using the converter options
-    doc = Asciidoctor.load src_str, index_opts
-    output = doc.convert index_opts
-
-    # write the converted document to an index file located at the
-    # destination root
-    index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
-    doc.write output, index_filepath.to_s
-  end
-
-  # creates a DocInfo instance, fills it with basic info and
-  # returns the filled in instance so that derived implementations can
-  # add more data
-  def add_doc(adoc, adoc_stderr)
-    Giblog.logger.debug do
-      "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}"
-    end
-    Giblog.logger.debug { "Doc attributes: #{adoc.attributes}" }
-
-    @processed_docs << DocInfo.new(adoc, @paths.dst_root_abs, adoc_stderr)
-  end
-
-  def add_doc_fail(filepath, exception)
-    info = DocInfo.new
-
-    # the only info we have is the source file name
-    info.converted = false
-    info.src_file = filepath
-    info.error_msg = exception.message
-
-    @processed_docs << info
   end
 
   def walk_dirs
@@ -324,14 +271,13 @@ class TreeConverter
     # check if we shall build index or not
     return if @options[:suppressBuildRef]
 
-    # build a reference index
-    ib = index_builder_factory
-    generate_file ib.index_source, @paths.dst_root_abs, "index"
-
     # build a dependency graph
     gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths
-    puts gb.source
-    generate_file gb.source, @paths.dst_root_abs, "graph"
+    ok = @conversion.convert_str gb.source, @paths.dst_root_abs, "graph"
+
+    # build a reference index
+    ib = index_builder_factory
+    @conversion.convert_str ib.source(ok), @paths.dst_root_abs, "index"
 
     # clean up adoc resources
     # @index_builder = nil
@@ -363,6 +309,29 @@ class TreeConverter
     else
       raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
     end
+  end
+
+  # creates a DocInfo instance, fills it with basic info and
+  # returns the filled in instance so that derived implementations can
+  # add more data
+  def add_doc(adoc, adoc_stderr)
+    Giblog.logger.debug do
+      "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}"
+    end
+    Giblog.logger.debug { "Doc attributes: #{adoc.attributes}" }
+
+    @processed_docs << DocInfo.new(adoc, @paths.dst_root_abs, adoc_stderr)
+  end
+
+  def add_doc_fail(filepath, exception)
+    info = DocInfo.new
+
+    # the only info we have is the source file name
+    info.converted = false
+    info.src_file = filepath
+    info.error_msg = exception.message
+
+    @processed_docs << info
   end
 
   # convert a single adoc doc to whatever the user wants
@@ -477,7 +446,7 @@ class GitRepoParser
 
     # Render the summary page
     tc = TreeConverter.new options
-    tc.generate_file @index_builder.index_source, @paths.dst_root_abs, "index"
+    tc.conversion.convert_str @index_builder.source, @paths.dst_root_abs, "index"
 
     # clean up
     @index_builder = nil

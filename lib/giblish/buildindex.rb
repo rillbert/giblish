@@ -19,10 +19,10 @@ class BasicIndexBuilder
     @manage_docid = handle_docid
   end
 
-  def index_source
+  def source(dep_graph_exists = false)
     <<~DOC_STR
       #{generate_header}
-      #{generate_tree}
+      #{generate_tree(dep_graph_exists)}
       #{generate_details}
       #{generate_footer}
     DOC_STR
@@ -41,6 +41,43 @@ class BasicIndexBuilder
       #{t.strftime('%Y-%m-%d %H:%M')}
 
     DOC_HEADER
+  end
+
+  def generate_tree(dep_graph_exists)
+    # build up tree of paths
+    root = PathTree.new
+    @processed_docs.each do |d|
+      root.add_path(d.rel_path.to_s, d)
+    end
+
+    # include link to dependency graph if it exists
+    dep_graph_str = if dep_graph_exists
+                      "_(a visual graph of document dependencies can be found " \
+                      "<<./graph.adoc#,here>>)_"
+                    else
+                      ""
+                    end
+    # output tree intro
+    tree_string = <<~DOC_HEADER
+      == Document Overview
+
+      _Click on the title to open the document or on `details` to see more
+      info about the document. A `(warn)` label indicates that there were
+      warnings while converting the document._
+
+      #{dep_graph_str}
+
+      [subs=\"normal\"]
+      ----
+    DOC_HEADER
+
+    # generate each tree entry string
+    root.traverse_top_down do |level, node|
+      tree_string << tree_entry_string(level, node)
+    end
+
+    # generate the tree footer
+    tree_string << "\n----\n"
   end
 
   def generate_footer
@@ -115,34 +152,6 @@ class BasicIndexBuilder
       # no converted file exists, show what we know
       "#{prefix_str} FAIL: #{d.src_file}      <<#{d.src_file},details>>\n"
     end
-  end
-
-  def generate_tree
-    # build up tree of paths
-    root = PathTree.new
-    @processed_docs.each do |d|
-      root.add_path(d.rel_path.to_s, d)
-    end
-
-    # output tree intro
-    tree_string = <<~DOC_HEADER
-      == Document Overview
-
-      _Click on the title to open the document or on `details` to see more
-      info about the document. A `(warn)` label indicates that there were
-      warnings while converting the document._
-
-      [subs=\"normal\"]
-      ----
-    DOC_HEADER
-
-    # generate each tree entry string
-    root.traverse_top_down do |level, node|
-      tree_string << tree_entry_string(level, node)
-    end
-
-    # generate the tree footer
-    tree_string << "\n----\n"
   end
 
   # Derived classes can override this with useful info
@@ -322,7 +331,7 @@ class GitSummaryIndexBuilder
     @tags << t
   end
 
-  def index_source
+  def source
     <<~ADOC_SRC
       #{generate_header}
       #{generate_branch_info}
