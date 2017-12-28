@@ -85,15 +85,15 @@ class DocConverter
   # to disk.
   # returns 'true' if a file was written, 'false' if not
   def convert_str(src_str, dst_dir, basename)
+    index_opts = @converter_options.dup
+
     # use the same options as when converting all docs
     # in the tree but make sure we don't write to file
-    index_opts = @converter_options.dup
+    # by trial and error, the following dirs seem to be
+    # necessary to change
     index_opts[:to_dir] = dst_dir.to_s
     index_opts[:base_dir] = dst_dir.to_s
-
-    # index_opts.delete_if { |k, _v| %i[to_file to_dir].include? k }
     index_opts.delete_if { |k, _v| %i[to_file].include? k }
-    # puts "index_opts: #{index_opts}"
 
     # load and convert the document using the converter options
     doc = nil, output = nil
@@ -277,8 +277,8 @@ class FileTreeConverter
     ib = index_factory
     @converter.convert_str ib.source(ok), @paths.dst_root_abs, "index"
 
-    # clean up adoc resources
-    # @index_builder = nil
+    # clean up cached files and adoc resources
+    remove_diagram_temps
     GC.start
   end
 
@@ -329,6 +329,14 @@ class FileTreeConverter
   end
 
   private
+
+  # remove cache dir and svg image created by asciidoctor-Diagram
+  # when creating the document dependency graph
+  def remove_diagram_temps
+    adoc_diag_cache = @paths.dst_root_abs.join(".asciidoctor")
+    FileUtils.remove_dir(adoc_diag_cache) if adoc_diag_cache.directory?
+    @paths.dst_root_abs.join("docdeps.svg").delete
+  end
 
   # convert a single adoc doc to whatever the user wants
   def to_asciidoc(filepath)
