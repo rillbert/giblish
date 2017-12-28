@@ -88,7 +88,12 @@ class DocConverter
     # use the same options as when converting all docs
     # in the tree but make sure we don't write to file
     index_opts = @converter_options.dup
-    index_opts.delete_if { |k, _v| %i[to_file to_dir].include? k }
+    index_opts[:to_dir] = dst_dir.to_s
+    index_opts[:base_dir] = dst_dir.to_s
+
+    # index_opts.delete_if { |k, _v| %i[to_file to_dir].include? k }
+    index_opts.delete_if { |k, _v| %i[to_file].include? k }
+    # puts "index_opts: #{index_opts}"
 
     # load and convert the document using the converter options
     doc = nil, output = nil
@@ -96,6 +101,7 @@ class DocConverter
       doc = Asciidoctor.load src_str, index_opts
       output = doc.convert index_opts
     end
+
     # if we get anything from asciidoctor to stderr,
     # consider this a failure and do not emit a file.
     return false unless adoc_stderr.length.zero?
@@ -249,7 +255,6 @@ class FileTreeConverter
   end
 
   def convert
-    puts "options at convert: #{@options}"
     # collect all doc ids and enable replacement of known doc ids with
     # valid references to adoc files
     manage_doc_ids if @options[:resolveDocid]
@@ -359,6 +364,7 @@ class FileTreeConverter
 
     # Make sure that no prior docid's are hangning around
     Giblish::DocidCollector.clear_cache
+    Giblish::DocidCollector.clear_deps
     idc = Giblish::DocidCollector.new
 
     # traverse the src file tree and collect ids from all
@@ -372,7 +378,6 @@ class FileTreeConverter
 end
 
 class GitRepoConverter < FileTreeConverter
-
   def initialize(options)
     super(options)
     # cache the top of the tree since we need to redefine the

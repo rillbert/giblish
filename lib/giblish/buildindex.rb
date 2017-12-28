@@ -239,13 +239,9 @@ class GitRepoIndexBuilder < BasicIndexBuilder
 
     # Redefine the src_file to mean the relative path to the git repo root
     @processed_docs.each do |info|
-      puts "src_file: #{info.src_file}"
-      puts "rel_path: #{info.rel_path}"
-      puts "----"
       info.src_file = Pathname.new(
         info.src_file
       ).relative_path_from(git_repo_root).to_s
-      puts "src_file (after): #{info.src_file}"
     end
 
     # no repo root given...

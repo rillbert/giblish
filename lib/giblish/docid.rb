@@ -26,6 +26,10 @@ module Giblish
       def clear_cache
         @docid_cache = {}
       end
+
+      def clear_deps
+        @docid_deps = {}
+      end
     end
 
     # The minimum number of characters required for a valid doc id
@@ -94,7 +98,7 @@ module Giblish
             # add the referenced doc id as a target dependency of this document
             docid_deps[src_path] << target_id
             docid_deps[src_path] = docid_deps[src_path].uniq
-            
+
             # resolve the doc id ref to a valid relative path
             "<<#{get_rel_path(src_path, target_id)}##{section}#{display_str}>>"
           else
