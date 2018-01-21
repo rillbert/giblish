@@ -22,18 +22,32 @@ class DocInfo
   attr_accessor :doc_id
   attr_accessor :purpose_str
   attr_accessor :status
-  attr_accessor :relPath
-  attr_accessor :srcFile
   attr_accessor :history
   attr_accessor :error_msg
   attr_accessor :stderr
+  # these two members can have encoding issues when
+  # running in a mixed Windows/Linux setting.
+  # that is why the explicit utf-8 read methods are
+  # provided.
+  attr_accessor :relPath
+  attr_accessor :srcFile
+
+  def relPath_utf8
+    return nil if @relPath.nil?
+    @relPath.to_s.encode("utf-8")
+  end
+
+  def srcFile_utf8
+    return nil if @srcFile.nil?
+    @srcFile.to_s.encode("utf-8")
+  end
 
   def initialize
     @history = []
   end
 
   def to_s
-    "DocInfo: title: #{@title} srcFile: #{@srcFile}"
+    "DocInfo: title: #{@title} srcFile: #{srcFile_utf8}"
   end
 end
 
@@ -173,8 +187,8 @@ class BasicIndexBuilder
       @nof_missing_titles += 1
       doc_info.title = "NO TITLE FOUND (#{@nof_missing_titles}) !"
     end
-    return "<<#{doc_info.relPath}#,#{doc_info.title}>>",
-    "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"
+    return "<<#{doc_info.relPath_utf8}#,#{doc_info.title}>>".encode("utf-8"),
+    "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n".encode("utf-8")
   end
 
   # Generate an adoc string that will display as
@@ -206,7 +220,7 @@ class BasicIndexBuilder
       tree_entry_converted prefix_str, d
     else
       # no converted file exists, show what we know
-      "#{prefix_str} FAIL: #{d.srcFile}      <<#{d.srcFile},details>>\n"
+      "#{prefix_str} FAIL: #{d.srcFile_utf8}      <<#{d.srcFile_utf8},details>>\n"
     end
   end
 
@@ -214,7 +228,8 @@ class BasicIndexBuilder
     # build up tree of paths
     root = PathTree.new
     @added_docs.each do |d|
-      root.add_path(d.relPath.to_s, d)
+#      root.add_path(d.relPath.to_s, d)
+      root.add_path(d.relPath_utf8, d)
     end
 
     # output tree intro
@@ -245,11 +260,11 @@ class BasicIndexBuilder
 
   def generate_detail_fail(d)
     <<~FAIL_INFO
-      === #{d.srcFile}
+      === #{d.srcFile_utf8}
 
       Source file::
 
-      #{d.srcFile}
+      #{d.srcFile_utf8}
 
       Error detail::
       #{d.stderr}
@@ -262,15 +277,15 @@ class BasicIndexBuilder
   def generate_detail(d)
     # Generate detail info
     <<~DETAIL_SRC
-      [[#{Giblish.to_valid_id(d.title)}]]
-      === #{d.title}
+      [[#{Giblish.to_valid_id(d.title.encode("utf-8"))}]]
+      === #{d.title.encode("utf-8")}
 
       #{d.purpose_str}
 
       #{generate_conversion_info d}
 
       Source file::
-      #{d.srcFile}
+      #{d.srcFile_utf8}
 
       #{generate_history_info d}
 
@@ -344,20 +359,13 @@ class GitRepoIndexBuilder < BasicIndexBuilder
     # Get the commit history of the doc
     # (use a homegrown git log to get 'follow' flag)
     gi = Giblish::GitItf.new(@git_repo_root)
-    gi.file_log(info.srcFile.to_s).each do |i|
+    gi.file_log(info.srcFile_utf8).each do |i|
       h = DocInfo::DocHistory.new
       h.date = i["date"]
       h.message = i["message"]
       h.author = i["author"]
       info.history << h
     end
-    # @git_repo.log(50).object("*#{info.srcFile}").each do |l|
-    #   h = DocInfo::DocHistory.new
-    #   h.date = l.date
-    #   h.message = l.message
-    #   h.author = l.author.name
-    #   info.history << h
-    # end
   end
 
   protected
