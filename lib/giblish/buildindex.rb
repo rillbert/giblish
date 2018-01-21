@@ -228,8 +228,7 @@ class BasicIndexBuilder
     # build up tree of paths
     root = PathTree.new
     @added_docs.each do |d|
-#      root.add_path(d.relPath.to_s, d)
-      root.add_path(d.relPath_utf8, d)
+      root.add_path(d.relPath.to_s, d)
     end
 
     # output tree intro
