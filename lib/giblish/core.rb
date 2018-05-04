@@ -330,7 +330,17 @@ class TreeConverter
 
   # predicate that decides if a path is a asciidoc file or not
   def adocfile?(path)
-    path.extname.casecmp(".ADOC").zero? && path.file?
+    fs = path.basename.to_s
+
+    unless @options[:excludeRegexp].nil?
+      # exclude file if user wishes
+      er = Regexp.new @options[:excludeRegexp]
+      return false unless er.match(fs).nil?
+    end
+
+    # only include files
+    ir = Regexp.new @options[:includeRegexp]
+    return !ir.match(fs).nil?
   end
 
   # Register the asciidoctor extension that handles doc ids and traverse

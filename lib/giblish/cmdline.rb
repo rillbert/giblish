@@ -33,6 +33,15 @@ class CmdLineParser
                              For html this is a name of a css file, for pdf, this is
                              the name of an yml file. If no style is given 'giblish'
                              is used as default.
+  -i --include <regexp>      include only files with a filename that matches the supplied
+                             regexp (defaults to '.*\.(?i)adoc$' meaning it matches all
+                             files ending in .adoc case-insensitive). The matching is made
+                             on the _file name only_, not the full path (i.e. for the full 
+                             path /my/file.adoc, only file.adoc is used in the matching).
+  -j --exclude <regexp>      exclude files with filenames matching the supplied 
+                             regexp (no files are excluded by default). The matching is made
+                             on the _file name only_, not the full path (i.e. for the full 
+                             path /my/file.adoc, only file.adoc is used in the matching).
   -w --web-root <path>       Specifies the top dir (DirectoryRoot) of a file system
                              tree published by a web server. This switch is only used
                              when generating html. The typical use case is that giblish
@@ -95,15 +104,15 @@ ENDHELP
   def set_log_level
     log_level = @args[:logLevel] || "warn"
     case log_level
-    when "debug" then Giblog.logger.sev_threshold = Logger::DEBUG
-    when "info"  then Giblog.logger.sev_threshold = Logger::INFO
-    when "warn"  then Giblog.logger.sev_threshold = Logger::WARN
-    when "error" then Giblog.logger.sev_threshold = Logger::ERROR
-    when "fatal" then Giblog.logger.sev_threshold = Logger::FATAL
-    else
-      puts "Invalid log level specified. Run with -h to see supported levels"
-      puts USAGE
-      exit 1
+      when "debug" then Giblog.logger.sev_threshold = Logger::DEBUG
+      when "info"  then Giblog.logger.sev_threshold = Logger::INFO
+      when "warn"  then Giblog.logger.sev_threshold = Logger::WARN
+      when "error" then Giblog.logger.sev_threshold = Logger::ERROR
+      when "fatal" then Giblog.logger.sev_threshold = Logger::FATAL
+      else
+        puts "Invalid log level specified. Run with -h to see supported levels"
+        puts USAGE
+        exit 1
     end
   end
 
@@ -115,15 +124,18 @@ ENDHELP
   def parse_cmdline(cmdline_args)
     # default values for cmd line switches
     @args = {
-      help: false,
-      version: false,
-      force: true,
-      format: "html",
-      flatten: false,
-      suppressBuildRef: false,
-      localRepoOnly: false,
-      resolveDocid: false,
-      webRoot: false
+        help: false,
+        version: false,
+        force: true,
+        format: "html",
+        # note that the single quotes are important for the regexp
+        includeRegexp: '.*\.(?i)adoc$',
+        excludeRegexp: nil,
+        flatten: false,
+        suppressBuildRef: false,
+        localRepoOnly: false,
+        resolveDocid: false,
+        webRoot: false
     }
 
     # set default log level
@@ -136,24 +148,26 @@ ENDHELP
     next_arg = unflagged_args.first
     cmdline_args.each do |arg|
       case arg
-      when "-h", "--help"         then @args[:help]      = true
-      when "-v", "--version"      then @args[:version]   = true
-      when "-f", "--format   "    then next_arg = :format
-      when "-r", "--resource-dir" then next_arg = :resourceDir
-      when "-n", "--no-build-ref" then @args[:suppressBuildRef] = true
-      when "-g", "--git-branches" then next_arg = :gitBranchRegexp
-      when "-t", "--git-tags"     then next_arg = :gitTagRegexp
-      when "-c", "--local-only"   then @args[:localRepoOnly] = true
-      when "-d", "--resolve-docid" then @args[:resolveDocid] = true
-      when "-s", "--style"        then next_arg = :userStyle
-      when "-w", "--web-root"     then next_arg = :webRoot
-      when "--log-level"          then next_arg = :logLevel
-      else
-        if next_arg
-          @args[next_arg] = arg
-          unflagged_args.delete(next_arg)
-        end
-        next_arg = unflagged_args.first
+        when "-h", "--help"         then @args[:help]      = true
+        when "-v", "--version"      then @args[:version]   = true
+        when "-f", "--format   "    then next_arg = :format
+        when "-r", "--resource-dir" then next_arg = :resourceDir
+        when "-n", "--no-build-ref" then @args[:suppressBuildRef] = true
+        when "-i", "--include"      then next_arg = :includeRegexp
+        when "-j", "--exclude"      then next_arg = :excludeRegexp
+        when "-g", "--git-branches" then next_arg = :gitBranchRegexp
+        when "-t", "--git-tags"     then next_arg = :gitTagRegexp
+        when "-c", "--local-only"   then @args[:localRepoOnly] = true
+        when "-d", "--resolve-docid" then @args[:resolveDocid] = true
+        when "-s", "--style"        then next_arg = :userStyle
+        when "-w", "--web-root"     then next_arg = :webRoot
+        when "--log-level"          then next_arg = :logLevel
+        else
+          if next_arg
+            @args[next_arg] = arg
+            unflagged_args.delete(next_arg)
+          end
+          next_arg = unflagged_args.first
       end
     end
   end
@@ -187,7 +201,7 @@ ENDHELP
     # The user wants to parse a git repo, check that the srcDirRoot is within a
     # git repo if the user wants to generate git-branch specific docs
     @args[:gitRepoRoot] = Giblish::PathManager.find_gitrepo_root(
-      @args[:srcDirRoot]
+        @args[:srcDirRoot]
     )
     return unless @args[:gitRepoRoot].nil?
 
