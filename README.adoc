@@ -2,7 +2,7 @@
 Generate docs from asciidoc files in a git repo
 
 [abstract]
-Build status: https://travis-ci.com/rillbert/giblish.svg?branch=master
+image::https://travis-ci.com/rillbert/giblish.svg?branch=master
 
 == Purpose
 
