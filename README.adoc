@@ -2,6 +2,8 @@
 Generate docs from asciidoc files in a git repo
 
 [abstract]
+
+
 image::https://travis-ci.com/rillbert/giblish.svg?branch=master
 
 == Purpose
