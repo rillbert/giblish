@@ -410,6 +410,7 @@ class GitSummaryIndexBuilder
   def initialize(repo)
     @branches = []
     @tags = []
+    @git_repo = repo
     @repo_url = repo.remote.url
   end
 
@@ -473,18 +474,19 @@ class GitSummaryIndexBuilder
       == Tags
 
       |===
-      |Tag |Tag comment |Creator |Creation date
+      |Tag |Tag comment |Creator |Tagged commit 
 
     TAG_INFO
 
     str << @tags.collect do |t|
       dirname = t.name.tr "/", "_"
+      c = @git_repo.gcommit(t.sha)
 
       <<~A_ROW
         |link:#{dirname}/index.html[#{t.name}]
         |#{t.annotated? ? t.message : "-"}
         |#{t.annotated? ? t.tagger.name : "-"}
-        |#{t.annotated? ? t.tagger.date : "-"}
+        |#{t.sha[0,8]}... committed at #{c.author.date}
       A_ROW
     end.join("\n")
 
