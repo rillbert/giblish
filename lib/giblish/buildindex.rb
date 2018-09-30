@@ -472,12 +472,31 @@ class GitSummaryIndexBuilder
     str = <<~TAG_INFO
       == Tags
 
+      |===
+      |Tag |Tag comment |Creator |Creation date
+
     TAG_INFO
 
-    @tags.each do |t|
+    str << @tags.collect do |t|
       dirname = t.name.tr "/", "_"
-      str << " * link:#{dirname}/index.html[#{t.name}]\n"
-    end
+
+      <<~A_ROW
+        |link:#{dirname}/index.html[#{t.name}]
+        |#{t.annotated? ? t.message : "-"}
+        |#{t.annotated? ? t.tagger.name : "-"}
+        |#{t.annotated? ? t.tagger.date : "-"}
+      A_ROW
+    end.join("\n")
+
+    str << "|===\n"
+
+    # @tags.each do |t|
+    #   dirname = t.name.tr "/", "_"
+    #   str << " * link:#{dirname}/index.html[#{t.name}]"
+    #   if t.annotated?
+    #     str << "created at #{t.tagger.date} by #{t.tagger.name} with message: #{t.message}"
+    #   end
+    # end
     str
   end
 end
