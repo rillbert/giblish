@@ -31,6 +31,9 @@ module Giblish
     attr_accessor :paths
 
     def initialize(paths, options)
+      # access the source highlight module
+      require "asciidoctor-rouge"
+
       @paths = paths
       @user_style = options[:userStyle]
       @converter_options = COMMON_CONVERTER_OPTS.dup
@@ -133,11 +136,6 @@ module Giblish
     def initialize(paths, options)
       super paths, options
 
-      # require access to modules for source highlight and
-      # doc dependency graphs
-      require "asciidoctor-rouge"
-      require "asciidoctor-diagram"
-
       # handle needed assets for the styling (css et al)
       html_attrib = setup_web_assets options[:webRoot]
 
@@ -202,11 +200,6 @@ module Giblish
   class PdfConverter < DocConverter
     def initialize(paths, options)
       super paths, options
-
-      # require access to modules for source highlight and
-      # doc dependency graphs
-      require "asciidoctor-rouge"
-      require "asciidoctor-diagram"
 
       pdf_attrib = setup_pdf_attribs
 

@@ -57,7 +57,7 @@ module Giblish
       @converter.convert_str ib.source(ok), @paths.dst_root_abs, "index"
 
       # clean up cached files and adoc resources
-      # remove_diagram_temps if ok
+      remove_diagram_temps if ok
       GC.start
     end
 

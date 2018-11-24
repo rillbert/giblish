@@ -9,6 +9,13 @@ module Giblish
     # Supported options:
     # :extension - file extension for URL links (default is .html)
     def initialize(processed_docs, paths, options = {})
+
+      # this class relies on graphwiz (dot), make sure we can access that
+      raise "Could not find the 'dot' tool needed to generate a dependency graph!" if Giblish.which('dot').nil?
+
+      # require asciidoctor module needed for generating diagrams
+      require "asciidoctor-diagram/graphviz"
+
       @processed_docs = processed_docs
       @paths = paths
       @options = options.dup

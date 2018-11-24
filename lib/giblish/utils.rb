@@ -152,6 +152,8 @@ module Giblish
     end
   end
 
+  # runs the supplied block but redirect stderr to a string
+  # returns the string containing stderr contents
   def with_captured_stderr
     old_stderr = $stderr
     $stderr = StringIO.new("", "w")
@@ -162,9 +164,29 @@ module Giblish
   end
   module_function :with_captured_stderr
 
+  # transforms strings to valid asciidoctor id strings
   def to_valid_id(input_str)
     id_str = "_#{input_str.downcase}"
     id_str.gsub(%r{[^a-z0-9]+},"_")
   end
   module_function :to_valid_id
+
+  # See https://stackoverflow.com/questions/2108727/which-in-ruby-checking-if-program-exists-in-path-from-ruby
+  # Cross-platform way of finding an executable in the $PATH.
+  #
+  # Ex
+  #   which('ruby') #=> /usr/bin/ruby
+  def which(cmd)
+    exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
+    ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+      exts.each { |ext|
+        exe = File.join(path, "#{cmd}#{ext}")
+        return exe if File.executable?(exe) && !File.directory?(exe)
+      }
+    end
+    return nil
+  end
+  module_function :which
+
+
 end
