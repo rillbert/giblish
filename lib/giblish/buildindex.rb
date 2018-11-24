@@ -117,8 +117,8 @@ class BasicIndexBuilder
               doc_info.title
             end
 
-    [title, "<<#{doc_info.rel_path}#,#{title}>>",
-     "<<#{Giblish.to_valid_id(title)},details>>\n"]
+    [title, "<<#{doc_info.rel_path}#,#{title}>>".encode("utf-8"),
+     "<<#{Giblish.to_valid_id(title)},details>>\n".encode("utf-8")]
   end
 
   # Generate an adoc string that will display as
@@ -150,7 +150,7 @@ class BasicIndexBuilder
       tree_entry_converted prefix_str, d
     else
       # no converted file exists, show what we know
-      "#{prefix_str} FAIL: #{d.src_file}      <<#{d.src_file},details>>\n"
+      "#{prefix_str} FAIL: #{d.srcFile_utf8}      <<#{d.srcFile_utf8},details>>\n"
     end
   end
 
@@ -161,11 +161,11 @@ class BasicIndexBuilder
 
   def generate_detail_fail(d)
     <<~FAIL_INFO
-      === #{d.src_file}
+      === #{d.srcFile_utf8}
 
       Source file::
 
-      #{d.src_file}
+      #{d.srcFile_utf8}
 
       Error detail::
       #{d.stderr}
@@ -183,15 +183,15 @@ class BasicIndexBuilder
                     "Purpose::\n#{d.purpose_str}"
                   end
     <<~DETAIL_SRC
-      [[#{Giblish.to_valid_id(d.title)}]]
-      === #{d.title}
+      [[#{Giblish.to_valid_id(d.title.encode("utf-8"))}]]
+      === #{d.title.encode("utf-8")}
 
       #{purpose_str}
 
       #{generate_conversion_info d}
 
       Source file::
-      #{d.src_file}
+      #{d.srcFile_utf8}
 
       #{generate_history_info d}
 
@@ -256,6 +256,24 @@ class GitRepoIndexBuilder < BasicIndexBuilder
     end
   end
 
+  def add_doc(adoc, adoc_stderr)
+    info = super(adoc, adoc_stderr)
+
+    # Redefine the srcFile to mean the relative path to the git repo root
+    info.srcFile = Pathname.new(info.srcFile).relative_path_from(@git_repo_root).to_s
+
+    # Get the commit history of the doc
+    # (use a homegrown git log to get 'follow' flag)
+    gi = Giblish::GitItf.new(@git_repo_root)
+    gi.file_log(info.srcFile_utf8).each do |i|
+      h = DocInfo::DocHistory.new
+      h.date = i["date"]
+      h.message = i["message"]
+      h.author = i["author"]
+      info.history << h
+    end
+  end
+
   protected
 
   def generate_header
@@ -298,6 +316,7 @@ class GitSummaryIndexBuilder
   def initialize(repo, branches, tags)
     @branches = branches
     @tags = tags
+    @git_repo = repo
     @repo_url = repo.remote.url
   end
 
@@ -351,12 +370,32 @@ class GitSummaryIndexBuilder
     str = <<~TAG_INFO
       == Tags
 
+      |===
+      |Tag |Tag comment |Creator |Tagged commit 
+
     TAG_INFO
 
-    @tags.each do |t|
+    str << @tags.collect do |t|
       dirname = t.name.tr "/", "_"
-      str << " * link:#{dirname}/index.html[#{t.name}]\n"
-    end
+      c = @git_repo.gcommit(t.sha)
+
+      <<~A_ROW
+        |link:#{dirname}/index.html[#{t.name}]
+        |#{t.annotated? ? t.message : "-"}
+        |#{t.annotated? ? t.tagger.name : "-"}
+        |#{t.sha[0,8]}... committed at #{c.author.date}
+      A_ROW
+    end.join("\n")
+
+    str << "|===\n"
+
+    # @tags.each do |t|
+    #   dirname = t.name.tr "/", "_"
+    #   str << " * link:#{dirname}/index.html[#{t.name}]"
+    #   if t.annotated?
+    #     str << "created at #{t.tagger.date} by #{t.tagger.name} with message: #{t.message}"
+    #   end
+    # end
     str
   end
 end
