@@ -12,7 +12,7 @@ module Giblish
       @processed_docs = processed_docs
       @paths = paths
       @options = options.dup
-      @extension = options.key?(:extension) ? options.key?[:extension] : ".html"
+      @extension = options.key?(:extension) ? options[:extension] : "html"
       @docid_cache = DocidCollector.docid_cache
       @docid_deps =  DocidCollector.docid_deps
       @dep_graph = build_dep_graph
@@ -75,9 +75,22 @@ module Giblish
 
     def generate_labels
       label_str = ""
+      # @dep_graph.each_key do |info|
+      #   rp = info.rel_path.sub_ext(@extension)
+      #   label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\", URL=\"#{rp}\" target=\"_blank\"]\n"
+      # end
       @dep_graph.each_key do |info|
-        rp = info.rel_path.sub_ext(@extension)
-        label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\", URL=\"#{rp}\" target=\"_blank\"]\n"
+        label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\""
+        rp = info.rel_path.sub_ext(".#{@extension}")
+        # add clickable links in the case of html output (this is not supported
+        # out-of-the-box for pdf).
+        case @extension
+          when "html"
+            label_str += ", URL=\"#{rp}\" ]\n"
+          else
+            label_str += " ]\n"
+        end
+#        label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\", URL=\"#{rp}\" ]\n"
       end
       label_str
     end

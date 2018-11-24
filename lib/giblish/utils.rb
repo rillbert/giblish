@@ -6,8 +6,8 @@ class Giblog
   def self.setup
     return if defined? @logger
     @logger = Logger.new(STDOUT)
-    @logger.formatter = proc do |_severity, datetime, _progname, msg|
-      "#{datetime.strftime('%H:%M:%S')} - #{msg}\n"
+    @logger.formatter = proc do |severity, datetime, _progname, msg|
+      "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
     end
   end
 

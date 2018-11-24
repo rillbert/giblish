@@ -1,5 +1,3 @@
-#!/usr/bin/ruby
-
 require_relative "utils"
 require_relative "version"
 

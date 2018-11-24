@@ -20,7 +20,7 @@ class RunGiblishTest < Minitest::Test
   end
 
   def test_basic_pdf_conversion
-    g = `lib/giblish.rb -f pdf --log-level info ./data/testdocs/wellformed/ testoutput`
+    g = `lib/giblish.rb -f pdf -d --log-level debug ./data/testdocs/wellformed/ testoutput`
     assert_equal 0, $?.exitstatus
     assert_match(/Giblish is done!$/, g)
   end
