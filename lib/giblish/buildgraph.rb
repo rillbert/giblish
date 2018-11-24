@@ -6,12 +6,18 @@ module Giblish
   # Graphviz is used as the graph generator and must be available
   # as a valid engine via asciidoctor-diagram for this class to work.
   class GraphBuilderGraphviz
+
+    # the dependency graph relies on graphwiz (dot), check if we can access that
+    def self.supported
+      return !Giblish.which('dot').nil?
+    end
+
     # Supported options:
     # :extension - file extension for URL links (default is .html)
     def initialize(processed_docs, paths, options = {})
 
       # this class relies on graphwiz (dot), make sure we can access that
-      raise "Could not find the 'dot' tool needed to generate a dependency graph!" if Giblish.which('dot').nil?
+      raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported
 
       # require asciidoctor module needed for generating diagrams
       require "asciidoctor-diagram/graphviz"

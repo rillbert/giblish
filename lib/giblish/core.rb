@@ -49,15 +49,21 @@ module Giblish
       return if @options[:suppressBuildRef]
 
       # build a dependency graph
-      gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-      ok = @converter.convert_str gb.source, @paths.dst_root_abs, "graph"
+      dep_graph_exist = if Giblish::GraphBuilderGraphviz.supported
+                          gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
+                          @converter.convert_str gb.source, @paths.dst_root_abs, "graph"
+                        else
+                          Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
+                          Giblog.logger.warn { "The dependency graph will not be generated !!" }
+                          false
+                        end
 
       # build a reference index
       ib = index_factory
-      @converter.convert_str ib.source(ok), @paths.dst_root_abs, "index"
+      @converter.convert_str ib.source(dep_graph_exist), @paths.dst_root_abs, "index"
 
       # clean up cached files and adoc resources
-      remove_diagram_temps if ok
+      remove_diagram_temps if dep_graph_exist
       GC.start
     end
 

@@ -351,7 +351,7 @@ module Giblish
 
       # get the branch-unique dst-dir
       str = <<~BRANCH_INFO
-        == Branches
+      == Branches
 
       BRANCH_INFO
 
@@ -368,7 +368,7 @@ module Giblish
       # get the branch-unique dst-dir
       str = <<~TAG_INFO
         == Tags
-
+        
         |===
         |Tag |Tag comment |Creator |Tagged commit 
 
