@@ -92,13 +92,30 @@ module Giblish
     end
 
     def make_dot_entry(doc_dict, info)
+      # split title into multiple rows if it is too long
+      line_length = 15
+      lines = [""]
+      info.title.split(" ").inject("") do |l,w|
+        line = l + " " + w
+        lines[-1] = line
+        if line.length > line_length
+          # create a new, empty, line
+          lines << ""
+          ""
+        else
+          line
+        end
+      end
+      title = lines.select { |l| l.length > 0 }.map {|l| l}.join("\n")
+
+      # create the label used to display the node in the graph
       dot_entry = if info.doc_id.nil?
                     doc_id = next_fake_id
                     @noid_docs[info] = doc_id
-                    "\"#{doc_id}\"[label=\"-\\n#{info.title}\""
+                    "\"#{doc_id}\"[label=\"-\\n#{title}\""
                   else
                     doc_id = info.doc_id
-                    "\"#{info.doc_id}\"[label=\"#{info.doc_id}\\n#{info.title}\""
+                    "\"#{info.doc_id}\"[label=\"#{info.doc_id}\\n#{title}\""
                   end
       # add clickable links in the case of html output (this is not supported
       # out-of-the-box for pdf).
