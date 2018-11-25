@@ -42,12 +42,35 @@ module Giblish
       DOC_HEADER
     end
 
-    def generate_tree(dep_graph_exists)
-      # build up tree of paths
-      root = PathTree.new
+    def get_docid_statistics
+      largest = ""
+      clash = []
       @processed_docs.each do |d|
-        root.add_path(d.rel_path.to_s, d)
+        # get the lexically largest doc id
+        largest = d.doc_id if !d.doc_id.nil? && d.doc_id > largest
+
+        # collect all ids in an array to find duplicates later on
+        clash << d.doc_id unless d.doc_id.nil?
       end
+      # find the duplicate doc ids (if any)
+      duplicates = clash.select { |id| clash.count(id) > 1 }.uniq.sort
+
+      return largest,duplicates
+    end
+
+    def generate_doc_id_info(dep_graph_exists)
+      largest,duplicates = get_docid_statistics
+      docid_info_str = if largest.length.zero?
+                         ""
+                       else
+                         "The 'largest' document id found when resolving :docid: tags is *#{largest}*."
+                       end
+      docid_warn_str = if duplicates.length.zero?
+                         ""
+                       else
+                         "WARNING: The following document ids are used for more than one document. " +
+                             "_#{duplicates.map {|id| id.to_s}.join(",") }_"
+                       end
 
       # include link to dependency graph if it exists
       dep_graph_str = if dep_graph_exists
@@ -56,19 +79,40 @@ module Giblish
                       else
                         ""
                       end
+
+      if !largest.length.zero?
+        <<~DOC_ID_INFO
+        Document id numbers::
+        The generation of this repository uses document id numbers. #{docid_info_str} #{dep_graph_str}
+  
+        #{docid_warn_str}
+
+        DOC_ID_INFO
+      else
+        ""
+      end
+    end
+
+    def generate_tree(dep_graph_exists)
       # output tree intro
       tree_string = <<~DOC_HEADER
         == Document Overview
 
         _Click on the title to open the document or on `details` to see more
         info about the document. A `(warn)` label indicates that there were
-        warnings while converting the document._
+        warnings while converting the document from its asciidoc format._
 
-        #{dep_graph_str}
+        #{generate_doc_id_info dep_graph_exists}
 
         [subs=\"normal\"]
         ----
       DOC_HEADER
+
+      # build up tree of paths
+      root = PathTree.new
+      @processed_docs.each do |d|
+        root.add_path(d.rel_path.to_s, d)
+      end
 
       # generate each tree entry string
       root.traverse_top_down do |level, node|
@@ -144,6 +188,7 @@ module Giblish
       return "#{prefix_str} #{node.name}\n" unless node.leaf?
 
       # return links to content and details for files
+      # node.data is a DocInfo instance
       d = node.data
       if d.converted
         tree_entry_converted prefix_str, d

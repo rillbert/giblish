@@ -192,7 +192,9 @@ module Giblish
       end
 
       if docid_cache.key? id
-        Giblog.logger.warn { "Found same doc id twice (#{id}). Using last found id." }
+        Giblog.logger.warn { "Found same doc id twice (#{id})." }
+        Giblog.logger.warn { "Assigning this id to the file #{path}." }
+        Giblog.logger.warn { "Discarding this id from the file #{docid_cache[id]}." }
       end
       docid_cache[id] = Pathname(path)
     end
