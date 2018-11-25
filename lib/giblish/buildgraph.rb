@@ -22,6 +22,8 @@ module Giblish
       # require asciidoctor module needed for generating diagrams
       require "asciidoctor-diagram/graphviz"
 
+      @noid_docs = {}
+      @next_id = 0
       @processed_docs = processed_docs
       @paths = paths
       @options = options.dup
@@ -76,6 +78,9 @@ module Giblish
                 fillcolor="#ebf26680",
                 style="filled,solid"
               ]
+        
+        rankdir="LR"
+
       DOC_STR
     end
 
@@ -86,32 +91,55 @@ module Giblish
       DOC_STR
     end
 
-    def generate_labels
-      label_str = ""
-      # @dep_graph.each_key do |info|
-      #   rp = info.rel_path.sub_ext(@extension)
-      #   label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\", URL=\"#{rp}\" target=\"_blank\"]\n"
-      # end
-      @dep_graph.each_key do |info|
-        label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\""
-        rp = info.rel_path.sub_ext(".#{@extension}")
-        # add clickable links in the case of html output (this is not supported
-        # out-of-the-box for pdf).
-        case @extension
-          when "html"
-            label_str += ", URL=\"#{rp}\" ]\n"
-          else
-            label_str += " ]\n"
-        end
-#        label_str += "\"#{info.doc_id}\" [label=\"#{info.doc_id} \\n#{info.title}\", URL=\"#{rp}\" ]\n"
+    def make_dot_entry(doc_dict, info)
+      dot_entry = if info.doc_id.nil?
+                    doc_id = next_fake_id
+                    @noid_docs[info] = doc_id
+                    "\"#{doc_id}\"[label=\"-\\n#{info.title}\""
+                  else
+                    doc_id = info.doc_id
+                    "\"#{info.doc_id}\"[label=\"#{info.doc_id}\\n#{info.title}\""
+                  end
+      # add clickable links in the case of html output (this is not supported
+      # out-of-the-box for pdf).
+      rp = info.rel_path.sub_ext(".#{@extension}")
+      case @extension
+        when "html"
+          dot_entry += ", URL=\"#{rp}\" ]"
+        else
+          dot_entry += " ]"
       end
-      label_str
+      doc_dict[doc_id] = dot_entry
+    end
+
+    def generate_labels
+      # create an entry in the 'dot' description for each
+      # document, sort them according to descending doc id to
+      # get them displayed in the opposite order in the graph
+      node_dict = {}
+      @dep_graph.each_key do |info|
+        make_dot_entry node_dict, info
+      end
+      # sort the nodes by reverse doc id
+      node_dict = node_dict.sort.reverse.to_h
+
+      # produce the string with all node entries
+      node_str = node_dict.map do |k,v|
+        v
+      end.join("\n")
+      node_str
     end
 
     def generate_deps
       dep_str = ""
       @dep_graph.each do |info, targets|
-        src_part = "\"#{info.doc_id}\""
+        # set either the real or the generated id as source
+        src_part = if info.doc_id.nil?
+                      "\"#{@noid_docs[info]}\""
+                   else
+                     "\"#{info.doc_id}\""
+                   end
+
         if targets.length.zero?
           dep_str += "#{src_part}\n"
           next
@@ -124,6 +152,11 @@ module Giblish
         dep_str += "}\n"
       end
       dep_str
+    end
+
+    def next_fake_id
+      @next_id += 1
+      "_generated_id_#{@next_id.to_s.rjust(4, '0')}"
     end
   end
 end

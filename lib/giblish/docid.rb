@@ -165,10 +165,11 @@ module Giblish
     # returns an array with [id, section, display_str]
     def parse_doc_id_ref(input_str)
       ref, display_str = input_str.split(",").each(&:strip)
-      display_str = "" if display_str.nil?
-      display_str.prepend "," if display_str.length.positive?
-
       id, section = ref.split "#"
+
+      display_str = id.dup if display_str.nil?
+      display_str.prepend ","
+
       section = "" if section.nil?
 
       [id, section, display_str]
