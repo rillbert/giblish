@@ -48,10 +48,16 @@ class CmdLineParser
                              tree (DirectoryRoot on Apache) and not the full absolute
                              path to the css directory.
   -g --git-branches <regExp> if the source_dir_top is located within a git repo,
-                             generate docs for all remote branches that matches
+                             generate docs for all _remote branches on origin_ that matches
                              the given regular expression. Each git branch will
                              be generated to a separate subdir under the destination
                              root dir.
+                             NOTE: To do this, giblish will _explicitly check out the
+                             matching branches and merge them with the corresponding
+                             branch on origin_.
+                             NOTE 2: In bash, use double quotes around your regexp if
+                             you need to quote it. Single quotes are treated as part
+                             of the regexp itself. 
   -t --git-tags <regExp>     if the source_dir_top is located within a git repo,
                              generate docs for all tags that matches the given
                              regular expression. Each tag will be generated to
@@ -64,7 +70,7 @@ class CmdLineParser
                              doc ids to resolve relative paths between the
                              generated documents
   --log-level                set the log level explicitly. Must be one of
-                             debug, info, warn (default), error or fatal.
+                             debug, info (default), warn, error or fatal.
 ENDHELP
 
   def initialize(cmdline_args)
@@ -100,7 +106,7 @@ ENDHELP
   private
 
   def set_log_level
-    log_level = @args[:logLevel] || "warn"
+    log_level = @args[:logLevel] || "info"
     case log_level
       when "debug" then Giblog.logger.sev_threshold = Logger::DEBUG
       when "info"  then Giblog.logger.sev_threshold = Logger::INFO

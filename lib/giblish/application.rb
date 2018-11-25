@@ -15,6 +15,9 @@ module Giblish
     end
 
     def run(args)
+      # force immediate output
+      $stdout.sync = true
+
       # setup logging
       Giblog.setup
 

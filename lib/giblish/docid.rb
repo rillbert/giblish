@@ -186,7 +186,7 @@ module Giblish
       Giblog.logger.debug { "found possible docid: #{id}" }
 
       unless doc_id_ok? doc_id
-        Giblog.logger.error { "Invalid docid: #{id}, this will be ignored!" }
+        Giblog.logger.error { "Invalid docid: #{id} in file #{path}, this will be ignored!" }
         return
       end
 

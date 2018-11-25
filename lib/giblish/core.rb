@@ -43,7 +43,7 @@ module Giblish
       Find.find(@paths.src_root_abs) do |path|
         p = Pathname.new(path)
         to_asciidoc(p) if adocfile? p
-      end
+      end if @paths.src_root_abs.directory?
 
       # check if we shall build index or not
       return if @options[:suppressBuildRef]
@@ -178,7 +178,7 @@ module Giblish
       Find.find(@paths.src_root_abs) do |path|
         p = Pathname.new(path)
         idc.parse_file(p) if adocfile? p
-      end
+      end if @paths.src_root_abs.directory?
       idc
     end
   end
@@ -289,7 +289,7 @@ module Giblish
 
       unless is_tag
         # if this is a branch, make sure it is up-to-date
-        Giblog.logger.debug {"Merging with origin/#{co.name}"}
+        Giblog.logger.info {"Merging with origin/#{co.name}"}
         @git_repo.merge "origin/#{co.name}"
       end
 

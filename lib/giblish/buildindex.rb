@@ -322,9 +322,9 @@ module Giblish
     def source
       <<~ADOC_SRC
         #{generate_header}
-              #{generate_branch_info}
-              #{generate_tag_info}
-              #{generate_footer}
+        #{generate_branch_info}
+        #{generate_tag_info}
+        #{generate_footer}
       ADOC_SRC
     end
 
@@ -351,7 +351,7 @@ module Giblish
 
       # get the branch-unique dst-dir
       str = <<~BRANCH_INFO
-      == Branches
+        == Branches
 
       BRANCH_INFO
 
