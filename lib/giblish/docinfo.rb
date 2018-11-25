@@ -16,31 +16,28 @@ module Giblish
     attr_accessor :doc_id
     attr_accessor :purpose_str
     attr_accessor :status
-    attr_accessor :rel_path
-    attr_accessor :src_file
     attr_accessor :history
     attr_accessor :error_msg
     attr_accessor :stderr
-
     # these two members can have encoding issues when
     # running in a mixed Windows/Linux setting.
     # that is why the explicit utf-8 read methods are
     # provided.
-    attr_accessor :relPath
-    attr_accessor :srcFile
+    attr_accessor :rel_path
+    attr_accessor :src_file
 
     def relPath_utf8
-      return nil if @relPath.nil?
-      @relPath.to_s.encode("utf-8")
+      return nil if @rel_path.nil?
+      @rel_path.to_s.encode("utf-8")
     end
 
     def srcFile_utf8
-      return nil if @srcFile.nil?
-      @srcFile.to_s.encode("utf-8")
+      return nil if @src_file.nil?
+      @src_file.to_s.encode("utf-8")
     end
 
     def initialize(adoc: nil, dst_root_abs: nil, adoc_stderr: "")
-      @srcFile = nil
+      @src_file = nil
       @history = []
       @converted = true
       @stderr = adoc_stderr

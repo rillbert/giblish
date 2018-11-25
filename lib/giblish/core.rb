@@ -224,7 +224,7 @@ module Giblish
       # Get the commit history of the doc
       # (use a homegrown git log to get 'follow' flag)
       gi = Giblish::GitItf.new(@git_repo_root)
-      gi.file_log(info.src_file.to_s).each do |i|
+      gi.file_log(info.srcFile_utf8).each do |i|
         h = DocInfo::DocHistory.new
         h.date = i["date"]
         h.message = i["message"]

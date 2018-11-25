@@ -161,7 +161,7 @@ module Giblish
               end
 
       [title, "<<#{doc_info.rel_path}#,#{title}>>".encode("utf-8"),
-       "<<#{Giblish.to_valid_id(title)},details>>\n".encode("utf-8")]
+       "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n".encode("utf-8")]
     end
 
     # Generate an adoc string that will display as
@@ -208,7 +208,6 @@ module Giblish
         === #{d.srcFile_utf8}
 
         Source file::
-
         #{d.srcFile_utf8}
 
         Error detail::
@@ -226,9 +225,18 @@ module Giblish
                     else
                       "Purpose::\n#{d.purpose_str}"
                     end
+
+      doc_id_str = if !d.doc_id.nil? && @manage_docid
+                     "Doc id::\n_#{d.doc_id}_"
+                   else
+                     ""
+                   end
+
       <<~DETAIL_SRC
         [[#{Giblish.to_valid_id(d.title.encode("utf-8"))}]]
         === #{d.title.encode("utf-8")}
+
+        #{doc_id_str}
 
         #{purpose_str}
 

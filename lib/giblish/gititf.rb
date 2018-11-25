@@ -74,6 +74,7 @@ module Giblish
         end
       end
       hsh_array << hsh if hsh
+      hsh_array
     end
 
     # Execute engine for git commands,
