@@ -28,6 +28,14 @@ module Giblish
     end
 
     protected
+    # return the adoc string for displaying the source file
+    def display_source_file(doc_info)
+      <<~SRC_FILE_TXT
+        Source file::
+        #{doc_info.srcFile_utf8}
+
+      SRC_FILE_TXT
+    end
 
     def generate_header
       t = Time.now
@@ -60,11 +68,12 @@ module Giblish
 
     def generate_doc_id_info(dep_graph_exists)
       largest,duplicates = get_docid_statistics
-      docid_info_str = if largest.length.zero?
+      docid_info_str = if ! @manage_docid
                          ""
                        else
                          "The 'largest' document id found when resolving :docid: tags is *#{largest}*."
                        end
+
       docid_warn_str = if duplicates.length.zero?
                          ""
                        else
@@ -80,7 +89,7 @@ module Giblish
                         ""
                       end
 
-      if !largest.length.zero?
+      if @manage_docid
         <<~DOC_ID_INFO
         Document id numbers::
         The generation of this repository uses document id numbers. #{docid_info_str} #{dep_graph_str}
@@ -207,8 +216,7 @@ module Giblish
       <<~FAIL_INFO
         === #{d.srcFile_utf8}
 
-        Source file::
-        #{d.srcFile_utf8}
+        #{display_source_file(d)}
 
         Error detail::
         #{d.stderr}
@@ -242,8 +250,7 @@ module Giblish
 
         #{generate_conversion_info d}
 
-        Source file::
-        #{d.srcFile_utf8}
+        #{display_source_file(d)}
 
         #{generate_history_info d}
 
@@ -284,17 +291,10 @@ module Giblish
   end
 
   # Builds an index of the generated documents and includes some git metadata
-  # repository
+  # from the repository
   class GitRepoIndexBuilder < BasicIndexBuilder
     def initialize(processed_docs, path_manager, manage_docid, git_repo_root)
       super processed_docs, path_manager, manage_docid
-
-      # Redefine the src_file to mean the relative path to the git repo root
-      @processed_docs.each do |info|
-        info.src_file = Pathname.new(
-            info.src_file
-        ).relative_path_from(git_repo_root).to_s
-      end
 
       # no repo root given...
       return unless git_repo_root
@@ -303,30 +303,27 @@ module Giblish
         # Make sure that we can "talk" to git if user feeds us
         # a git repo root
         @git_repo = Git.open(git_repo_root)
+        @git_repo_root = git_repo_root
       rescue Exception => e
         Giblog.logger.error {"No git repo! exception: #{e.message}"}
       end
     end
 
-    def add_doc(adoc, adoc_stderr)
-      info = super(adoc, adoc_stderr)
+    protected
+    # override basic version and use the relative path to the
+    # git repo root instead
+    def display_source_file(doc_info)
+      # Use the path relative to the git repo root as display
+      src_file = Pathname.
+          new(doc_info.src_file).
+          relative_path_from(@git_repo_root).to_s
+      <<~SRC_FILE_TXT
+        Source file::
+        #{src_file}
 
-      # Redefine the srcFile to mean the relative path to the git repo root
-      info.srcFile = Pathname.new(info.srcFile).relative_path_from(@git_repo_root).to_s
-
-      # Get the commit history of the doc
-      # (use a homegrown git log to get 'follow' flag)
-      gi = Giblish::GitItf.new(@git_repo_root)
-      gi.file_log(info.srcFile_utf8).each do |i|
-        h = DocInfo::DocHistory.new
-        h.date = i["date"]
-        h.message = i["message"]
-        h.author = i["author"]
-        info.history << h
-      end
+      SRC_FILE_TXT
     end
 
-    protected
 
     def generate_header
       t = Time.now

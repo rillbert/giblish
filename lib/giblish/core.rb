@@ -221,10 +221,12 @@ module Giblish
     def add_doc(adoc, adoc_stderr)
       info = super(adoc, adoc_stderr)
 
+      # Redefine the srcFile to mean the relative path to the git repo root
+      src_file = Pathname.new(info.src_file).relative_path_from(@git_repo_root).to_s
       # Get the commit history of the doc
       # (use a homegrown git log to get 'follow' flag)
       gi = Giblish::GitItf.new(@git_repo_root)
-      gi.file_log(info.srcFile_utf8).each do |i|
+      gi.file_log(src_file).each do |i|
         h = DocInfo::DocHistory.new
         h.date = i["date"]
         h.message = i["message"]
