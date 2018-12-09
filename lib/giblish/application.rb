@@ -6,14 +6,18 @@ require_relative "utils"
 module Giblish
   class Application
 
+    # return exit status (0 for success)
     def run_with_args(args)
       run args
     end
 
+    # does not return, exits with status code
     def run_from_cmd_line
-      run ARGV
+      status = run ARGV
+      exit(status)
     end
 
+    # return exit status (0 for success)
     def run(args)
       # force immediate output
       $stdout.sync = true
@@ -37,9 +41,10 @@ module Giblish
           tc.convert
         end
         Giblog.logger.info { "Giblish is done!" }
+        0
       rescue Exception => e
         log_error e
-        exit(1)
+        1
       end
     end
 

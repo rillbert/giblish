@@ -7,11 +7,10 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/*_test.rb"]
 end
 
-Rake::TestTask.new(:current_test) do |t|
+Rake::TestTask.new(:current) do |t|
   t.libs << "test"
   t.libs << "lib"
-  t.test_files = FileList["test/**/run_test.rb"]
-  # t.test_files = FileList["test/**/docid_test.rb"]
+  t.test_files = FileList["test/**/depgraph_test.rb"]
 end
 
 Rake::TestTask.new(:sandbox) do |t|

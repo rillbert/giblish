@@ -48,15 +48,19 @@ module Giblish
       # check if we shall build index or not
       return if @options[:suppressBuildRef]
 
-      # build a dependency graph
-      dep_graph_exist = if Giblish::GraphBuilderGraphviz.supported
-                          gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-                          @converter.convert_str gb.source, @paths.dst_root_abs, "graph"
-                        else
-                          Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
-                          Giblog.logger.warn { "The dependency graph will not be generated !!" }
-                          false
-                        end
+      # build a dependency graph (only if we resolve docids...)
+      dep_graph_exist = if @options[:resolveDocid]
+        if Giblish::GraphBuilderGraphviz.supported
+          gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
+          @converter.convert_str gb.source, @paths.dst_root_abs, "graph"
+        else
+          Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
+          Giblog.logger.warn { "The dependency graph will not be generated !!" }
+          false
+        end
+      else
+        false
+      end
 
       # build a reference index
       ib = index_factory
