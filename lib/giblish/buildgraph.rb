@@ -105,7 +105,7 @@ module Giblish
         else
           line
         end
-      end
+      end unless info.title.nil?
       title = lines.select { |l| l.length > 0 }.map {|l| l}.join("\n")
 
       # create the label used to display the node in the graph
