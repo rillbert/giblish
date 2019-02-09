@@ -86,7 +86,7 @@ module Giblish
 
       # Convert all docid refs to valid relative refs
       reader.lines.each do |line|
-        line.gsub!(/<<\s*:docid:\s*(.*)>>/) do |_m|
+        line.gsub!(/<<\s*:docid:\s*(.*?)>>/) do |_m|
           # parse the ref
           target_id, section, display_str =
             parse_doc_id_ref Regexp.last_match(1)
