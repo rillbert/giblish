@@ -28,7 +28,7 @@ class DocidCollectorTest < Minitest::Test
 
   def test_collect_docids
     args = ["--log-level",
-            "debug",
+            "info",
             "-d",
             @src_root,
             @dst_root]

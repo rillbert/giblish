@@ -71,7 +71,7 @@ module Giblish
       docid_info_str = if ! @manage_docid
                          ""
                        else
-                         "The 'largest' document id found when resolving :docid: tags is *#{largest}*."
+                         "The 'largest' document id found when resolving :docid: tags in all documents is *#{largest}*."
                        end
 
       docid_warn_str = if duplicates.length.zero?
@@ -122,6 +122,9 @@ module Giblish
       @processed_docs.each do |d|
         root.add_path(d.rel_path.to_s, d)
       end
+
+      # sort the tree
+      root.sort_children
 
       # generate each tree entry string
       root.traverse_top_down do |level, node|
