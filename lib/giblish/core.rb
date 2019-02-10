@@ -6,6 +6,7 @@ require "pathname"
 require_relative "buildindex"
 require_relative "docconverter"
 require_relative "docid"
+require_relative "indexheadings"
 require_relative "docinfo"
 require_relative "buildgraph"
 
@@ -31,6 +32,10 @@ module Giblish
       )
       @processed_docs = []
       @converter = converter_factory
+
+      # REVIEW: Remove this after testing !!!
+      Giblish.register_index_heading_extension
+
     end
 
     def convert
@@ -65,6 +70,9 @@ module Giblish
       # build a reference index
       ib = index_factory
       @converter.convert_str ib.source(dep_graph_exist), @paths.dst_root_abs, "index"
+
+      # serialize heading index
+      IndexHeadings.serialize @paths.dst_root_abs
 
       # clean up cached files and adoc resources
       remove_diagram_temps if dep_graph_exist
@@ -170,7 +178,7 @@ module Giblish
     # headers.
     def manage_doc_ids
       # Register the docid preprocessor hook
-      Giblish.register_extensions
+      Giblish.register_docid_extension
 
       # Make sure that no prior docid's are hangning around
       DocidCollector.clear_cache

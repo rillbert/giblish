@@ -203,10 +203,10 @@ module Giblish
 
   # Helper method to register the docid preprocessor extension with
   # the asciidoctor engine.
-  def register_extensions
+  def register_docid_extension
     Asciidoctor::Extensions.register do
       preprocessor DocidCollector
     end
   end
-  module_function :register_extensions
+  module_function :register_docid_extension
 end
