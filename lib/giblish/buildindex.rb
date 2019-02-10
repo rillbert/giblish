@@ -47,9 +47,21 @@ module Giblish
 
         #{t.strftime('%Y-%m-%d %H:%M')}
 
+        #{add_search_box}
+
       DOC_HEADER
     end
 
+    def add_search_box
+      <<~SEARCH_INFO
+      ++++
+        <form class="example" action="/action_page.php" style="margin:auto;max-width:300px">
+            <input type="text" placeholder="Search.." name="search2">
+            <button type="submit"><i class="fa fa-search"></i></button>
+        </form>
+      ++++
+      SEARCH_INFO
+    end
     def get_docid_statistics
       largest = ""
       clash = []
