@@ -1,4 +1,5 @@
 require "json"
+require "pathname"
 require "asciidoctor"
 require "asciidoctor/extensions"
 require_relative "./utils"
@@ -26,10 +27,20 @@ module Giblish
         @heading_index = {}
       end
 
-      def serialize dir_path
-        puts "writing json to #{dir_path.join("heading_index.json").to_s}"
-        File.open(dir_path.join("heading_index.json").to_s,"w") do |f|
-          f.write(@heading_index.to_json)
+      # write the index to a file in dst_dir and remove the base_dir
+      # part of the path for each filename
+      def serialize(dst_dir, base_dir = "")
+        hi = {}
+        if base_dir.empty?
+          hi = heading_index
+        else
+          heading_index.each do |k,v|
+            hi[Pathname.new(k).relative_path_from(base_dir)] = v
+          end
+        end
+        puts "writing json to #{dst_dir.join("heading_index.json").to_s}"
+        File.open(dst_dir.join("heading_index.json").to_s,"w") do |f|
+          f.write(hi.to_json)
         end
       end
     end

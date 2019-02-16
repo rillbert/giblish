@@ -72,7 +72,7 @@ module Giblish
       @converter.convert_str ib.source(dep_graph_exist), @paths.dst_root_abs, "index"
 
       # serialize heading index
-      IndexHeadings.serialize @paths.dst_root_abs
+      IndexHeadings.serialize @paths.dst_root_abs,@paths.src_root_abs
 
       # clean up cached files and adoc resources
       remove_diagram_temps if dep_graph_exist
