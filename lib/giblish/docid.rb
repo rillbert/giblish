@@ -52,7 +52,7 @@ module Giblish
     # - does not contain any blank line
     def parse_file(path)
       Giblog.logger.debug { "parsing file #{path} for docid..." }
-      process_header_lines(path) do |line|
+      Giblish.process_header_lines_from_file(path) do |line|
         m = /^:docid: +(.*)$/.match(line)
         if m
           # There is a docid defined, cache the path and doc id
@@ -110,30 +110,6 @@ module Giblish
     end
 
     private
-
-    # Helper method that provides the user with a way of processing only the
-    # lines within the asciidoc header block.
-    # The user must return nil to get the next line.
-    #
-    # ex:
-    # process_header_lines(file_path) do |line|
-    #   if line == "Quack!"
-    #      puts "Donald!"
-    #      1
-    #   else
-    #      nil
-    #   end
-    # end
-    def process_header_lines(path)
-      state = "before_header"
-      File.foreach(path) do |line|
-        case state
-        when "before_header" then (state = "in_header" if line =~ /^=+.*$/)
-        when "in_header" then (state = "done" if line =~ /^\s*$/ || yield(line))
-        when "done" then break
-        end
-      end
-    end
 
     # Helper method to shorten calls to docid_cache from instance methods
     def docid_cache

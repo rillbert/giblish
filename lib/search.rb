@@ -23,7 +23,7 @@ class GrepDocTree
     @output = ""
     @error = ""
     @status = 0
-    @index = {}
+    @match_index = {}
   end
 
   def grep(base_dir)
@@ -35,6 +35,8 @@ class GrepDocTree
     @output, @error, @status = Open3.capture3("#{grep_env} grep #{@grep_opts} #{@input} #{@top_dir}")
     @output.gsub!(/\x1b\[01m\x1b\[K/,"##")
     @output.gsub!(/\x1b\[m\x1b\[K/,"##")
+
+    puts @output
     File.open("regex.log","w") do |f|
       f.write @output
     end
@@ -47,49 +49,97 @@ class GrepDocTree
   # the format of the output:
   # {html_filename#heading : [line_1, line_2, ...], ...}
   #
-  # src_index has format:
-  # {filename_1 : {id_1 : line_no, id_2 : line_no, ...}, filename_2 ...}
+  # The src info index has the following JSON format
+  # {
+  #   file_infos : [{
+  #     filepath : filepath_1,
+  #     title : Title,
+  #     sections : [{
+  #       id : section_id_1,
+  #       title : section_title_1,
+  #       line_no : line_no
+  #     },
+  #     {
+  #       id : section_id_1,
+  #       title : section_title_1,
+  #       line_no : line_no
+  #     },
+  #     ...
+  #     ]
+  #   },
+  #   {
+  #     filepath : filepath_1,
+  #     ...
+  #   }]
+  # }
   def index_output src_index
-    output_index = {}
-    @index.each do |k,v|
-      if src_index.key?(k.to_s)
-        file_anchors = index_one_file k,v,src_index[k.to_s]
-        output_index = output_index.merge(file_anchors)
+    matches = []
+    # for each file with at least one match
+    @match_index.each do |file_path,match_infos|
+      # assume that max one file with the specified path
+      # exists
+      files = src_index["file_infos"].select do |fi|
+        fi["filepath"] == file_path.to_s
       end
-    end
-    output_index
+      next if files.empty?
+
+      file_anchors = index_one_file files.first,match_infos
+      matches << file_anchors
+      end
+    matches
   end
 
-  def index_one_file filename, match_line_info_array,src_sections
-    anchor_hash = {}
-    match_line_info_array.each do |line_info|
-      match_line_nr = line_info.line_no
+  # format:
+  #
+  # {
+  #   filepath : Filepath,
+  #   title : Title,
+  #   matches : {
+  #       section_id :
+  #       {
+  #         section_title : Section Title,
+  #         location : Location,
+  #         lines : [line_1, line_2, ...]
+  #       }
+  #     }
+  #   ]
+  # }
+  #
+  def index_one_file file_info, match_infos
+    matches = {}
+    file_anchors = {
+        "filepath" => file_info["filepath"],
+        "title" => file_info["title"],
+        "matches" => matches
+    }
+
+    match_infos.each do |match_info|
+      match_line_nr = match_info.line_no
 
       # find section with closest lower line_no to line_info
       best_so_far = 1
-      chosen_id = ""
-      src_sections.each do |id,line_no|
-        l = Integer(line_no)
+      chosen_section_info = {}
+      file_info["sections"].each do |section_info|
+        l = Integer(section_info["line_no"])
         if l <= match_line_nr && l > best_so_far
-          best_so_far = l
-          chosen_id = id
+          chosen_section_info = section_info
         end
       end
-
-      # construct the location as filename#section_id
-      anchor = "#{filename.sub_ext(".html").to_s}##{chosen_id}"
-
-      # add hash[location] [<< line_n]
-      anchor_hash[anchor] = [] unless anchor_hash.key? anchor
-      anchor_hash[anchor] << line_info.line
+      matches[chosen_section_info["id"]] =
+          {
+              "section_title" => chosen_section_info["title"],
+              "location" => "#{Pathname.new(file_info["filepath"]).sub_ext(".html").to_s}##{chosen_section_info["id"]}",
+              "lines" => []
+          } unless matches.key?(chosen_section_info["id"])
+      matches[chosen_section_info["id"]]["lines"] << match_info.line
     end
-    anchor_hash
+    file_anchors
   end
 
   def formatted_output
     # assume we have an updated index
     adoc_str = ""
-    @index.each do |k,v|
+    @match_index.each do |k,v|
       adoc_str += "#{k}::\n"
       v.each { |line_info|
         adoc_str += "#{line_info.line_no} : #{line_info.line}\n"
@@ -106,31 +156,49 @@ class GrepDocTree
   def reindex_result(base_dir)
     # grep format is
     # <filename>:<line_no>:<line>
-    @index = {}
+    @match_index = {}
     @output.split("\n").each do |line|
       tokens = line.split(":",3)
+      # remove all lines starting with :<attrib>:
+      tokens[2].gsub!(/^:[[:graph:]]+:.*$/,"")
+      next if tokens[2].empty?
+
       file_path = Pathname.new(tokens[0]).relative_path_from Pathname.new(base_dir)
-      @index[file_path] = [] unless @index.key? file_path
-      @index[file_path] << Line_info.new(tokens[2],tokens[1])
+      @match_index[file_path] = [] unless @match_index.key? file_path
+      @match_index[file_path] << Line_info.new(tokens[2], tokens[1])
     end
   end
 end
 
 def wash_line line
-  # remove =,|,: at the start of a line
-  result = line.gsub(/^[=|:]+/,"")
-
+  # remove any '::'
+  result = line.gsub(/::*/,"")
+  # remove =,| at the start of a line
+  result.gsub!(/^[=|]+/,"")
+  result
 end
 
-# index have format
-# {html_filename#heading : [line_1, line_2, ...], ...}
+# index is an array of file_info, see index_one_file
+# for format per file
+# == Title (filename)
+#
+# <<location,section_title>>::
+# line_1
+# line_2
+# ...
 def format_search_adoc index
   str = ""
-  index.each do |heading,lines|
-    str << "<<#{heading}>>::\n\n"
-    lines.each do |line|
-      str << wash_line(line)
-      str << "\n\n"
+  index.each do |file_info|
+    filename = Pathname.new(file_info["filepath"]).basename
+    str << "== #{file_info["title"]}\n\n"
+    file_info["matches"].each do |section_id, info |
+      str << "<<#{info["location"]},#{info["section_title"]}>>::\n\n"
+      str << "[subs=\"quotes\"]\n"
+      str << "----\n"
+      info["lines"].each do | line |
+        str << "-- #{wash_line(line)}\n"
+      end.join("\n\n")
+      str << "----\n"
     end
     str << "\n"
   end
@@ -163,8 +231,8 @@ if __FILE__ == $PROGRAM_NAME
   }
 
 
-  output = gt.index_output src_index
-  docstr = format_search_adoc output
+  matches = gt.index_output src_index
+  docstr = format_search_adoc matches
   puts docstr
 
 #  cgi = CGI.new

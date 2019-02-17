@@ -152,6 +152,50 @@ module Giblish
     end
   end
 
+  # Helper method that provides the user with a way of processing only the
+  # lines within the asciidoc header block.
+  # The user must return nil to get the next line.
+  #
+  # ex:
+  # process_header_lines(file_path) do |line|
+  #   if line == "Quack!"
+  #      puts "Donald!"
+  #      1
+  #   else
+  #      nil
+  #   end
+  # end
+  def process_header_lines(lines)
+    state = "before_header"
+    lines.each do |line|
+      case state
+      when "before_header" then (state = "in_header" if line =~ /^[=+]^.*$/ || yield(line))
+      when "in_header" then (state = "done" if line =~ /^\s*$/ || yield(line))
+      when "done" then break
+      end
+    end
+  end
+  module_function :process_header_lines
+
+  # Helper method that provides the user with a way of processing only the
+  # lines within the asciidoc header block.
+  # The user must return nil to get the next line.
+  #
+  # ex:
+  # process_header_lines_from_file(file_path) do |line|
+  #   if line == "Quack!"
+  #      puts "Donald!"
+  #      1
+  #   else
+  #      nil
+  #   end
+  # end
+  def process_header_lines_from_file(path)
+    lines = File.readlines(path)
+    process_header_lines(lines)
+  end
+  module_function :process_header_lines_from_file
+
   # runs the supplied block but redirect stderr to a string
   # returns the string containing stderr contents
   def with_captured_stderr

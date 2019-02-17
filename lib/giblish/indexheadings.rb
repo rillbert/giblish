@@ -6,17 +6,38 @@ require_relative "./utils"
 
 module Giblish
 
-  # Parse adoc files and index their headings in a global dict
-  # The dict looks as:
+  # This hook is called by Asciidoctor once for each document _before_
+  # Asciidoctor processes the adoc content.
+  #
+  # It indexes all headings found all documents in the tree.
+  # The resulting index will have the following JSON format
   # {
-  #  file_name_doc_1 => {"heading_1"=>10,"heading_2"=>34, ...},
-  #  file_name_doc_2 => {"heading_1"=>4,"heading_2"=>22, ...}
+  #   file_infos : [{
+  #     filepath : filepath_1,
+  #     title : Title,
+  #     sections : [{
+  #       id : section_id_1,
+  #       title : section_title_1,
+  #       line_no : line_no
+  #     },
+  #     {
+  #       id : section_id_1,
+  #       title : section_title_1,
+  #       line_no : line_no
+  #     },
+  #     ...
+  #     ]
+  #   },
+  #   {
+  #     filepath : filepath_1,
+  #     ...
+  #   }]
   # }
   class IndexHeadings < Asciidoctor::Extensions::Preprocessor
 
     # Use a class-global heading_index dict since asciidoctor creates a new instance
-    # of this class for each preprocessor hook call
-    @heading_index = {}
+    # of this class for each processed file
+    @heading_index = {"file_infos" => []}
 
     class << self
       def heading_index
@@ -24,39 +45,28 @@ module Giblish
       end
 
       def clear_index
-        @heading_index = {}
+        @heading_index = {"file_infos" => []}
       end
 
       # write the index to a file in dst_dir and remove the base_dir
       # part of the path for each filename
       def serialize(dst_dir, base_dir = "")
-        hi = {}
         if base_dir.empty?
-          hi = heading_index
+          heading_index
         else
-          heading_index.each do |k,v|
-            hi[Pathname.new(k).relative_path_from(base_dir)] = v
+          heading_index["file_infos"].each do |file_info|
+            # remove the base_dir part of the file path
+            file_info["filepath"] = Pathname.new(file_info["filepath"])
+                                        .relative_path_from(base_dir)
           end
         end
         puts "writing json to #{dst_dir.join("heading_index.json").to_s}"
         File.open(dst_dir.join("heading_index.json").to_s,"w") do |f|
-          f.write(hi.to_json)
+          f.write(heading_index.to_json)
         end
       end
     end
 
-    # scan through a document and index all its headings
-    #
-    # a heading is defined as a line starting with one or more
-    # '=' signs. Note that the 'old style' is not supported.
-    def parse_file(path)
-
-    end
-
-    # This hook is called by Asciidoctor once for each document _before_
-    # Asciidoctor processes the adoc content.
-    #
-    # It indexes all headings found in the document in a dictionary
     def process(document, reader)
       # Add doc as a source dependency for doc ids
       src_path = document.attributes["docfile"]
@@ -67,24 +77,51 @@ module Giblish
       # done differently
       return if src_path.nil?
 
+      # get the title from thw raw text (asciidoctor has not yet
+      # processed the text)
+      title = find_title reader.lines
+
       # Index all headings in the doc
       Giblog.logger.debug { "indexing headings in #{src_path}" }
+      sections = []
+      file_info_hash = {
+          "filepath" => src_path,
+          "title" => title,
+          "sections" => sections
+      }
+
+      # build the 'sections' array
       line_no = 1
-      doc_heading_dict = {}
+      regex = Regexp.new(/^=+\s+(.*)$/)
       reader.lines.each do |line|
-        m = /^=+\s+(.*)$/.match(line)
+        m = regex.match(line)
         if m
           # We found a heading, index it
-          doc_heading_dict[get_unique_id(doc_heading_dict, m[1])] = line_no
+          section = { "id" => get_unique_id(file_info_hash, m[1]) }
+          section["title"] = m[1].strip
+          section["line_no"] = line_no
+          sections << section
         end
         line_no += 1
       end
-      heading_index[src_path] = doc_heading_dict
-      Giblog.logger.info {"index: #{heading_index.inspect}"}
+
+      heading_index["file_infos"] << file_info_hash
       reader
     end
 
     private
+
+    def find_title(lines)
+      title = "No title Found!"
+      Giblish.process_header_lines(lines) do |line|
+        m = /^=+(.*)$/.match(line)
+        if m
+          # We found a decent title
+          title = m[1].strip
+        end
+      end
+      title
+    end
 
     def get_unique_id(doc_heading_dict, heading_str)
       id_base = Giblish.to_valid_id(heading_str)
