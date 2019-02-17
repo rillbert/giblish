@@ -33,6 +33,12 @@ class GrepDocTree
     puts "running: #{grep_env} grep #{@grep_opts} #{@input} #{@top_dir}"
 
     @output, @error, @status = Open3.capture3("#{grep_env} grep #{@grep_opts} #{@input} #{@top_dir}")
+    @output.gsub!(/\x1b\[01m\x1b\[K/,"##")
+    @output.gsub!(/\x1b\[m\x1b\[K/,"##")
+    File.open("regex.log","w") do |f|
+      f.write @output
+    end
+
     reindex_result base_dir
   end
 
@@ -110,24 +116,29 @@ class GrepDocTree
   end
 end
 
+def wash_line line
+  # remove =,|,: at the start of a line
+  result = line.gsub(/^[=|:]+/,"")
+
+end
+
 # index have format
 # {html_filename#heading : [line_1, line_2, ...], ...}
 def format_search_adoc index
+  str = ""
+  index.each do |heading,lines|
+    str << "<<#{heading}>>::\n\n"
+    lines.each do |line|
+      str << wash_line(line)
+      str << "\n\n"
+    end
+    str << "\n"
+  end
+
   <<~ADOC
   = Search Result
 
-  #{str = ""
-    index.each do |heading,lines|
-      str << "#{heading}::\n"
-      lines.each do |line|
-        str << line
-        str << "\n\n"
-      end
-      str << "\n"
-    end
-  str
-  }
-
+  #{str}
   ADOC
 end
 
@@ -135,13 +146,12 @@ require 'benchmark'
 
 # test the class...
 if __FILE__ == $PROGRAM_NAME
-#  cgi = CGI.new
 
   base_dir = "/home/anders/vironova/repos/qms"
   gt = nil
-  # read in the src_index
+
+  # read the src_index from file
   jsonpath = Pathname.new("/home/anders/repos/gendocs/heading_index.json").to_s
-  puts "read json data from #{jsonpath}"
   src_index = {}
   json = File.read(jsonpath)
   src_index = JSON.parse(json)
@@ -152,21 +162,19 @@ if __FILE__ == $PROGRAM_NAME
     gt.grep base_dir
   }
 
+
   output = gt.index_output src_index
+  docstr = format_search_adoc output
+  puts docstr
 
-  docstr = <<~ADOC
-  = Search Result
-
-
-  #{puts output.inspect}
-
-  ADOC
-
-  puts format_search_adoc output
+#  cgi = CGI.new
+  File.open("search_result.html","w") do |f|
+    f.write Asciidoctor.convert docstr, header_footer: true
+  end
 #  print cgi.header
 #  print Asciidoctor.convert docstr, header_footer: true
 
-  puts "\n===\n"
+  puts "Done."
   puts time
 end
 
