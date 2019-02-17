@@ -9,8 +9,10 @@ module Giblish
   # This hook is called by Asciidoctor once for each document _before_
   # Asciidoctor processes the adoc content.
   #
-  # It indexes all headings found all documents in the tree.
-  # The resulting index will have the following JSON format
+  # It indexes all headings found in all documents in the tree.
+  # The resulting index can be serialized to a JSON file file
+  # with the following format:
+  #
   # {
   #   file_infos : [{
   #     filepath : filepath_1,

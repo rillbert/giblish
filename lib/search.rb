@@ -212,6 +212,28 @@ end
 
 require 'benchmark'
 
+# assume that the file tree looks like when running
+# on a git branch
+#
+# top_dir
+# |- web_assets
+# |- branch_1_top_dir
+# |     |- index.html
+# |     |- file1.html
+# |     |- dir_1
+# |     |   |- file2.html
+# |- search_assets
+# |     |- branch_1
+# |           |- heading_index.json
+# |           |- file1.adoc
+# |           |- dir_1
+# |           |   |- file2.html
+# |           |- ...
+# |     |- branch_2
+# |           | ...
+# |- branch_2_top_dir
+# | ...
+#
 # test the class...
 if __FILE__ == $PROGRAM_NAME
 

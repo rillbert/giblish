@@ -32,10 +32,6 @@ module Giblish
       )
       @processed_docs = []
       @converter = converter_factory
-
-      # REVIEW: Remove this after testing !!!
-      Giblish.register_index_heading_extension
-
     end
 
     def convert
@@ -43,12 +39,18 @@ module Giblish
       # valid references to adoc files
       manage_doc_ids if @options[:resolveDocid]
 
+      # register add-on for handling searchability
+      manage_searchability if @options[:make_searchable]
+
       # traverse the src file tree and convert all files deemed as
       # adoc files
       Find.find(@paths.src_root_abs) do |path|
         p = Pathname.new(path)
         to_asciidoc(p) if adocfile? p
       end if @paths.src_root_abs.directory?
+
+      # create necessary search assets if needed
+      create_search_assets if @options[:make_searchable]
 
       # check if we shall build index or not
       return if @options[:suppressBuildRef]
@@ -173,6 +175,51 @@ module Giblish
       return !ir.match(fs).nil?
     end
 
+    def manage_searchability
+      # register the extension
+      Giblish.register_index_heading_extension
+
+      # make sure we start from a clean slate
+      IndexHeadings.clear_index
+    end
+
+    # top_dir
+    # |- web_assets
+    # |- branch_1_top_dir
+    # |     |- index.html
+    # |     |- file1.html
+    # |     |- dir_1
+    # |     |   |- file2.html
+    # |- search_assets
+    # |     |- branch_1
+    # |           |- heading_index.json
+    # |           |- file1.adoc
+    # |           |- dir_1
+    # |           |   |- file2.html
+    # |           |- ...
+    # |     |- branch_2
+    # |           | ...
+    # |- branch_2_top_dir
+    # | ...
+    def create_search_assets
+      # create dir for web assets directly under dst_root
+      assets_dir = "#{@paths.dst_root_abs}/search_assets"
+      Dir.exist?(assets_dir) || FileUtils.mkdir_p(assets_dir)
+
+      # store the JSON file
+      IndexHeadings.serialize assets_dir if @options[:make_searchable]
+
+      # traverse the src file tree and copy all published adoc files
+      # to the search_assets dir
+      Find.find(@paths.src_root_abs) do |path|
+        next unless adocfile? path
+
+        dst_dir = @paths.adoc_output_dir(path)
+        FileUtils.mkdir_p(File.dirname(dst_dir))
+        FileUtils.cp(path, dst_dir)
+      end if @paths.src_root_abs.directory?
+
+    end
     # Register the asciidoctor extension that handles doc ids and traverse
     # the source tree to collect all :docid: attributes found in document
     # headers.

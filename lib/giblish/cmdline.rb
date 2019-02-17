@@ -69,6 +69,21 @@ class CmdLineParser
                              generate the documents and use the collected
                              doc ids to resolve relative paths between the
                              generated documents
+  -m --make-searchable       (currently only supported for html)
+                             provide necessary indata to make it possible to
+                             search the published content via a cgi-script. This 
+                             flag will do the following:
+                               1. index all headings in all source files and store
+                                  the result in a JSON file
+                               2. copy the JSON file and all source (adoc) files to
+                                  a 'search_assets' folder in the top-level dir of
+                                  the destination.
+                               3. add html code that displays a search field in the 
+                                  index page that will try to call the cgi-script
+                                  'giblish-search' when the user inputs some text 
+                             To actually provide search functionality for a user, you 
+                             need to provide the cgi-script and configure your web-server
+                             to invoke it when needed.
   --log-level                set the log level explicitly. Must be one of
                              debug, info (default), warn, error or fatal.
 ENDHELP
@@ -139,6 +154,7 @@ ENDHELP
         suppressBuildRef: false,
         localRepoOnly: false,
         resolveDocid: false,
+        make_searchable: false,
         webRoot: false
     }
 
@@ -163,6 +179,7 @@ ENDHELP
         when "-t", "--git-tags"     then next_arg = :gitTagRegexp
         when "-c", "--local-only"   then @args[:localRepoOnly] = true
         when "-d", "--resolve-docid" then @args[:resolveDocid] = true
+        when "-m", "--make-searchable" then @args[:make_searchable] = true
         when "-s", "--style"        then next_arg = :userStyle
         when "-w", "--web-root"     then next_arg = :webRoot
         when "--log-level"          then next_arg = :logLevel
@@ -181,6 +198,9 @@ ENDHELP
     if !@args[:resourceDir] && @args[:userStyle]
       puts "Error: The given style would not be used since no resource dir "\
            "was specified (-s specified without -r)"
+    elsif @args[:make_searchable] && @args[:format] != "html"
+      puts "Error: The --make-searchable option is only supported for "\
+           "html rendering"
     else
       return
     end
