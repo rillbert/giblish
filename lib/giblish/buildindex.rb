@@ -52,11 +52,11 @@ module Giblish
     end
 
     def add_search_box
-      search_script = @paths
       <<~SEARCH_INFO
       ++++
         <form class="example" action="/giblish-search.cgi" style="margin:auto;max-width:300px">
             <input type="text" placeholder="Search.." name="searchphrase"/>
+            <input type="hidden" name="topdir" value="#{@paths.dst_root_abs.to_s}"
             <button type="submit"><i class="fa fa-search"></i></button>
         </form>
       ++++
