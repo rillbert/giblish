@@ -39,7 +39,7 @@ class GrepDocTree
   # returns an indexed output where each match from the search is associated with the
   # corresponding src file's closest heading.
   # the format of the output:
-  # {filename#heading : [line_1, line_2, ...], ...}
+  # {html_filename#heading : [line_1, line_2, ...], ...}
   #
   # src_index has format:
   # {filename_1 : {id_1 : line_no, id_2 : line_no, ...}, filename_2 ...}
@@ -48,8 +48,7 @@ class GrepDocTree
     @index.each do |k,v|
       if src_index.key?(k.to_s)
         file_anchors = index_one_file k,v,src_index[k.to_s]
-        puts file_anchors.inspect
-        ouput_index = output_index.merge(file_anchors)
+        output_index = output_index.merge(file_anchors)
       end
     end
     output_index
@@ -72,7 +71,7 @@ class GrepDocTree
       end
 
       # construct the location as filename#section_id
-      anchor = "#{filename.to_s}##{chosen_id}"
+      anchor = "#{filename.sub_ext(".html").to_s}##{chosen_id}"
 
       # add hash[location] [<< line_n]
       anchor_hash[anchor] = [] unless anchor_hash.key? anchor
@@ -111,6 +110,26 @@ class GrepDocTree
   end
 end
 
+# index have format
+# {html_filename#heading : [line_1, line_2, ...], ...}
+def format_search_adoc index
+  <<~ADOC
+  = Search Result
+
+  #{str = ""
+    index.each do |heading,lines|
+      str << "#{heading}::\n"
+      lines.each do |line|
+        str << line
+        str << "\n\n"
+      end
+      str << "\n"
+    end
+  str
+  }
+
+  ADOC
+end
 
 require 'benchmark'
 
@@ -133,17 +152,17 @@ if __FILE__ == $PROGRAM_NAME
     gt.grep base_dir
   }
 
-  gt.index_output src_index
+  output = gt.index_output src_index
 
-#  docstr = <<~ADOC
-#  = Search Result
+  docstr = <<~ADOC
+  = Search Result
 
-#  == Searching for #{cgi["search"]}
 
-  #{gt.formatted_output}
-#  ADOC
+  #{puts output.inspect}
 
-#  puts docstr
+  ADOC
+
+  puts format_search_adoc output
 #  print cgi.header
 #  print Asciidoctor.convert docstr, header_footer: true
 
