@@ -53,16 +53,20 @@ module Giblish
       # write the index to a file in dst_dir and remove the base_dir
       # part of the path for each filename
       def serialize(dst_dir, base_dir = "")
-        if base_dir.empty?
+        dst_dir = Pathname.new(dst_dir) unless dst_dir.respond_to?(:join)
+        base_dir = Pathname.new(base_dir) unless base_dir.respond_to?(:join)
+
+        if base_dir.to_s.empty?
           heading_index
         else
+          # remove the base_dir part of the file path
           heading_index["file_infos"].each do |file_info|
-            # remove the base_dir part of the file path
             file_info["filepath"] = Pathname.new(file_info["filepath"])
                                         .relative_path_from(base_dir)
           end
         end
-        puts "writing json to #{dst_dir.join("heading_index.json").to_s}"
+
+        Giblog.logger.info { "writing json to #{dst_dir.join("heading_index.json").to_s}" }
         File.open(dst_dir.join("heading_index.json").to_s,"w") do |f|
           f.write(heading_index.to_json)
         end

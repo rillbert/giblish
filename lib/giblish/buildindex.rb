@@ -21,6 +21,7 @@ module Giblish
     def source(dep_graph_exists = false)
       <<~DOC_STR
         #{generate_header}
+        #{add_search_box}
         #{generate_tree(dep_graph_exists)}
         #{generate_details}
         #{generate_footer}
@@ -47,19 +48,19 @@ module Giblish
 
         #{t.strftime('%Y-%m-%d %H:%M')}
 
-        #{add_search_box}
-
       DOC_HEADER
     end
 
     def add_search_box
+      search_script = @paths
       <<~SEARCH_INFO
       ++++
-        <form class="example" action="/action_page.php" style="margin:auto;max-width:300px">
-            <input type="text" placeholder="Search.." name="search2">
+        <form class="example" action="/giblish-search.cgi" style="margin:auto;max-width:300px">
+            <input type="text" placeholder="Search.." name="searchphrase"/>
             <button type="submit"><i class="fa fa-search"></i></button>
         </form>
       ++++
+
       SEARCH_INFO
     end
     def get_docid_statistics

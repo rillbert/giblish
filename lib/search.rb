@@ -212,6 +212,43 @@ end
 
 require 'benchmark'
 
+def init_web_server
+  require 'webrick'
+
+  root = File.expand_path '~/repos/gendocs'
+  server = WEBrick::HTTPServer.new :Port => 8000, :DocumentRoot => root
+
+  trap 'INT' do server.shutdown end
+
+  server.start
+end
+
+def provide_hello_world
+  cgi = CGI.new
+
+  docstr = <<~ADOC
+    = A dynamically made doc
+    :toc: left
+    :numbered:
+    
+    == The query params
+    
+    I received the following paramters: #{cgi.keys}
+
+    The user came here from: #{ENV["HTTP_REFERER"]}
+
+    == useful data 
+
+    Params: #{cgi.params.inspect}
+
+    Env: #{ENV.inspect}
+
+  ADOC
+
+  print cgi.header
+  print Asciidoctor.convert docstr, header_footer: true
+end
+
 # assume that the file tree looks like when running
 # on a git branch
 #
@@ -219,7 +256,7 @@ require 'benchmark'
 # |- web_assets
 # |- branch_1_top_dir
 # |     |- index.html
-# |     |- file1.html
+# |     |- file_1.html
 # |     |- dir_1
 # |     |   |- file2.html
 # |- search_assets
@@ -236,6 +273,12 @@ require 'benchmark'
 #
 # test the class...
 if __FILE__ == $PROGRAM_NAME
+
+#  init_web_server
+#  exit 0
+
+  provide_hello_world
+  exit 0
 
   base_dir = "/home/anders/vironova/repos/qms"
   gt = nil
@@ -257,34 +300,13 @@ if __FILE__ == $PROGRAM_NAME
   docstr = format_search_adoc matches
   puts docstr
 
-#  cgi = CGI.new
-  File.open("search_result.html","w") do |f|
-    f.write Asciidoctor.convert docstr, header_footer: true
-  end
-#  print cgi.header
-#  print Asciidoctor.convert docstr, header_footer: true
+#  File.open("search_result.html","w") do |f|
+#    f.write Asciidoctor.convert docstr, header_footer: true
+#  end
+  cgi = CGI.new
+  print cgi.header
+  print Asciidoctor.convert docstr, header_footer: true
 
-  puts "Done."
-  puts time
+  # puts "Done."
+  # puts time
 end
-
-# cgi = CGI.new
-#
-#
-# docstr = <<~ADOC
-# = A dynamically made doc
-# :toc: left
-# :numbered:
-#
-# == The query params
-#
-# I got #{cgi.keys}
-#
-# grep returns
-#
-# #{o}
-# ADOC
-#
-#
-# print cgi.header
-# print Asciidoctor.convert docstr, header_footer: true

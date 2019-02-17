@@ -32,6 +32,7 @@ module Giblish
       )
       @processed_docs = []
       @converter = converter_factory
+      @search_assets_path = @paths.dst_root_abs.realpath.join("search_assets")
     end
 
     def convert
@@ -72,9 +73,6 @@ module Giblish
       # build a reference index
       ib = index_factory
       @converter.convert_str ib.source(dep_graph_exist), @paths.dst_root_abs, "index"
-
-      # serialize heading index
-      IndexHeadings.serialize @paths.dst_root_abs,@paths.src_root_abs
 
       # clean up cached files and adoc resources
       remove_diagram_temps if dep_graph_exist
@@ -130,6 +128,11 @@ module Giblish
     end
 
     private
+
+    def create_search_asset_dir
+      Dir.exist?(@search_assets_path) || FileUtils.mkdir_p(@search_assets_path.to_s)
+      @search_assets_path
+    end
 
     # remove cache dir and svg image created by asciidoctor-diagram
     # when creating the document dependency graph
@@ -202,24 +205,24 @@ module Giblish
     # |- branch_2_top_dir
     # | ...
     def create_search_assets
-      # create dir for web assets directly under dst_root
-      assets_dir = "#{@paths.dst_root_abs}/search_assets"
-      Dir.exist?(assets_dir) || FileUtils.mkdir_p(assets_dir)
+      # get the proper dir for the search assets
+      assets_dir = create_search_asset_dir
 
       # store the JSON file
-      IndexHeadings.serialize assets_dir if @options[:make_searchable]
+      IndexHeadings.serialize assets_dir, @paths.src_root_abs
 
       # traverse the src file tree and copy all published adoc files
       # to the search_assets dir
       Find.find(@paths.src_root_abs) do |path|
-        next unless adocfile? path
+        p = Pathname.new(path)
+        next unless adocfile? p
 
-        dst_dir = @paths.adoc_output_dir(path)
-        FileUtils.mkdir_p(File.dirname(dst_dir))
-        FileUtils.cp(path, dst_dir)
+        dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
+        FileUtils.mkdir_p(dst_dir)
+        FileUtils.cp(p.to_s, dst_dir)
       end if @paths.src_root_abs.directory?
-
     end
+
     # Register the asciidoctor extension that handles doc ids and traverse
     # the source tree to collect all :docid: attributes found in document
     # headers.
@@ -360,7 +363,7 @@ module Giblish
       # Update needed base class members before converting a new checkout
       @processed_docs = []
       @paths.dst_root_abs = @master_paths.dst_root_abs.realpath.join(dir_name)
-      # @converter.paths = @paths
+      @search_assets_path = @master_paths.dst_root_abs.realpath.join("search_assets").join(dir_name)
 
       # Parse and convert docs using given args
       Giblog.logger.info {"Convert docs into dir #{@paths.dst_root_abs}"}
