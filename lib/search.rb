@@ -26,22 +26,25 @@ class GrepDocTree
     @match_index = {}
   end
 
-  def grep(base_dir)
+  def grep
     # This console code sequence will only show the matching word in bold ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=
     grep_env="GREP_COLORS=\"ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=\""
     @grep_opts += " --color=always"
-    puts "running: #{grep_env} grep #{@grep_opts} #{@input} #{@top_dir}"
 
-    @output, @error, @status = Open3.capture3("#{grep_env} grep #{@grep_opts} #{@input} #{@top_dir}")
-    @output.gsub!(/\x1b\[01m\x1b\[K/,"##")
-    @output.gsub!(/\x1b\[m\x1b\[K/,"##")
 
-    puts @output
-    File.open("regex.log","w") do |f|
-      f.write @output
+    @output, @error, @status = Open3.capture3("#{grep_env} grep #{@grep_opts} \"#{@input}\" #{@top_dir}")
+
+    begin
+      @output.force_encoding(Encoding::UTF_8)
+      @output.gsub!(/\x1b\[01m\x1b\[K/,"##")
+      @output.gsub!(/\x1b\[m\x1b\[K/,"##")
+    rescue StandardError => e
+      print e.message
+      print e.backtrace.inspect
+      exit 0
     end
 
-    reindex_result base_dir
+    reindex_result @top_dir
   end
 
   # returns an indexed output where each match from the search is associated with the
@@ -128,7 +131,7 @@ class GrepDocTree
       matches[chosen_section_info["id"]] =
           {
               "section_title" => chosen_section_info["title"],
-              "location" => "#{Pathname.new(file_info["filepath"]).sub_ext(".html").to_s}##{chosen_section_info["id"]}",
+              "location" => "#{Pathname.new(@top_dir.basename).join(file_info["filepath"]).sub_ext(".html").to_s}##{chosen_section_info["id"]}",
               "lines" => []
           } unless matches.key?(chosen_section_info["id"])
       matches[chosen_section_info["id"]]["lines"] << match_info.line
@@ -163,10 +166,12 @@ class GrepDocTree
       tokens[2].gsub!(/^:[[:graph:]]+:.*$/,"")
       next if tokens[2].empty?
 
+      # remove everything above the repo root from the filepath
       file_path = Pathname.new(tokens[0]).relative_path_from Pathname.new(base_dir)
       @match_index[file_path] = [] unless @match_index.key? file_path
       @match_index[file_path] << Line_info.new(tokens[2], tokens[1])
     end
+
   end
 end
 
@@ -249,6 +254,43 @@ def provide_hello_world
   print Asciidoctor.convert docstr, header_footer: true
 end
 
+# top_dir = Pathname where the heading_index.json is located
+def perform_search(top_dir, search_phrase)
+  top_dir = Pathname.new(top_dir) unless top_dir.respond_to?(:join)
+
+  # read the src_index from file
+  jsonpath = top_dir.join("heading_index.json")
+  src_index = {}
+  json = File.read(jsonpath.to_s)
+  src_index = JSON.parse(json)
+
+  # search the doc tree for regex
+  gt = GrepDocTree.new "#{top_dir}",search_phrase,true
+  gt.grep
+
+  matches = gt.index_output src_index
+  format_search_adoc matches
+
+end
+
+def cgi_search
+  cgi = CGI.new
+
+  # get top dir for search_assets
+  index_dir = Pathname.new(cgi["topdir"])
+  top_dir = index_dir.join("../search_assets").join(index_dir.basename)
+
+  print cgi.header
+  docstr = perform_search top_dir, cgi["searchphrase"]
+  print Asciidoctor.convert docstr, header_footer: true
+end
+
+def cmd_search(top_dir, search_phrase)
+  docstr = perform_search top_dir, search_phrase
+  print Asciidoctor.convert docstr, header_footer: true
+  # puts docstr
+end
+
 # assume that the file tree looks like when running
 # on a git branch
 #
@@ -277,36 +319,46 @@ if __FILE__ == $PROGRAM_NAME
 #  init_web_server
 #  exit 0
 
-  provide_hello_world
+  # provide_hello_world
+  # exit 0
+
+  cgi_search
   exit 0
 
-  base_dir = "/home/anders/vironova/repos/qms"
-  gt = nil
-
-  # read the src_index from file
-  jsonpath = Pathname.new("/home/anders/repos/gendocs/heading_index.json").to_s
-  src_index = {}
-  json = File.read(jsonpath)
-  src_index = JSON.parse(json)
-
-  # search the doc tree for regex
-  time = Benchmark.measure {
-    gt = GrepDocTree.new "#{base_dir}/qms","Sentinel",true
-    gt.grep base_dir
-  }
+  # cmd_search(
+  #     "/home/anders/repos/gendocs/search_assets/personal_rillbert_SWD-54_refactor_swd_doc",
+  #     "Vironova"
+  # )
+  # exit 0
 
 
-  matches = gt.index_output src_index
-  docstr = format_search_adoc matches
-  puts docstr
-
-#  File.open("search_result.html","w") do |f|
-#    f.write Asciidoctor.convert docstr, header_footer: true
-#  end
-  cgi = CGI.new
-  print cgi.header
-  print Asciidoctor.convert docstr, header_footer: true
-
-  # puts "Done."
+#   base_dir = "/home/anders/vironova/repos/qms"
+#   gt = nil
+#
+#   # read the src_index from file
+#   jsonpath = Pathname.new("/home/anders/repos/gendocs/heading_index.json").to_s
+#   src_index = {}
+#   json = File.read(jsonpath)
+#   src_index = JSON.parse(json)
+#
+#   # search the doc tree for regex
+#   time = Benchmark.measure {
+#     gt = GrepDocTree.new "#{base_dir}/qms","Sentinel",true
+#     gt.grep base_dir
+#   }
+#
+#
+#   matches = gt.index_output src_index
+#   docstr = format_search_adoc matches
+#   puts docstr
+#
+# #  File.open("search_result.html","w") do |f|
+# #    f.write Asciidoctor.convert docstr, header_footer: true
+# #  end
+#   cgi = CGI.new
+#   print cgi.header
+#   print Asciidoctor.convert docstr, header_footer: true
+#
+#   # puts "Done."
   # puts time
 end
