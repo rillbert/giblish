@@ -280,15 +280,33 @@ def cgi_search
   index_dir = Pathname.new(cgi["topdir"])
   top_dir = index_dir.join("../search_assets").join(index_dir.basename)
 
+  # set a relative stylesheet
+  adoc_options =  {
+      "data-uri" => 1,
+      "linkcss" => 1,
+#      "stylesdir" => "#{index_dir.join("../web_assets/css")}",
+      "stylesdir" => "../web_assets/css",
+      "stylesheet" => "qms.css",
+      "copycss!" => 1
+  }
   print cgi.header
   docstr = perform_search top_dir, cgi["searchphrase"]
-  print Asciidoctor.convert docstr, header_footer: true
+  print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
 end
 
 def cmd_search(top_dir, search_phrase)
   docstr = perform_search top_dir, search_phrase
-  print Asciidoctor.convert docstr, header_footer: true
-  # puts docstr
+  # set a relative stylesheet
+  adoc_options =  {
+      "linkcss" => 1,
+      "stylesdir" => "#{Pathname.new(top_dir).join("../../web_assets/css")}",
+      "stylesheet" => "qms.css",
+      "copycss!" => 1
+  }
+
+  print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
+#  print Asciidoctor.convert docstr, header_footer: true
+#  puts docstr
 end
 
 # assume that the file tree looks like when running
