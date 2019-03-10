@@ -14,11 +14,10 @@ class GrepDocTree
     end
   }
 
-  def initialize(top_dir, input_str, is_case_sensitive = true)
-    @grep_opts = "-nHr"
+  def initialize(search_asset_root_dir, input_str, is_case_sensitive = true)
+    @grep_opts = "-nHr --include '*.adoc' "
     @grep_opts += "i" unless is_case_sensitive
-    @grep_opts += " --include '*.adoc'"
-    @top_dir = Pathname.new top_dir
+    @search_root = Pathname.new search_asset_root_dir
     @input = input_str
     @output = ""
     @error = ""
@@ -32,7 +31,7 @@ class GrepDocTree
     @grep_opts += " --color=always"
 
 
-    @output, @error, @status = Open3.capture3("#{grep_env} grep #{@grep_opts} \"#{@input}\" #{@top_dir}")
+    @output, @error, @status = Open3.capture3("#{grep_env} grep #{@grep_opts} \"#{@input}\" #{@search_root}")
 
     begin
       @output.force_encoding(Encoding::UTF_8)
@@ -44,7 +43,7 @@ class GrepDocTree
       exit 0
     end
 
-    reindex_result @top_dir
+    grep2hash @search_root
   end
 
   # returns an indexed output where each match from the search is associated with the
@@ -52,7 +51,7 @@ class GrepDocTree
   # the format of the output:
   # {html_filename#heading : [line_1, line_2, ...], ...}
   #
-  # The src info index has the following JSON format
+  # The heading_db has the following JSON format
   # {
   #   file_infos : [{
   #     filepath : filepath_1,
@@ -75,25 +74,29 @@ class GrepDocTree
   #     ...
   #   }]
   # }
-  def index_output src_index
+  def match_with_headings heading_db
     matches = []
+
     # for each file with at least one match
     @match_index.each do |file_path,match_infos|
       # assume that max one file with the specified path
       # exists
-      files = src_index["file_infos"].select do |fi|
+      files = heading_db["file_infos"].select do |fi|
         fi["filepath"] == file_path.to_s
       end
       next if files.empty?
 
-      file_anchors = index_one_file files.first,match_infos
+      file_anchors = construct_user_info files.first, match_infos
       matches << file_anchors
       end
     matches
   end
 
-  # format:
+  # Produce a hash with all info needed for the user to navigate to the
+  # matching html section for all matches to the file in the supplied file
+  # info hash.
   #
+  # format of the resulting hash:
   # {
   #   filepath : Filepath,
   #   title : Title,
@@ -108,7 +111,7 @@ class GrepDocTree
   #   ]
   # }
   #
-  def index_one_file file_info, match_infos
+  def construct_user_info file_info, match_infos
     matches = {}
     file_anchors = {
         "filepath" => file_info["filepath"],
@@ -128,10 +131,11 @@ class GrepDocTree
           chosen_section_info = section_info
         end
       end
+
       matches[chosen_section_info["id"]] =
           {
               "section_title" => chosen_section_info["title"],
-              "location" => "#{Pathname.new(@top_dir.basename).join(file_info["filepath"]).sub_ext(".html").to_s}##{chosen_section_info["id"]}",
+              "location" => "#{Pathname.new(file_info["filepath"]).sub_ext(".html").to_s}##{chosen_section_info["id"]}",
               "lines" => []
           } unless matches.key?(chosen_section_info["id"])
       matches[chosen_section_info["id"]]["lines"] << match_info.line
@@ -153,15 +157,19 @@ class GrepDocTree
 
   private
 
-  # indexes the 'raw' matches from grep into a hash
-  # with format
+  # converts the 'raw' matches from grep into a hash.
+  # i.e. from:
+  # <filename>:<line_no>:<line>
+  # <filename>:<line_no>:<line>
+  # ...
+  #
+  # to
   # {file_path : [line_info1, line_info2, ...], ...}
-  def reindex_result(base_dir)
-    # grep format is
-    # <filename>:<line_no>:<line>
+  def grep2hash(base_dir)
     @match_index = {}
     @output.split("\n").each do |line|
       tokens = line.split(":",3)
+
       # remove all lines starting with :<attrib>:
       tokens[2].gsub!(/^:[[:graph:]]+:.*$/,"")
       next if tokens[2].empty?
@@ -183,7 +191,7 @@ def wash_line line
   result
 end
 
-# index is an array of file_info, see index_one_file
+# index is an array of file_info, see construct_user_info
 # for format per file
 # == Title (filename)
 #
@@ -254,21 +262,21 @@ def provide_hello_world
   print Asciidoctor.convert docstr, header_footer: true
 end
 
-# top_dir = Pathname where the heading_index.json is located
-def perform_search(top_dir, search_phrase)
-  top_dir = Pathname.new(top_dir) unless top_dir.respond_to?(:join)
+# search_assets_top_dir = Pathname where the heading_index.json is located
+def perform_search(search_assets_top_dir, search_phrase)
+  search_assets_top_dir = Pathname.new(search_assets_top_dir) unless search_assets_top_dir.respond_to?(:join)
 
-  # read the src_index from file
-  jsonpath = top_dir.join("heading_index.json")
+  # read the heading_db from file
+  jsonpath = search_assets_top_dir.join("heading_index.json")
   src_index = {}
   json = File.read(jsonpath.to_s)
   src_index = JSON.parse(json)
 
   # search the doc tree for regex
-  gt = GrepDocTree.new "#{top_dir}",search_phrase,true
+  gt = GrepDocTree.new "#{search_assets_top_dir}",search_phrase,true
   gt.grep
 
-  matches = gt.index_output src_index
+  matches = gt.match_with_headings src_index
   format_search_adoc matches
 
 end
@@ -278,19 +286,37 @@ def cgi_search
 
   # get top dir for search_assets
   index_dir = Pathname.new(cgi["topdir"])
-  top_dir = index_dir.join("../search_assets").join(index_dir.basename)
+
+  # if the source was rendered from a git branch, the paths
+  # search_assets = <index_dir>/../search_assets/<branch_name>/
+  # styles_dir = ../web_assets/css
+  #
+  # and if not, the path is
+  # search_assets = <index_dir>/search_assets
+  # styles_dir = ./web_assets/css
+  search_assets,styles_dir = if index_dir.join("./search_assets").exist?
+                                [index_dir.join("./search_assets"),
+                                 "./web_assets/css"]
+                             elsif index_dir.join("../search_assets").exist?
+                               [index_dir.join("../search_assets").join(index_dir.basename),
+                                "../web_assets/css"]
+                             else
+                               raise ScriptError, "Could not find search_assets dir!"
+                             end
 
   # set a relative stylesheet
   adoc_options =  {
       "data-uri" => 1,
       "linkcss" => 1,
-#      "stylesdir" => "#{index_dir.join("../web_assets/css")}",
-      "stylesdir" => "../web_assets/css",
+      "stylesdir" => styles_dir,
+      # FIX This hard-coded value...
       "stylesheet" => "qms.css",
       "copycss!" => 1
   }
+
+  # render the html via the asciidoctor engine
   print cgi.header
-  docstr = perform_search top_dir, cgi["searchphrase"]
+  docstr = perform_search search_assets, cgi["searchphrase"]
   print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
 end
 
@@ -309,33 +335,56 @@ def cmd_search(top_dir, search_phrase)
 #  puts docstr
 end
 
-# assume that the file tree looks like when running
-# on a git branch
+# assume that the file tree looks like this when running
+# on a git branch:
 #
-# top_dir
+# dst_root_dir
 # |- web_assets
 # |- branch_1_top_dir
 # |     |- index.html
 # |     |- file_1.html
 # |     |- dir_1
 # |     |   |- file2.html
+# |- branch_2_top_dir
+# |- branch_x_...
 # |- search_assets
-# |     |- branch_1
+# |     |- branch_1_top_dir
 # |           |- heading_index.json
 # |           |- file1.adoc
 # |           |- dir_1
 # |           |   |- file2.html
 # |           |- ...
-# |     |- branch_2
+# |     |- branch_2_top_dir
 # |           | ...
-# |- branch_2_top_dir
-# | ...
+
+# assume that the file tree looks like this when not
+# rendering a git branch:
 #
+# dst_root_dir
+# |- index.html
+# |- file_1.html
+# |- dir_1
+# |   |- file2.html
+# |...
+# |- web_assets (only if a custom stylesheet is used...)
+# |- search_assets
+# |     |- heading_index.json
+# |     |- file1.adoc
+# |     |- dir_1
+# |     |   |- file2.html
+# |     |- ...
+
+
 # test the class...
 if __FILE__ == $PROGRAM_NAME
 
-#  init_web_server
-#  exit 0
+  ## To run a simple web server to test this locally, uncomment the following two lines:
+  # init_web_server
+  #  exit 0
+
+  # and then create the html docs using:
+  #  lib/giblish.rb -c -m -w /home/anders/repos/gendocs -r /home/anders/vironova/repos/qms/scripts/docgeneration/resources/ -s qms -g main ~/vironova/repos/qms/qms/ ../gendocs
+
 
   # provide_hello_world
   # exit 0
@@ -349,34 +398,4 @@ if __FILE__ == $PROGRAM_NAME
   # )
   # exit 0
 
-
-#   base_dir = "/home/anders/vironova/repos/qms"
-#   gt = nil
-#
-#   # read the src_index from file
-#   jsonpath = Pathname.new("/home/anders/repos/gendocs/heading_index.json").to_s
-#   src_index = {}
-#   json = File.read(jsonpath)
-#   src_index = JSON.parse(json)
-#
-#   # search the doc tree for regex
-#   time = Benchmark.measure {
-#     gt = GrepDocTree.new "#{base_dir}/qms","Sentinel",true
-#     gt.grep base_dir
-#   }
-#
-#
-#   matches = gt.index_output src_index
-#   docstr = format_search_adoc matches
-#   puts docstr
-#
-# #  File.open("search_result.html","w") do |f|
-# #    f.write Asciidoctor.convert docstr, header_footer: true
-# #  end
-#   cgi = CGI.new
-#   print cgi.header
-#   print Asciidoctor.convert docstr, header_footer: true
-#
-#   # puts "Done."
-  # puts time
 end
