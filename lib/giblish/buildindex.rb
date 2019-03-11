@@ -44,7 +44,7 @@ module Giblish
     def display_source_file(doc_info)
       <<~SRC_FILE_TXT
         Source file::
-        #{doc_info.srcFile_utf8}
+        #{doc_info.src_file}
 
       SRC_FILE_TXT
     end
@@ -60,11 +60,13 @@ module Giblish
     end
 
     def add_search_box
+      # TODO: Fix the hard-coded path
+      cgi_path = "/cgi-bin/giblish-search.cgi"
       css = @converter.converter_options[:attributes]["stylesheet"]
-      puts css
+
       <<~SEARCH_INFO
       ++++
-        <form class="example" action="/giblish-search.cgi" style="margin:auto;max-width:300px">
+        <form class="example" action="#{cgi_path}" style="margin:auto;max-width:300px">
             <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
             <button id="search" type="submit"><i class="fa fa-search"></i></button>
             <br>
@@ -204,8 +206,8 @@ module Giblish
                 doc_info.title
               end
 
-      [title, "<<#{doc_info.rel_path}#,#{title}>>".encode("utf-8"),
-       "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n".encode("utf-8")]
+      [title, "<<#{doc_info.rel_path}#,#{title}>>",
+       "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"]
     end
 
     # Generate an adoc string that will display as
@@ -238,7 +240,7 @@ module Giblish
         tree_entry_converted prefix_str, d
       else
         # no converted file exists, show what we know
-        "#{prefix_str} FAIL: #{d.srcFile_utf8}      <<#{d.srcFile_utf8},details>>\n"
+        "#{prefix_str} FAIL: #{d.src_file}      <<#{d.src_file},details>>\n"
       end
     end
 
@@ -249,7 +251,7 @@ module Giblish
 
     def generate_detail_fail(d)
       <<~FAIL_INFO
-        === #{d.srcFile_utf8}
+        === #{d.src_file}
 
         #{display_source_file(d)}
 
