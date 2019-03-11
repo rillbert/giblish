@@ -187,110 +187,88 @@ class GrepDocTree
       @match_index[file_path] = [] unless @match_index.key? file_path
       @match_index[file_path] << Line_info.new(tokens[2], tokens[1])
     end
-
   end
 end
 
-def wash_line line
-  # remove any '::'
-  result = line.gsub(/::*/,"")
-  # remove =,| at the start of a line
-  result.gsub!(/^[=|]+/,"")
-  result
-end
+class SearchDocTree
+  def initialize(input_data)
+    @input_data = input_data
+  end
 
-# index is an array of file_info, see construct_user_info
-# for format per file
-# == Title (filename)
-#
-# <<location,section_title>>::
-# line_1
-# line_2
-# ...
-def format_search_adoc index
-  str = ""
-  index.each do |file_info|
-    filename = Pathname.new(file_info["filepath"]).basename
-    str << "== #{file_info["title"]}\n\n"
-    file_info["matches"].each do |section_id, info |
-      str << "<<#{info["location"]},#{info["section_title"]}>>::\n\n"
-      str << "[subs=\"quotes\"]\n"
-      str << "----\n"
-      info["lines"].each do | line |
-        str << "-- #{wash_line(line)}\n"
-      end.join("\n\n")
-      str << "----\n"
+  def search
+    # read the heading_db from file
+    jsonpath = @input_data[:search_top].join("heading_index.json")
+    src_index = {}
+    json = File.read(jsonpath.to_s)
+    src_index = JSON.parse(json)
+
+    # search the doc tree for regex
+    gt = GrepDocTree.new @input_data
+    gt.grep
+
+    matches = gt.match_with_headings src_index
+    format_search_adoc matches
+  end
+
+  private
+
+  def wash_line line
+    # remove any '::'
+    result = line.gsub(/::*/,"")
+    # remove =,| at the start of a line
+    result.gsub!(/^[=|]+/,"")
+    result
+  end
+
+  # index is an array of file_info, see construct_user_info
+  # for format per file
+  # == Title (filename)
+  #
+  # <<location,section_title>>::
+  # line_1
+  # line_2
+  # ...
+  def format_search_adoc index
+    str = ""
+    index.each do |file_info|
+      filename = Pathname.new(file_info["filepath"]).basename
+      str << "== #{file_info["title"]}\n\n"
+      file_info["matches"].each do |section_id, info |
+        str << "<<#{info["location"]},#{info["section_title"]}>>::\n\n"
+        str << "[subs=\"quotes\"]\n"
+        str << "----\n"
+        info["lines"].each do | line |
+          str << "-- #{wash_line(line)}\n"
+        end.join("\n\n")
+        str << "----\n"
+      end
+      str << "\n"
     end
-    str << "\n"
-  end
 
-  <<~ADOC
+    <<~ADOC
     = Search Result
 
     #{str}
-  ADOC
+    ADOC
+  end
 end
 
-require 'benchmark'
-
-def init_web_server
+def init_web_server web_root
   require 'webrick'
 
-  root = File.expand_path '~/repos/gendocs'
+  root = File.expand_path web_root
+  puts "Trying to start a WEBrick instance at port 8000 serving files from #{web_root}..."
   server = WEBrick::HTTPServer.new :Port => 8000, :DocumentRoot => root
+  puts "WEBrick instance now listening to localhost:8000"
 
   trap 'INT' do server.shutdown end
 
   server.start
 end
 
-def provide_hello_world
+def cgi_main
+  # init a new cgi 'connection'
   cgi = CGI.new
-
-  docstr = <<~ADOC
-    = A dynamically made doc
-    :toc: left
-    :numbered:
-    
-    == The query params
-    
-    I received the following paramters: #{cgi.keys}
-
-    The user came here from: #{ENV["HTTP_REFERER"]}
-
-    == useful data 
-
-    Params: #{cgi.params.inspect}
-
-    Env: #{ENV.inspect}
-
-  ADOC
-
-  print cgi.header
-  print Asciidoctor.convert docstr, header_footer: true
-end
-
-# search_assets_top_dir = Pathname where the heading_index.json is located
-def perform_search(input_data)
-
-  # read the heading_db from file
-  jsonpath = input_data[:search_top].join("heading_index.json")
-  src_index = {}
-  json = File.read(jsonpath.to_s)
-  src_index = JSON.parse(json)
-
-  # search the doc tree for regex
-  gt = GrepDocTree.new input_data
-  gt.grep
-
-  matches = gt.match_with_headings src_index
-  format_search_adoc matches
-
-end
-
-def cgi_search
-  cgi = CGI.new
-
 
   # retrieve the form data supplied by user
   input_data = {
@@ -298,10 +276,13 @@ def cgi_search
       ignorecase: cgi.has_key?("ignorecase"),
       useregexp: cgi.has_key?("useregexp"),
       index_dir: Pathname.new(cgi["topdir"]),
+      client_css: cgi["css"],
       search_top: nil,
       styles_top: nil
   }
 
+  # fixup paths depending on git branch or not
+  #
   # if the source was rendered from a git branch, the paths
   # search_assets = <index_dir>/../search_assets/<branch_name>/
   # styles_dir = ../web_assets/css
@@ -319,35 +300,22 @@ def cgi_search
     raise ScriptError, "Could not find search_assets dir!"
   end
 
-  # set a relative stylesheet
+  # use a relative stylesheet (same as the index page was rendered with)
   adoc_options =  {
       "data-uri" => 1,
       "linkcss" => 1,
       "stylesdir" => input_data[:styles_top].to_s,
-      # FIX This hard-coded value...
-      "stylesheet" => "qms.css",
+      "stylesheet" => input_data[:client_css],
       "copycss!" => 1
   }
 
-  # render the html via the asciidoctor engine
+  # search the docs and render html
+  sdt = SearchDocTree.new(input_data)
+  docstr = sdt.search
+
+  # send the result back to the client
   print cgi.header
-  docstr = perform_search input_data
   print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
-end
-
-def cmd_search(top_dir, search_phrase)
-  docstr = perform_search top_dir, search_phrase
-  # set a relative stylesheet
-  adoc_options =  {
-      "linkcss" => 1,
-      "stylesdir" => "#{Pathname.new(top_dir).join("../../web_assets/css")}",
-      "stylesheet" => "qms.css",
-      "copycss!" => 1
-  }
-
-  print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
-#  print Asciidoctor.convert docstr, header_footer: true
-#  puts docstr
 end
 
 # assume that the file tree looks like this when running
@@ -390,27 +358,27 @@ end
 # |     |- ...
 
 
-# test the class...
+
+# Usage:
+#   to start a local web server for development work
+# giblish-search.rb <web_root>
+#
+#   to run as a cgi script via a previously setup web server:
+# giblish-search.rb
+#
 if __FILE__ == $PROGRAM_NAME
 
-  ## To run a simple web server to test this locally, uncomment the following two lines:
-  # init_web_server
-  #  exit 0
+  if ARGV.length == 0
+    # 'Normal' cgi usage, as called from a web server
+    cgi_main
+    exit 0
+  end
 
-  # and then create the html docs using:
-  #  lib/giblish.rb -c -m -w /home/anders/repos/gendocs -r /home/anders/vironova/repos/qms/scripts/docgeneration/resources/ -s qms -g main ~/vironova/repos/qms/qms/ ../gendocs
-
-
-  # provide_hello_world
-  # exit 0
-
-  cgi_search
-  exit 0
-
-  # cmd_search(
-  #     "/home/anders/repos/gendocs/search_assets/personal_rillbert_SWD-54_refactor_swd_doc",
-  #     "Vironova"
-  # )
-  # exit 0
-
+  if ARGV.length == 1
+    # Run a simple web server to test this locally..
+    # and then create the html docs using:
+    # giblish -c -m -w <web_root> -r <resource_dir> -s <style_name> -g <git_branch> <src_root> <web_root>
+    init_web_server ARGV[0]
+    exit 0
+  end
 end
