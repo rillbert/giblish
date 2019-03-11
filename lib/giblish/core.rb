@@ -85,7 +85,7 @@ module Giblish
     # user options
     def index_factory
       raise "Internal logic error!" if @options[:suppressBuildRef]
-      SimpleIndexBuilder.new(@processed_docs, @paths,
+      SimpleIndexBuilder.new(@processed_docs, @converter, @paths,
                              @options[:resolveDocid])
     end
 
@@ -276,7 +276,7 @@ module Giblish
     protected
 
     def index_factory
-      GitRepoIndexBuilder.new(@processed_docs, @paths,
+      GitRepoIndexBuilder.new(@processed_docs, @converter, @paths,
                               @options[:resolveDocid], @options[:gitRepoRoot])
     end
 

@@ -10,10 +10,11 @@ module Giblish
   # Base class with common functionality for all index builders
   class BasicIndexBuilder
     # set up the basic index building info
-    def initialize(processed_docs, path_manager, handle_docid = false)
+    def initialize(processed_docs, converter, path_manager, handle_docid = false)
       @paths = path_manager
       @nof_missing_titles = 0
       @processed_docs = processed_docs
+      @converter = converter
       @src_str = ""
       @manage_docid = handle_docid
     end
@@ -59,6 +60,8 @@ module Giblish
     end
 
     def add_search_box
+      css = @converter.converter_options[:attributes]["stylesheet"]
+      puts css
       <<~SEARCH_INFO
       ++++
         <form class="example" action="/giblish-search.cgi" style="margin:auto;max-width:300px">
@@ -72,7 +75,8 @@ module Giblish
             <input id="useregexp" type="checkbox" value="true" name="regexp"/>
             <label for="useregexp">Use Regexp</label>
 
-            <input type="hidden" name="topdir" value="#{@paths.dst_root_abs.to_s}</input>"
+            <input type="hidden" name="topdir" value="#{@paths.dst_root_abs.to_s}"</input>"
+            <input type="hidden" name="css" value="#{css}"</input>"
         </form>
       ++++
 
@@ -316,16 +320,16 @@ module Giblish
 
   # A simple index generator that shows a table with the generated documents
   class SimpleIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, path_manager, manage_docid = false)
-      super processed_docs, path_manager, manage_docid
+    def initialize(processed_docs, converter, path_manager, manage_docid = false)
+      super processed_docs, converter, path_manager, manage_docid
     end
   end
 
   # Builds an index of the generated documents and includes some git metadata
   # from the repository
   class GitRepoIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, path_manager, manage_docid, git_repo_root)
-      super processed_docs, path_manager, manage_docid
+    def initialize(processed_docs, converter, path_manager, manage_docid, git_repo_root)
+      super processed_docs, converter, path_manager, manage_docid
 
       # no repo root given...
       return unless git_repo_root
