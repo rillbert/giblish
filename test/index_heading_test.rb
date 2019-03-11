@@ -48,19 +48,19 @@ class IndexHeadingTest < Minitest::Test
 
   def test_indexing
 
-    filepath = "#{@src_root}/wellformed/index_headings/simple_test.adoc"
-
-    # create an asciidoc doc object and convert to requested
-    # output using current conversion options
-    @converter_options[:to_dir] = @paths.adoc_output_dir(filepath).to_s
-    @converter_options[:base_dir] =
-        Giblish::PathManager.closest_dir(filepath).to_s
-    @converter_options[:to_file] =
-        Giblish::PathManager.get_new_basename(filepath,
-                                              @converter_options[:fileext])
-
-    # do the actual conversion
-    Asciidoctor.convert_file "#{filepath}", @converter_options
+    # filepath = "#{@src_root}/wellformed/index_headings/simple_test.adoc"
+    #
+    # # create an asciidoc doc object and convert to requested
+    # # output using current conversion options
+    # @converter_options[:to_dir] = @paths.adoc_output_dir(filepath).to_s
+    # @converter_options[:base_dir] =
+    #     Giblish::PathManager.closest_dir(filepath).to_s
+    # @converter_options[:to_file] =
+    #     Giblish::PathManager.get_new_basename(filepath,
+    #                                           @converter_options[:fileext])
+    #
+    # # do the actual conversion
+    # Asciidoctor.convert_file "#{filepath}", @converter_options
 
   end
 end
