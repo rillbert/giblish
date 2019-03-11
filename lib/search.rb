@@ -14,11 +14,19 @@ class GrepDocTree
     end
   }
 
-  def initialize(search_asset_root_dir, input_str, is_case_sensitive = true)
+  # grep_opts:
+  # :search_top
+  # :search_phrase
+  # :ignorecase
+  # :useregexp
+  def initialize(grep_opts)
     @grep_opts = "-nHr --include '*.adoc' "
-    @grep_opts += "i" unless is_case_sensitive
-    @search_root = Pathname.new search_asset_root_dir
-    @input = input_str
+    @grep_opts += "-i " if grep_opts.has_key? :ignorecase
+    @grep_opts += "-F " unless grep_opts.has_key? :useregexp
+
+    @search_root = grep_opts[:search_top]
+    @input = grep_opts[:search_phrase]
+
     @output = ""
     @error = ""
     @status = 0
@@ -217,9 +225,9 @@ def format_search_adoc index
   end
 
   <<~ADOC
-  = Search Result
+    = Search Result
 
-  #{str}
+    #{str}
   ADOC
 end
 
@@ -263,17 +271,16 @@ def provide_hello_world
 end
 
 # search_assets_top_dir = Pathname where the heading_index.json is located
-def perform_search(search_assets_top_dir, search_phrase)
-  search_assets_top_dir = Pathname.new(search_assets_top_dir) unless search_assets_top_dir.respond_to?(:join)
+def perform_search(input_data)
 
   # read the heading_db from file
-  jsonpath = search_assets_top_dir.join("heading_index.json")
+  jsonpath = input_data[:search_top].join("heading_index.json")
   src_index = {}
   json = File.read(jsonpath.to_s)
   src_index = JSON.parse(json)
 
   # search the doc tree for regex
-  gt = GrepDocTree.new "#{search_assets_top_dir}",search_phrase,true
+  gt = GrepDocTree.new input_data
   gt.grep
 
   matches = gt.match_with_headings src_index
@@ -284,8 +291,16 @@ end
 def cgi_search
   cgi = CGI.new
 
-  # get top dir for search_assets
-  index_dir = Pathname.new(cgi["topdir"])
+
+  # retrieve the form data supplied by user
+  input_data = {
+      search_phrase: cgi["searchphrase"],
+      ignorecase: cgi.has_key?("ignorecase"),
+      useregexp: cgi.has_key?("useregexp"),
+      index_dir: Pathname.new(cgi["topdir"]),
+      search_top: nil,
+      styles_top: nil
+  }
 
   # if the source was rendered from a git branch, the paths
   # search_assets = <index_dir>/../search_assets/<branch_name>/
@@ -294,21 +309,21 @@ def cgi_search
   # and if not, the path is
   # search_assets = <index_dir>/search_assets
   # styles_dir = ./web_assets/css
-  search_assets,styles_dir = if index_dir.join("./search_assets").exist?
-                                [index_dir.join("./search_assets"),
-                                 "./web_assets/css"]
-                             elsif index_dir.join("../search_assets").exist?
-                               [index_dir.join("../search_assets").join(index_dir.basename),
-                                "../web_assets/css"]
-                             else
-                               raise ScriptError, "Could not find search_assets dir!"
-                             end
+  if input_data[:index_dir].join("./search_assets").exist?
+    input_data[:search_top] = input_data[:index_dir].join("./search_assets")
+    input_data[:styles_top] = Pathname.new("./web_assets/css")
+  elsif input_data[:index_dir].join("../search_assets").exist?
+    input_data[:search_top] = input_data[:index_dir].join("../search_assets").join(index_dir.basename)
+    input_data[:styles_top] = Pathname.new("../web_assets/css")
+  else
+    raise ScriptError, "Could not find search_assets dir!"
+  end
 
   # set a relative stylesheet
   adoc_options =  {
       "data-uri" => 1,
       "linkcss" => 1,
-      "stylesdir" => styles_dir,
+      "stylesdir" => input_data[:styles_top].to_s,
       # FIX This hard-coded value...
       "stylesheet" => "qms.css",
       "copycss!" => 1
@@ -316,7 +331,7 @@ def cgi_search
 
   # render the html via the asciidoctor engine
   print cgi.header
-  docstr = perform_search search_assets, cgi["searchphrase"]
+  docstr = perform_search input_data
   print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
 end
 
