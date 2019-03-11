@@ -72,7 +72,7 @@ module Giblish
 
       # build a reference index
       ib = index_factory
-      @converter.convert_str ib.source(dep_graph_exist), @paths.dst_root_abs, "index"
+      @converter.convert_str ib.source(dep_graph_exist,@options[:make_searchable]), @paths.dst_root_abs, "index"
 
       # clean up cached files and adoc resources
       remove_diagram_temps if dep_graph_exist
