@@ -258,7 +258,13 @@ def init_web_server web_root
 
   root = File.expand_path web_root
   puts "Trying to start a WEBrick instance at port 8000 serving files from #{web_root}..."
-  server = WEBrick::HTTPServer.new :Port => 8000, :DocumentRoot => root
+
+  server = WEBrick::HTTPServer.new(
+      :Port => 8000,
+      :DocumentRoot => root,
+      :Logger => WEBrick::Log.new("webrick.log",WEBrick::Log::DEBUG)
+  )
+
   puts "WEBrick instance now listening to localhost:8000"
 
   trap 'INT' do server.shutdown end
@@ -266,10 +272,14 @@ def init_web_server web_root
   server.start
 end
 
-def cgi_main
+def hello_world
   # init a new cgi 'connection'
   cgi = CGI.new
+  print cgi.header
+  print "Hello World"
+end
 
+def cgi_main cgi
   # retrieve the form data supplied by user
   input_data = {
       search_phrase: cgi["searchphrase"],
@@ -294,7 +304,7 @@ def cgi_main
     input_data[:search_top] = input_data[:index_dir].join("./search_assets")
     input_data[:styles_top] = Pathname.new("./web_assets/css")
   elsif input_data[:index_dir].join("../search_assets").exist?
-    input_data[:search_top] = input_data[:index_dir].join("../search_assets").join(index_dir.basename)
+    input_data[:search_top] = input_data[:index_dir].join("../search_assets").join(input_data[:index_dir].basename)
     input_data[:styles_top] = Pathname.new("../web_assets/css")
   else
     raise ScriptError, "Could not find search_assets dir!"
@@ -314,7 +324,6 @@ def cgi_main
   docstr = sdt.search
 
   # send the result back to the client
-  print cgi.header
   print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
 end
 
@@ -361,16 +370,26 @@ end
 
 # Usage:
 #   to start a local web server for development work
-# giblish-search.rb <web_root>
+# giblish-giblish-search.rb <web_root>
 #
 #   to run as a cgi script via a previously setup web server:
-# giblish-search.rb
+# giblish-giblish-search.rb
 #
 if __FILE__ == $PROGRAM_NAME
 
+  STDOUT.sync = true
   if ARGV.length == 0
     # 'Normal' cgi usage, as called from a web server
-    cgi_main
+
+    # init a new cgi 'connection' and print headers
+    cgi = CGI.new
+    print cgi.header
+    begin
+      cgi_main cgi
+    rescue Exception => e
+      print e.message
+      exit 1
+    end
     exit 0
   end
 
