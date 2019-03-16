@@ -132,7 +132,7 @@ class GrepDocTree
       match_line_nr = match_info.line_no
 
       # find section with closest lower line_no to line_info
-      best_so_far = 1
+      best_so_far = 0
       chosen_section_info = {}
       file_info["sections"].each do |section_info|
         l = Integer(section_info["line_no"])
