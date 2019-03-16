@@ -5,6 +5,7 @@ require "json"
 require "asciidoctor"
 require "open3"
 require "cgi"
+require "uri/generic"
 
 class GrepDocTree
   Line_info = Struct.new(:line, :line_no) {
@@ -207,10 +208,18 @@ class SearchDocTree
     gt.grep
 
     matches = gt.match_with_headings src_index
-    format_search_adoc matches
+
+    format_search_adoc matches, get_uri_top
   end
 
   private
+
+  def get_uri_top
+    if @input_data[:gitbranch]
+      return @input_data[:referer][0,@input_data[:referer].rindex('/')]
+    end
+    return @input_data[:referer].chomp('/')
+  end
 
   def wash_line line
     # remove any '::'
@@ -228,13 +237,14 @@ class SearchDocTree
   # line_1
   # line_2
   # ...
-  def format_search_adoc index
+  def format_search_adoc index,uri_top
     str = ""
     index.each do |file_info|
       filename = Pathname.new(file_info["filepath"]).basename
       str << "== #{file_info["title"]}\n\n"
       file_info["matches"].each do |section_id, info |
-        str << "<<#{info["location"]},#{info["section_title"]}>>::\n\n"
+        str << "#{uri_top}/#{info["location"]}[#{info["section_title"]}]::\n\n"
+        # str << "<<#{info["location"]},#{info["section_title"]}>>::\n\n"
         str << "[subs=\"quotes\"]\n"
         str << "----\n"
         info["lines"].each do | line |
@@ -273,10 +283,26 @@ def init_web_server web_root
 end
 
 def hello_world
+  require "pp"
+
   # init a new cgi 'connection'
   cgi = CGI.new
   print cgi.header
-  print "Hello World"
+  print "<br>"
+  print "Useful cgi parameters and variables."
+  print "<br>"
+  print cgi.public_methods(false).sort
+  print "<br>"
+  print "<br>"
+  print "referer: #{cgi.referer}<br>"
+  print "path: #{URI(cgi.referer).path}<br>"
+  print "host: #{cgi.host}<br>"
+  print "client_sent_topdir: #{cgi["topdir"]}<br>"
+  print "<br>"
+  print "<br>"
+  print "ENV: "
+  pp ENV
+  print "<br>"
 end
 
 def cgi_main cgi
@@ -285,13 +311,18 @@ def cgi_main cgi
       search_phrase: cgi["searchphrase"],
       ignorecase: cgi.has_key?("ignorecase"),
       useregexp: cgi.has_key?("useregexp"),
-      index_dir: Pathname.new(cgi["topdir"]),
+      doc_root_abs: Pathname.new(cgi["topdir"]),
+      referer: cgi.referer,
+      uri_path: URI(cgi.referer).path,
       client_css: cgi["css"],
       search_top: nil,
       styles_top: nil
   }
 
   # fixup paths depending on git branch or not
+  #
+  # search_assets is an absolute path
+  # styles_top is a relative path
   #
   # if the source was rendered from a git branch, the paths
   # search_assets = <index_dir>/../search_assets/<branch_name>/
@@ -300,12 +331,20 @@ def cgi_main cgi
   # and if not, the path is
   # search_assets = <index_dir>/search_assets
   # styles_dir = ./web_assets/css
-  if input_data[:index_dir].join("./search_assets").exist?
-    input_data[:search_top] = input_data[:index_dir].join("./search_assets")
-    input_data[:styles_top] = Pathname.new("./web_assets/css")
-  elsif input_data[:index_dir].join("../search_assets").exist?
-    input_data[:search_top] = input_data[:index_dir].join("../search_assets").join(input_data[:index_dir].basename)
-    input_data[:styles_top] = Pathname.new("../web_assets/css")
+  #
+  # The styles dir shall be a relative path
+  if input_data[:doc_root_abs].join("./search_assets").exist?
+    # this is not from a git branch
+    input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
+    input_data[:styles_top] = Pathname.new(input_data[:uri_path]).join("./web_assets/css")
+    input_data[:gitbranch] = false
+  elsif input_data[:doc_root_abs].join("../search_assets").exist?
+    # this is from a git branch
+    input_data[:search_top] = input_data[:doc_root_abs].join("../search_assets").join(input_data[:doc_root_abs].basename)
+    input_data[:styles_top] = Pathname.new(input_data[:uri_path]).join("../../web_assets/css")
+    input_data[:gitbranch] = true
+    STDERR.puts "uri_path: #{input_data[:uri_path]}"
+    STDERR.puts "styles_top: #{input_data[:styles_top]}"
   else
     raise ScriptError, "Could not find search_assets dir!"
   end
@@ -331,7 +370,6 @@ end
 # on a git branch:
 #
 # dst_root_dir
-# |- web_assets
 # |- branch_1_top_dir
 # |     |- index.html
 # |     |- file_1.html
@@ -339,6 +377,7 @@ end
 # |     |   |- file2.html
 # |- branch_2_top_dir
 # |- branch_x_...
+# |- web_assets
 # |- search_assets
 # |     |- branch_1_top_dir
 # |           |- heading_index.json
@@ -385,6 +424,7 @@ if __FILE__ == $PROGRAM_NAME
     cgi = CGI.new
     print cgi.header
     begin
+      # hello_world
       cgi_main cgi
     rescue Exception => e
       print e.message
