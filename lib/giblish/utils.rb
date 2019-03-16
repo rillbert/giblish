@@ -211,7 +211,8 @@ module Giblish
   # transforms strings to valid asciidoctor id strings
   def to_valid_id(input_str)
     id_str = "_#{input_str.strip.downcase}"
-    id_str.gsub(%r{[^a-z0-9]+},"_")
+    id_str.gsub!(%r{[^a-z0-9]+},"_")
+    id_str.chomp('_')
   end
   module_function :to_valid_id
 
