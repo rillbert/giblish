@@ -299,6 +299,7 @@ def hello_world
   print "host: #{cgi.host}<br>"
   print "client_sent_topdir: #{cgi["topdir"]}<br>"
   print "<br>"
+  print "client_sent_reldir: #{cgi["reltop"]}<br>"
   print "<br>"
   print "ENV: "
   pp ENV
@@ -312,6 +313,7 @@ def cgi_main cgi
       ignorecase: cgi.has_key?("ignorecase"),
       useregexp: cgi.has_key?("useregexp"),
       doc_root_abs: Pathname.new(cgi["topdir"]),
+      referer_rel_top: Pathname.new("/#{cgi["reltop"]}"),
       referer: cgi.referer,
       uri_path: URI(cgi.referer).path,
       client_css: cgi["css"],
@@ -336,15 +338,14 @@ def cgi_main cgi
   if input_data[:doc_root_abs].join("./search_assets").exist?
     # this is not from a git branch
     input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
-    input_data[:styles_top] = Pathname.new(input_data[:uri_path]).join("./web_assets/css")
+    # input_data[:styles_top] = Pathname.new(input_data[:uri_path]).join("./web_assets/css")
+    input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("web_assets/css")
     input_data[:gitbranch] = false
   elsif input_data[:doc_root_abs].join("../search_assets").exist?
     # this is from a git branch
     input_data[:search_top] = input_data[:doc_root_abs].join("../search_assets").join(input_data[:doc_root_abs].basename)
-    input_data[:styles_top] = Pathname.new(input_data[:uri_path]).join("../../web_assets/css")
+    input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("../web_assets/css")
     input_data[:gitbranch] = true
-    STDERR.puts "uri_path: #{input_data[:uri_path]}"
-    STDERR.puts "styles_top: #{input_data[:styles_top]}"
   else
     raise ScriptError, "Could not find search_assets dir!"
   end

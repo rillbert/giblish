@@ -38,12 +38,16 @@ module Giblish
     #            tree
     # resource_dir - a string or pathname with the directory containing
     #                resources
-    def initialize(src_root, dst_root, resource_dir = nil)
+    def initialize(src_root, dst_root, resource_dir = nil, web_root = false)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
+
       # Make sure that the resource dir exists if user gives a path to it
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
+
+      # Set web root if given by user
+      @web_root_abs = web_root ? Pathname.new(web_root) : nil
     end
 
     def dst_root_abs=(dst_root)
@@ -65,6 +69,13 @@ module Giblish
 
       # Get relative path from source root dir
       src_abs.relative_path_from(@src_root_abs)
+    end
+
+    def reldir_from_web_root(in_path)
+      p = in_path.is_a?(Pathname) ? in_path : Pathname.new(in_path)
+      return p if @web_root_abs.nil?
+
+      p.relative_path_from(@web_root_abs)
     end
 
     def adoc_output_file(infile_path, extension)

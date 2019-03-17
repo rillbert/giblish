@@ -28,7 +28,8 @@ module Giblish
       @paths = Giblish::PathManager.new(
           @options[:srcDirRoot],
           @options[:dstDirRoot],
-          @options[:resourceDir]
+          @options[:resourceDir],
+          @options[:webRoot]
       )
       @processed_docs = []
       @converter = converter_factory
@@ -120,7 +121,7 @@ module Giblish
 
       # the only info we have is the source file name
       info.converted = false
-      info.src_file = filepath
+      info.src_file = filepath.to_s
       info.error_msg = exception.message
 
       @processed_docs << info

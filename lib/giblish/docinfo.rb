@@ -27,7 +27,7 @@ module Giblish
       @title
     end
     def title=(rhs)
-      @title = rhs.encode("utf-8")
+      @title = rhs.nil? ? nil : rhs.encode("utf-8")
     end
     def rel_path
       @rel_path
@@ -37,7 +37,7 @@ module Giblish
       @src_file
     end
     def src_file=(rhs)
-      @src_file = rhs.encode("utf-8")
+      @src_file = rhs.nil? ? nil : rhs.encode("utf-8")
     end
     # attr_accessor :src_file
 

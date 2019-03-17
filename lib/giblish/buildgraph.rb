@@ -53,7 +53,7 @@ module Giblish
           doc.src_file.to_s.eql? src_file
         end
         raise "Inconsistent docs when building graph!! found no match for #{src_file}" if d.nil?
-        result[d] = id_array
+        result[d] = id_array if d.converted
       end
       result
     end

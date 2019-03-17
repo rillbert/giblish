@@ -69,8 +69,8 @@ class CmdLineParser
                              generate the documents and use the collected
                              doc ids to resolve relative paths between the
                              generated documents
-  -m --make-searchable       (currently only supported for html)
-                             provide necessary indata to make it possible to
+  -m --make-searchable       (only supported for html generation)
+                             take steps to make it possible to
                              search the published content via a cgi-script. This 
                              flag will do the following:
                                1. index all headings in all source files and store
@@ -80,10 +80,17 @@ class CmdLineParser
                                   the destination.
                                3. add html code that displays a search field in the 
                                   index page that will try to call the cgi-script
-                                  'giblish-search' when the user inputs some text 
+                                  'giblish-search' when the user inputs some text. 
                              To actually provide search functionality for a user, you 
                              need to provide the cgi-script and configure your web-server
-                             to invoke it when needed.
+                             to invoke it when needed. NOTE: The generated search box cgi 
+                             is currently hard-coded to look for the cgi script at the URL: 
+                             http://<your-web-domain>/cgi-bin/giblish-search.cgi
+                             E.g.
+                             http://example.com/cgi-bin/giblish-search.cgi
+                             An implementation of the giblish-search cgi-script is found
+                             within the lib folder of this gem, you can copy that to your 
+                             cgi-bin dir in your webserver and rename it from .rb to .cgi 
   --log-level                set the log level explicitly. Must be one of
                              debug, info (default), warn, error or fatal.
 ENDHELP
