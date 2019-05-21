@@ -34,11 +34,11 @@ class CmdLineParser
   -i --include <regexp>      include only files with a filename that matches the supplied
                              regexp (defaults to '.*\.(?i)adoc$' meaning it matches all
                              files ending in .adoc case-insensitive). The matching is made
-                             on the _file name only_, not the full path (i.e. for the full 
+                             on the _file name only_, not the full path (i.e. for the full
                              path /my/file.adoc, only file.adoc is used in the matching).
-  -j --exclude <regexp>      exclude files with filenames matching the supplied 
+  -j --exclude <regexp>      exclude files with filenames matching the supplied
                              regexp (no files are excluded by default). The matching is made
-                             on the _file name only_, not the full path (i.e. for the full 
+                             on the _file name only_, not the full path (i.e. for the full
                              path /my/file.adoc, only file.adoc is used in the matching).
   -w --web-root <path>       Specifies the top dir (DirectoryRoot) of a file system
                              tree published by a web server. This switch is only used
@@ -57,13 +57,18 @@ class CmdLineParser
                              branch on origin_.
                              NOTE 2: In bash, use double quotes around your regexp if
                              you need to quote it. Single quotes are treated as part
-                             of the regexp itself. 
+                             of the regexp itself.
   -t --git-tags <regExp>     if the source_dir_top is located within a git repo,
                              generate docs for all tags that matches the given
                              regular expression. Each tag will be generated to
                              a separate subdir under the destination root dir.
-  -c --local-only            do not try to fetch git info from any remotes of the
-                             repo before generating documents.
+  -c --local-only            do not try to fetch git info from any remotes of
+                             the repo before generating documents.
+  -a --attribute             set a document attribute. The contents of this
+                             flag is passed directly to the underlying
+                             asciidoctor tool, for details above the syntax,
+                             see the man page for asciidoctor. This option can
+                             be specified more than once.
   -d --resolve-docid         use two passes, the first to collect :docid:
                              attributes in the doc headers, the second to
                              generate the documents and use the collected
@@ -71,26 +76,26 @@ class CmdLineParser
                              generated documents
   -m --make-searchable       (only supported for html generation)
                              take steps to make it possible to
-                             search the published content via a cgi-script. This 
+                             search the published content via a cgi-script. This
                              flag will do the following:
                                1. index all headings in all source files and store
                                   the result in a JSON file
                                2. copy the JSON file and all source (adoc) files to
                                   a 'search_assets' folder in the top-level dir of
                                   the destination.
-                               3. add html code that displays a search field in the 
+                               3. add html code that displays a search field in the
                                   index page that will try to call the cgi-script
-                                  'giblish-search' when the user inputs some text. 
-                             To actually provide search functionality for a user, you 
+                                  'giblish-search' when the user inputs some text.
+                             To actually provide search functionality for a user, you
                              need to provide the cgi-script and configure your web-server
-                             to invoke it when needed. NOTE: The generated search box cgi 
-                             is currently hard-coded to look for the cgi script at the URL: 
+                             to invoke it when needed. NOTE: The generated search box cgi
+                             is currently hard-coded to look for the cgi script at the URL:
                              http://<your-web-domain>/cgi-bin/giblish-search.cgi
                              E.g.
                              http://example.com/cgi-bin/giblish-search.cgi
                              An implementation of the giblish-search cgi-script is found
-                             within the lib folder of this gem, you can copy that to your 
-                             cgi-bin dir in your webserver and rename it from .rb to .cgi 
+                             within the lib folder of this gem, you can copy that to your
+                             cgi-bin dir in your webserver and rename it from .rb to .cgi
   --log-level                set the log level explicitly. Must be one of
                              debug, info (default), warn, error or fatal.
 ENDHELP
@@ -185,6 +190,7 @@ ENDHELP
         when "-g", "--git-branches" then next_arg = :gitBranchRegexp
         when "-t", "--git-tags"     then next_arg = :gitTagRegexp
         when "-c", "--local-only"   then @args[:localRepoOnly] = true
+        when "-a", "--attribute"    then next_arg = :attributes
         when "-d", "--resolve-docid" then @args[:resolveDocid] = true
         when "-m", "--make-searchable" then @args[:make_searchable] = true
         when "-s", "--style"        then next_arg = :userStyle
@@ -192,12 +198,30 @@ ENDHELP
         when "--log-level"          then next_arg = :logLevel
         else
           if next_arg
-            @args[next_arg] = arg
+            if next_arg == :attributes
+              # support multiple invocations of -a
+              add_attribute arg
+            else
+              @args[next_arg] = arg
+            end
             unflagged_args.delete(next_arg)
           end
           next_arg = unflagged_args.first
       end
     end
+  end
+
+  # adds the str (must be in key=value format) to the
+  # user defined attributes
+  def add_attribute(attrib_str)
+    kv = attrib_str.split('=')
+    if kv.length != 2
+      puts "Invalid attribute format: #{attrib_str} Must be <key>=<value>"
+      exit 1
+    end
+
+    @args[:attributes] ||= {}
+    @args[:attributes][kv[0]] = kv[1]
   end
 
   def prevent_invalid_combos

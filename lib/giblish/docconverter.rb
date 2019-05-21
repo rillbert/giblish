@@ -37,7 +37,12 @@ module Giblish
       @paths = paths
       @user_style = options[:userStyle]
       @converter_options = COMMON_CONVERTER_OPTS.dup
+
+      # use the default options and override them with options set by
+      # the user if applicable
       @converter_options[:attributes] = DEFAULT_ATTRIBUTES.dup
+      @converter_options[:attributes].merge!(options[:attributes])
+
       @converter_options[:backend] = options[:backend]
     end
 
@@ -64,6 +69,8 @@ module Giblish
                                                 @converter_options[:fileext])
 
       Giblog.logger.debug {"converter_options: #{@converter_options}"}
+
+      pp @converter_options[:attributes]
 
       # do the actual conversion
       Asciidoctor.convert_file filepath, @converter_options
