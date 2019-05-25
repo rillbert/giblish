@@ -70,8 +70,6 @@ module Giblish
 
       Giblog.logger.debug {"converter_options: #{@converter_options}"}
 
-      pp @converter_options[:attributes]
-
       # do the actual conversion
       Asciidoctor.convert_file filepath, @converter_options
     end
