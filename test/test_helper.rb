@@ -10,6 +10,7 @@ module Giblish
     attr_accessor :testdir_root
     attr_accessor :src_root
     attr_accessor :dst_root
+    attr_reader :dir_created
 
     # defaults to
     # testdir_root = <working_dir>
@@ -23,7 +24,13 @@ module Giblish
       @testdir_root ||= File.expand_path(File.dirname(__FILE__))
       @src_root ||= "#{@testdir_root}/../data/testdocs"
       @dst_root ||= "#{@testdir_root}/../testoutput"
-      FileUtils.mkdir_p @dst_root
+
+      # create the dir if needed and keep track of if we created it
+      @dir_created = false
+      unless Dir.exists? @dst_root
+        FileUtils.mkdir_p @dst_root
+        @dir_created = true
+      end
 
       # Instantiate a path manager with the given src and dst paths
       @paths = Giblish::PathManager.new(@src_root, @dst_root)
@@ -31,12 +38,16 @@ module Giblish
 
     def teardown_log_and_paths(dry_run: true)
       if dry_run
-        puts "Suppressed deletion of #{@dst_root} due to a set 'dry_run' flag"
+        puts "Suppress deletion of #{@dst_root} due to a set 'dry_run' flag"
+        return
+      end
+
+      unless @dir_created
+        puts "Suppress deletion of #{@dst_root}. It existed before the tests started."
         return
       end
 
       FileUtils.rm_r @dst_root
-
     end
 
     class TmpDocDir
