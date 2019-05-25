@@ -38,12 +38,12 @@ module Giblish
 
     def teardown_log_and_paths(dry_run: true)
       if dry_run
-        puts "Suppress deletion of #{@dst_root} due to a set 'dry_run' flag"
+        Giblog.logger.info "Suppress deletion of #{@dst_root} due to a set 'dry_run' flag"
         return
       end
 
       unless @dir_created
-        puts "Suppress deletion of #{@dst_root}. It existed before the tests started."
+        Giblog.logger.info "Suppress deletion of #{@dst_root}. It existed before the tests started."
         return
       end
 

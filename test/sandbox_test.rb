@@ -4,17 +4,15 @@ require_relative "../lib/giblish.rb"
 
 
 class RunGiblishTest < Minitest::Test
-  def test_adoc_logger
-    # filename = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs/wellformed/simple.adoc"
-    filename = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs/malformed/no_header.adoc"
-
-    # do the actual conversion
-#    opts = {logger: Giblog.logger, verbose: 2}
-    l = Giblish::AsciidoctorLogger.new
-    opts = {verbose: 2, logger: l}
-    Asciidoctor.convert_file filename, opts
-    puts "Max severity: #{l.max_severity}"
-  end
+  # def test_adoc_logger
+#     filename = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs/malformed/no_header.adoc"
+#
+#     # do the actual conversion
+#     l = Giblish::AsciidoctorLogger.new
+#     opts = {verbose: 2, logger: l}
+#     Asciidoctor.convert_file filename, opts
+    # puts "Max severity: #{l.max_severity}"
+  # end
 
   # def test_access_git_itf_members
 

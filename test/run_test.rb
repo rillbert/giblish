@@ -12,7 +12,7 @@ class RunGiblishTest < Minitest::Test
     @src_root = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs/wellformed"
     setup_log_and_paths
 
-    @logging = "info"
+    @logging = "warn"
   end
 
   def teardown
