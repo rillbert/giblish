@@ -3,12 +3,17 @@ require "pathname"
 require "fileutils"
 
 class Giblog
-  def self.setup
+  def self.setup(logger = nil)
     return if defined? @logger
-    @logger = Logger.new(STDOUT)
-    @logger.formatter = proc do |severity, datetime, _progname, msg|
-      "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
+    if logger.nil?
+      @logger = Logger.new(STDOUT)
+      # @logger.formatter = GiblogFormatter.new
+      @logger.formatter = proc do |severity, datetime, _progname, msg|
+        "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
+      end
+      return
     end
+    @logger = logger
   end
 
   def self.logger
@@ -21,8 +26,51 @@ class Giblog
   end
 end
 
+class GiblogFormatter
+  SEVERITY_LABELS = { 'WARN' => 'WARNING', 'FATAL' => 'FAILED' }
+
+  def call severity, datetime, progname, msg
+    %(#{datetime.strftime('%H:%M:%S')} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{::String === msg ? msg : msg.inspect}\n)
+  end
+end
+
 # Public: Contains a number of generic utility methods.
 module Giblish
+
+  class MultiIO
+    def initialize(*targets)
+      @targets = targets
+    end
+
+    def write(*args)
+      @targets.each {|t| t.write(*args)}
+    end
+
+    def close
+      @targets.each(&:close)
+    end
+  end
+
+  class AsciidoctorLogger < ::Logger
+
+    attr_reader :max_severity
+    attr_reader :log_str
+
+    def initialize
+      super(STDOUT,progname: "(from asciidoctor)", formatter: GiblogFormatter.new)
+      self.formatter = GiblogFormatter.new
+      @log_str = StringIO.new
+    end
+
+    def add severity, message = nil, progname = nil
+      if (severity ||= UNKNOWN) > (@max_severity ||= severity)
+        @max_severity = severity
+      end
+      @log_str.write(message + '\n') if message
+      super
+    end
+  end
+
   # Helper class to ease construction of different paths for input and output
   # files and directories
   class PathManager

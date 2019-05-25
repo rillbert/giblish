@@ -2,8 +2,21 @@ require "test_helper"
 require "pp"
 require_relative "../lib/giblish.rb"
 
+
 class RunGiblishTest < Minitest::Test
-  def test_access_git_itf_members
+  def test_adoc_logger
+    # filename = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs/wellformed/simple.adoc"
+    filename = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs/malformed/no_header.adoc"
+
+    # do the actual conversion
+#    opts = {logger: Giblog.logger, verbose: 2}
+    l = Giblish::AsciidoctorLogger.new
+    opts = {verbose: 2, logger: l}
+    Asciidoctor.convert_file filename, opts
+    puts "Max severity: #{l.max_severity}"
+  end
+
+  # def test_access_git_itf_members
 
 #    @git_repo_root = "../giblish-testdata"
 #    @git_repo_root = "."
@@ -28,5 +41,5 @@ class RunGiblishTest < Minitest::Test
     #   c = @git_repo.gcommit(t.sha)
     #   puts "Tags commit #{t.sha[0,8]}... which was committed at #{c.author.date}"
     # end
-  end
+  # end
 end

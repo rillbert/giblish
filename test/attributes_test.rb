@@ -27,18 +27,8 @@ class AttributesTest < Minitest::Test
   EOF
 
   def setup
-
-    # create dir for test docs
-    @src_root = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs/runtime"
-    FileUtils.mkdir_p @src_root
-
-    setup_log_and_paths
-  end
-
-  def teardown
-    dry_run = false
-    teardown_log_and_paths dry_run: dry_run
-    FileUtils.rm_r @src_root unless dry_run
+    # setup logging
+    Giblog.setup
   end
 
   def test_xref_short_style_via_attrib_flag

@@ -35,9 +35,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 10.0"
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
-  spec.add_runtime_dependency "asciidoctor", "~>1.5", ">= 1.5.8"
+  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.9"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 1.5"]
-  spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.alpha.16"]
+  spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.alpha.17"]
   spec.add_runtime_dependency "asciidoctor-rouge", ["~> 0.3"]
   spec.add_runtime_dependency "git", "~> 1.3"
   # needed by asciidoctor-pdf, see instructions at

@@ -41,7 +41,7 @@ module Giblish
       # use the default options and override them with options set by
       # the user if applicable
       @converter_options[:attributes] = DEFAULT_ATTRIBUTES.dup
-      @converter_options[:attributes].merge!(options[:attributes])
+      @converter_options[:attributes].merge!(options[:attributes]) unless options[:attributes].nil?
 
       @converter_options[:backend] = options[:backend]
     end
@@ -52,7 +52,7 @@ module Giblish
     # filepath - a pathname with the absolute path to the input file to convert
     #
     # Returns: The resulting Asciidoctor::Document object
-    def convert(filepath)
+    def convert(filepath, logger: nil)
       unless filepath.is_a?(Pathname)
         raise ArgumentError, "Trying to invoke convert with non-pathname!"
       end
@@ -68,10 +68,18 @@ module Giblish
           Giblish::PathManager.get_new_basename(filepath,
                                                 @converter_options[:fileext])
 
+      # set a specific logger instance to-be-used by asciidoctor
+      @converter_options[:logger] = logger unless logger.nil?
+
       Giblog.logger.debug {"converter_options: #{@converter_options}"}
 
       # do the actual conversion
-      Asciidoctor.convert_file filepath, @converter_options
+      doc = Asciidoctor.convert_file filepath, @converter_options
+
+      if logger && logger.max_severity && logger.max_severity >= Logger::Severity::WARN
+        raise RuntimeError, "Failed to convert the file #{filepath}"
+      end
+      doc
     end
 
     # converts the supplied string to the file
@@ -81,7 +89,7 @@ module Giblish
     # any error to stderr, otherwise, nothing will be written
     # to disk.
     # returns 'true' if a file was written, 'false' if not
-    def convert_str(src_str, dst_dir, basename)
+    def convert_str(src_str, dst_dir, basename,logger: nil)
       index_opts = @converter_options.dup
 
       # use the same options as when converting all docs
@@ -94,27 +102,22 @@ module Giblish
 
       # load and convert the document using the converter options
       doc = nil, output = nil
-      adoc_stderr = Giblish.with_captured_stderr do
-        doc = Asciidoctor.load src_str, index_opts
-        output = doc.convert index_opts
-      end
+
+      # set a specific logger instance to-be-used by asciidoctor
+      index_opts[:logger] = logger unless logger.nil?
+      doc = Asciidoctor.load src_str, index_opts
+      output = doc.convert index_opts
 
       index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
 
-      # if we get anything from asciidoctor to stderr,
-      # consider this a failure and do not emit a file.
-      if !adoc_stderr.length.zero?
-        Giblog.logger.error {"Errors when converting string to asciidoc!!"}
-        Giblog.logger.error {"Will _not_ generate file #{index_filepath.to_s}"}
-        Giblog.logger.error {"Got following warnings/errors from asciidoc conversion:"}
-        Giblog.logger.error {adoc_stderr}
-        return false
+      if logger && logger.max_severity && logger.max_severity >= Logger::Severity::WARN
+        raise RuntimeError, "Failed to convert string to asciidoc!! Will _not_ generate #{index_filepath.to_s}"
       end
 
       # write the converted document to an index file located at the
       # destination root
       doc.write output, index_filepath.to_s
-      true
+      0
     end
 
     protected
