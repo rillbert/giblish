@@ -161,7 +161,7 @@ module Giblish
         return p if git_dir.directory?
       end
     end
-  end
+  end # end of PathManager
 
   # Helper method that provides the user with a way of processing only the
   # lines within the asciidoc header block.
