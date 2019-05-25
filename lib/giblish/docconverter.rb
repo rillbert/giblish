@@ -73,7 +73,7 @@ module Giblish
       # do the actual conversion
       doc = Asciidoctor.convert_file filepath, @converter_options
 
-      if logger && logger.max_severity && logger.max_severity >= Logger::Severity::WARN
+      if logger && logger.max_severity && logger.max_severity > Logger::Severity::WARN
         raise RuntimeError, "Failed to convert the file #{filepath}"
       end
       doc
@@ -107,7 +107,7 @@ module Giblish
 
       index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
 
-      if logger && logger.max_severity && logger.max_severity >= Logger::Severity::WARN
+      if logger && logger.max_severity && logger.max_severity > Logger::Severity::WARN
         raise RuntimeError, "Failed to convert string to asciidoc!! Will _not_ generate #{index_filepath.to_s}"
       end
 
