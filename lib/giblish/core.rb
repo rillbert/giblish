@@ -37,6 +37,7 @@ module Giblish
     end
 
     def convert
+      status = 0
       # collect all doc ids and enable replacement of known doc ids with
       # valid references to adoc files
       manage_doc_ids if @options[:resolveDocid]
@@ -44,12 +45,18 @@ module Giblish
       # register add-on for handling searchability
       manage_searchability if @options[:make_searchable]
 
-      status = 0
       # traverse the src file tree and convert all files deemed as
       # adoc files
       Find.find(@paths.src_root_abs) do |path|
         p = Pathname.new(path)
-        status = status + to_asciidoc(p) if adocfile? p
+        begin
+          to_asciidoc(p) if adocfile? p
+        rescue Exception => e
+          str = "Error when converting file #{path.to_s}: #{e.message}\nBacktrace:\n"
+          e.backtrace.each {|l| str << "   #{l}\n"}
+          Giblog.logger.error {str}
+          status = 1
+        end
       end if @paths.src_root_abs.directory?
 
       # create necessary search assets if needed
@@ -62,7 +69,7 @@ module Giblish
       dep_graph_exist = if @options[:resolveDocid]
         if Giblish::GraphBuilderGraphviz.supported
           gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-          status = status + @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
+          @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
         else
           Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
           Giblog.logger.warn { "The dependency graph will not be generated !!" }
@@ -75,7 +82,7 @@ module Giblish
       # build a reference index
       adoc_logger = Giblish::AsciidoctorLogger.new
       ib = index_factory
-      status = status + @converter.convert_str(
+      @converter.convert_str(
           ib.source(
               dep_graph_exist,@options[:make_searchable]
           ),
@@ -154,7 +161,6 @@ module Giblish
 
     # convert a single adoc doc to whatever the user wants
     def to_asciidoc(filepath)
-      status = 0
       adoc = nil
       begin
         adoc_logger = Giblish::AsciidoctorLogger.new
@@ -162,14 +168,9 @@ module Giblish
 
         add_doc(adoc, adoc_logger.log_str.string)
       rescue Exception => e
-        str = "Error when converting file #{filepath}: #{e.message}\n"
-        e.backtrace.each {|l| str << "#{l}\n"}
-        Giblog.logger.error {str}
-
         add_doc_fail(filepath, e)
-        status = status + 1
+        raise
       end
-      status
     end
 
     # predicate that decides if a path is a asciidoc file or not
@@ -271,7 +272,7 @@ module Giblish
     def convert
       status = 0
       (@user_branches + @user_tags).each do |co|
-        status = status + convert_one_checkout(co)
+        convert_one_checkout(co)
       end
 
       # Render the summary page

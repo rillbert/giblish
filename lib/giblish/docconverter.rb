@@ -88,7 +88,7 @@ module Giblish
     # the supplied string must pass asciidoctor without
     # any error to stderr, otherwise, nothing will be written
     # to disk.
-    # returns 'true' if a file was written, 'false' if not
+    # Returns: The resulting Asciidoctor::Document object
     def convert_str(src_str, dst_dir, basename,logger: nil)
       index_opts = @converter_options.dup
 
@@ -117,7 +117,7 @@ module Giblish
       # write the converted document to an index file located at the
       # destination root
       doc.write output, index_filepath.to_s
-      0
+      doc
     end
 
     protected
