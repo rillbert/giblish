@@ -172,12 +172,12 @@ module Giblish
     def generate_conversion_info(d)
       return "" if d.stderr.empty?
       # extract conversion warnings from asciddoctor std err
-      conv_warnings = d.stderr.gsub("asciidoctor:", "\n * asciidoctor:")
-      Giblog.logger.warn {"Conversion warnings: #{conv_warnings}"}
+      conv_warnings = d.stderr.gsub(/^/, " * ")
+      Giblog.logger.warn {"Conversion warnings: \n#{conv_warnings}"}
 
       # assemble info to index page
       <<~CONV_INFO
-        Conversion info::
+        Conversion issues::
 
         #{conv_warnings}
       CONV_INFO
@@ -205,15 +205,15 @@ module Giblish
     end
 
     # Generate an adoc string that will display as
-    # DocTitle         (warn)  details
+    # DocTitle         (conv issues)  details
     # Where the DocTitle and details are links to the doc itself and a section
     # identified with the doc's title respectively.
     def tree_entry_converted(prefix_str, doc_info)
       # Get the elements of the entry
       doc_title, doc_link, doc_details = format_title_and_ref doc_info
-      warning_label = doc_info.stderr.empty? ? "" : "(warn)"
+      warning_label = doc_info.stderr.empty? ? "" : "(conv issues)"
 
-      # Calculate padding to get (warn) and details aligned between entries
+      # Calculate padding to get (conv issues) and details aligned between entries
       padding = 70
       [doc_title, prefix_str, warning_label].each {|p| padding -= p.length}
       padding = 0 unless padding.positive?

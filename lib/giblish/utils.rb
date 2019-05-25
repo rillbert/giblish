@@ -66,7 +66,16 @@ module Giblish
       if (severity ||= UNKNOWN) > (@max_severity ||= severity)
         @max_severity = severity
       end
-      @log_str.write(message + '\n') if message
+      # see super implementation (don't know why this is needed...)
+      if message.nil?
+        if block_given?
+          message = yield
+        else
+          message = progname
+          progname = @progname
+        end
+      end
+      @log_str.write("#{message}\n") if message
       super
     end
   end
