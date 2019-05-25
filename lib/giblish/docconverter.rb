@@ -31,9 +31,6 @@ module Giblish
     attr_accessor :paths
 
     def initialize(paths, options)
-      # access the source highlight module
-      require "asciidoctor-rouge"
-
       @paths = paths
       @user_style = options[:userStyle]
       @converter_options = COMMON_CONVERTER_OPTS.dup
