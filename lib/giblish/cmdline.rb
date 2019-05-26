@@ -114,6 +114,11 @@ ENDHELP
       puts "Giblish v#{Giblish::VERSION}"
       exit 0
     end
+
+    # act on the parsed cmd line args
+    set_log_level
+    sanity_check_input
+    set_gitrepo_root
   end
 
   def usage

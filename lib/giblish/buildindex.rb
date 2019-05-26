@@ -173,7 +173,6 @@ module Giblish
       return "" if d.stderr.empty?
       # extract conversion warnings from asciddoctor std err
       conv_warnings = d.stderr.gsub(/^/, " * ")
-      Giblog.logger.warn {"Conversion warnings: \n#{conv_warnings}"}
 
       # assemble info to index page
       <<~CONV_INFO

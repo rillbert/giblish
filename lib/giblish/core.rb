@@ -80,7 +80,7 @@ module Giblish
       end
 
       # build a reference index
-      adoc_logger = Giblish::AsciidoctorLogger.new
+      adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
       ib = index_factory
       @converter.convert_str(
           ib.source(
@@ -163,10 +163,10 @@ module Giblish
     def to_asciidoc(filepath)
       adoc = nil
       begin
-        adoc_logger = Giblish::AsciidoctorLogger.new
+        adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
         adoc = @converter.convert(filepath,logger: adoc_logger)
 
-        add_doc(adoc, adoc_logger.log_str.string)
+        add_doc(adoc, adoc_logger.user_info_str.string)
       rescue Exception => e
         add_doc_fail(filepath, e)
         raise

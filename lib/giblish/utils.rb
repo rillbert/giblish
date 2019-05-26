@@ -2,18 +2,20 @@ require "logger"
 require "pathname"
 require "fileutils"
 
+class GiblogFormatter
+  def call severity, datetime, progname, msg
+    "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
+  end
+end
+
 class Giblog
-  def self.setup(logger = nil)
+  def self.setup
     return if defined? @logger
-    if logger.nil?
-      @logger = Logger.new(STDOUT)
-      # @logger.formatter = GiblogFormatter.new
-      @logger.formatter = proc do |severity, datetime, _progname, msg|
-        "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
-      end
-      return
-    end
-    @logger = logger
+    @logger = Logger.new(STDOUT)
+    @logger.formatter = GiblogFormatter.new
+    # @logger.formatter = proc do |severity, datetime, _progname, msg|
+    #   "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
+    # end
   end
 
   def self.logger
@@ -26,56 +28,54 @@ class Giblog
   end
 end
 
-class GiblogFormatter
-  SEVERITY_LABELS = { 'WARN' => 'WARNING', 'FATAL' => 'FAILED' }
 
-  def call severity, datetime, progname, msg
-    %(#{datetime.strftime('%H:%M:%S')} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{::String === msg ? msg : msg.inspect}\n)
-  end
-end
 
 # Public: Contains a number of generic utility methods.
 module Giblish
 
-  class MultiIO
-    def initialize(*targets)
-      @targets = targets
-    end
+  class UserInfoFormatter
+    SEVERITY_LABELS = { 'WARN' => 'WARNING', 'FATAL' => 'FAILED' }
 
-    def write(*args)
-      @targets.each {|t| t.write(*args)}
-    end
-
-    def close
-      @targets.each(&:close)
+    # {:text=>"...",
+    #  :source_location=>#<Asciidoctor::Reader::Cursor:0x000055e65a8729e0
+    #          @file="<full adoc filename>",
+    #          @dir="<full src dir>",
+    #          @path="<only file name>",
+    #          @lineno=<src line no>
+    # }
+    def call severity, datetime, progname, msg
+      message = case msg
+                when ::String
+                  msg
+                when ::Hash
+                  # asciidoctor seem to emit a hash with error text and source location info
+                  # for warnings and errors
+                  str = ""
+                  str << "Line #{msg[:source_location].lineno.to_s} - " if msg[:source_location]
+                  str << "#{msg[:text].to_s}" if msg[:text]
+                  str
+                else
+                  msg.inspect
+                end
+      %(#{datetime.strftime('%H:%M:%S')} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{message}\n)
     end
   end
-
   class AsciidoctorLogger < ::Logger
 
     attr_reader :max_severity
-    attr_reader :log_str
+    attr_reader :user_info_str
 
-    def initialize
-      super(STDOUT,progname: "(from asciidoctor)", formatter: GiblogFormatter.new)
-      self.formatter = GiblogFormatter.new
-      @log_str = StringIO.new
+    def initialize user_info_log_level
+      super(STDOUT,progname: "(from asciidoctor)", formatter: UserInfoFormatter.new)
+      @user_info_str = StringIO.new
+      @user_info_logger = ::Logger.new(@user_info_str, formatter: UserInfoFormatter.new, level: user_info_log_level)
     end
 
     def add severity, message = nil, progname = nil
       if (severity ||= UNKNOWN) > (@max_severity ||= severity)
         @max_severity = severity
       end
-      # see super implementation (don't know why this is needed...)
-      if message.nil?
-        if block_given?
-          message = yield
-        else
-          message = progname
-          progname = @progname
-        end
-      end
-      @log_str.write("#{message}\n") if message
+      @user_info_logger.add(severity,message,progname)
       super
     end
   end
