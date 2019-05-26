@@ -6,6 +6,7 @@ require_relative "../lib/giblish/indexheadings.rb"
 
 
 class IndexHeadingTest < Minitest::Test
+  include Giblish::TestUtils
 
   # a common set of converter options used for all output formats
   COMMON_CONVERTER_OPTS = {
@@ -22,28 +23,17 @@ class IndexHeadingTest < Minitest::Test
   }.freeze
 
   def setup
-    # setup logging
-    Giblog.setup
+    setup_log_and_paths
 
     # register the extension
     Giblish.register_index_heading_extension
 
-    # find test directory path
-    @testdir_path = File.expand_path(File.dirname(__FILE__))
-
-    @src_root = "#{@testdir_path}/../data/testdocs"
-    @dst_root = "#{@testdir_path}/../testoutput"
-    FileUtils.mkdir_p @dst_root
-
-    # Instanciate a path manager with
-    # source root ==  .../giblish/data/testdocs and
-    # destination root == .../giblish/test/testoutput
-    @paths = Giblish::PathManager.new(@src_root,
-                                      @dst_root)
-
     @converter_options = COMMON_CONVERTER_OPTS.dup
     @converter_options[:fileext] = "html"
+  end
 
+  def teardown
+    teardown_log_and_paths dry_run: false
   end
 
   def test_indexing

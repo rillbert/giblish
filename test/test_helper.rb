@@ -47,7 +47,7 @@ module Giblish
         return
       end
 
-      FileUtils.rm_r @dst_root
+      FileUtils.remove_dir @dst_root
     end
 
     class TmpDocDir
