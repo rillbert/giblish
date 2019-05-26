@@ -7,9 +7,6 @@ class GiblishAdminTest < Minitest::Test
   def setup
     # setup logging
     Giblog.setup
-
-    # find test directory path
-    @testdir_path = File.expand_path(File.dirname(__FILE__))
   end
 
   def test_that_it_has_a_version_number
@@ -18,38 +15,42 @@ class GiblishAdminTest < Minitest::Test
 end
 
 class PathManagerTest < Minitest::Test
+  include Giblish::TestUtils
+
   def setup
     # setup logging
     Giblog.setup
-
-    # find test directory path
-    @testdir_path = Pathname.new(__dir__).realpath
   end
 
   def test_src_rel
-    # Instanciate a path manager with source root == .../giblish and
-    # destination root == .../giblish/test/testoutput
-    out = Giblish::PathManager.new("#{@testdir_path}/..",
-                                   "#{@testdir_path}/testoutput")
+    TmpDocDir.open do |d|
+      root = d.dir
 
-    # test that a fake path raises an exception
-    assert_raises Errno::ENOENT do
-      out.reldir_from_src_root("/home/kalle/anka.adoc")
+      FileUtils.mkdir_p(Pathname.new(root).join("branch_1/level_1"))
+      FileUtils.mkdir_p(Pathname.new(root).join("branch_2/level_1"))
+
+      out = Giblish::PathManager.new("#{root}/branch_2",
+                                     "#{root}/branch_1/level_1")
+
+      # test that a fake path raises an exception
+      assert_raises Errno::ENOENT do
+        out.reldir_from_src_root("/home/kalle/anka.adoc")
+      end
+
+      # test that the relative path from src_root to <root> is ".."
+      assert_equal Pathname.new(".."), out.reldir_from_src_root(root)
+      assert_equal(
+          Pathname.new("../branch_1/level_1"),
+          out.reldir_from_src_root("#{root}/branch_1/level_1/file.adoc")
+      )
+      assert_equal(
+          Pathname.new("../branch_1/level_1"),
+          out.adoc_output_dir("#{root}/branch_2/mytest.adoc")
+      )
+      assert_equal(
+          Pathname.new("../branch_1/level_1"),
+          out.adoc_output_dir("#{root}/branch_2")
+      )
     end
-
-    # test that the relative path from src_dir to @testdir_path is ".."
-    assert_equal Pathname.new("test"), out.reldir_from_src_root(@testdir_path)
-    assert_equal(
-      Pathname.new("lib/giblish"),
-      out.reldir_from_src_root("#{@testdir_path}/../lib/giblish/file.adoc")
-    )
-    assert_equal(
-      Pathname.new("testoutput/test"),
-      out.adoc_output_dir("#{@testdir_path}/mytest.adoc")
-    )
-    assert_equal(
-      Pathname.new("testoutput/test"),
-      out.adoc_output_dir(@testdir_path)
-    )
   end
 end

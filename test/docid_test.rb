@@ -11,7 +11,7 @@ class DocidCollectorTest < Minitest::Test
   end
 
   def teardown
-    teardown_log_and_paths dry_run: true
+    teardown_log_and_paths dry_run: false
   end
 
   def test_collect_docids
