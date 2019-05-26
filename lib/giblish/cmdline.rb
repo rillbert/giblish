@@ -64,11 +64,11 @@ class CmdLineParser
                              a separate subdir under the destination root dir.
   -c --local-only            do not try to fetch git info from any remotes of
                              the repo before generating documents.
-  -a --attribute             set a document attribute. The contents of this
-                             flag is passed directly to the underlying
-                             asciidoctor tool, for details above the syntax,
-                             see the man page for asciidoctor. This option can
-                             be specified more than once.
+  -a --attribute KEY=VALUE   set a document or asciidoctor attribute. 
+                             The contents of this flag is passed directly to the 
+                             underlying asciidoctor tool, for details above the 
+                             syntax and available attributes, see the documentation for 
+                             asciidoctor. This option can be specified more than once.
   -d --resolve-docid         use two passes, the first to collect :docid:
                              attributes in the doc headers, the second to
                              generate the documents and use the collected
