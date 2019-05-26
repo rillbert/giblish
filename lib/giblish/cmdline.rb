@@ -64,7 +64,7 @@ class CmdLineParser
                              a separate subdir under the destination root dir.
   -c --local-only            do not try to fetch git info from any remotes of
                              the repo before generating documents.
-  -a --attribute KEY=VALUE   set a document or asciidoctor attribute. 
+  -a --attribute <key>=<value> set a document or asciidoctor attribute. 
                              The contents of this flag is passed directly to the 
                              underlying asciidoctor tool, for details above the 
                              syntax and available attributes, see the documentation for 
