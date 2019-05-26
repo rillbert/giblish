@@ -114,16 +114,6 @@ ENDHELP
       puts "Giblish v#{Giblish::VERSION}"
       exit 0
     end
-
-    # set log level
-    set_log_level
-    sanity_check_input
-    set_gitrepo_root
-    # if @args[:logfile]
-    #   $stdout.reopen( ARGS[:logfile], "w" )
-    #   $stdout.sync = true
-    #   $stderr.reopen( $stdout )
-    # end
   end
 
   def usage

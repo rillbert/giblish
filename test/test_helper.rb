@@ -27,7 +27,7 @@ module Giblish
 
       # create the dir if needed and keep track of if we created it
       @dir_created = false
-      unless Dir.exists? @dst_root
+      unless Dir.exist? @dst_root
         FileUtils.mkdir_p @dst_root
         @dir_created = true
       end

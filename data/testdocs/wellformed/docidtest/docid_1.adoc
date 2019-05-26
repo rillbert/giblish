@@ -5,14 +5,13 @@
 == Purpose
 
 To test the basic functionality of document id references.
-This paragraph can be referenced as <<:docid:WF-013#Purpose,This paragraph>>.
 
 Other valid docid references::
 
-  * << :docid:WF-013,Using space before>>
-  * << :docid: WF-013,Using space and tabs>>
-  * <<:docid:WF-013#Testing Document ids>> No title but hash and section.
-  * <<:docid:WF-013>> No title and no hash
+  * << :docid:WF-022,Using space before>>
+  * << :docid: WF-022,Using space and tabs>>
+  * <<:docid:WF-022#Testing Document ids>> No title but hash and section.
+  * <<:docid:WF-022>> No title and no hash
   * <<:docid:WF-022,docid_2 adoc>> Another document within the tree.
   * <<:docid:WF-022#Purpose, Purpose in WF-022>> Reference a section in another document
   * <<:docid:WF-022>> Two references on the same line <<:docid:WF-013>>.
