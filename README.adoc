@@ -1,7 +1,7 @@
 = giblish
 Generate docs from asciidoc files in a git repo
 
-image::https://travis-ci.com/rillbert/giblish.svg?branch=master[build status]
+image::https://travis-ci.org/rillbert/giblish.svg?branch=master["Build Status", link="https://travis-ci.org/rillbert/giblish"]
 
 == Purpose
 
