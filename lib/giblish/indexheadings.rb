@@ -10,7 +10,7 @@ module Giblish
   # Asciidoctor processes the adoc content.
   #
   # It indexes all headings found in all documents in the tree.
-  # The resulting index can be serialized to a JSON file file
+  # The resulting index can be serialized to a JSON file
   # with the following format:
   #
   # {
@@ -96,26 +96,65 @@ module Giblish
           "sections" => sections
       }
 
-      # build the 'sections' array
-      line_no = 1
-      regex = Regexp.new(/^=+\s+(.*)$/)
-      reader.lines.each do |line|
-        m = regex.match(line)
-        if m
-          # We found a heading, index it
-          section = { "id" => get_unique_id(file_info_hash, m[1]) }
-          section["title"] = m[1].strip
-          section["line_no"] = line_no
-          sections << section
-        end
-        line_no += 1
-      end
+      index_sections(reader,file_info_hash)
 
       heading_index["file_infos"] << file_info_hash
       reader
     end
 
     private
+
+    # build the 'sections' array
+    def index_sections(reader, file_info_hash)
+      sections = file_info_hash["sections"]
+
+      heading_regex = Regexp.new(/^=+\s+(.*)$/)
+      anchor_regex = Regexp.new(/^\[\[(\w+)\]\]\s*$/)
+
+      line_no = 0
+      m = nil
+      match_str = ""
+      state = :text
+      reader.lines.each do |line|
+        line_no += 1
+        # implement a state machine that supports both custom
+        # anchors for a heading and the default heading ids generated
+        # by asciidoctor
+        case state
+        when :text
+          m = heading_regex.match(line)
+          if m
+            state = :heading
+            match_str = m[1]
+          else
+            m = anchor_regex.match(line)
+            if m
+              state = :expecting_heading
+              match_str = m[1]
+            end
+          end
+        when :expecting_heading
+          m = heading_regex.match(line)
+          if m
+            # we have an anchor and got a heading as expected, index it
+            section = { "id" => match_str }
+            section["title"] = m[1].strip
+            section["line_no"] = line_no
+            sections << section
+          else
+            Giblog.logger.debug {"Did not index the anchor: #{match_str} at line #{line_no}, probably not associated with a heading."}
+          end
+          state = :text
+        when :heading
+          # we got a heading without an accompanying anchor, index it
+          section = { "id" => get_unique_id(file_info_hash, match_str) }
+          section["title"] = m[1].strip
+          section["line_no"] = line_no
+          sections << section
+          state = :text
+        end
+      end
+    end
 
     def find_title(lines)
       title = "No title Found!"

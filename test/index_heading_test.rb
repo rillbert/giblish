@@ -42,7 +42,7 @@ class IndexHeadingTest < Minitest::Test
   end
 
   def test_create_search_index
-    TmpDocDir.open(true) do |tmp_doc_dir|
+    TmpDocDir.open do |tmp_doc_dir|
       root_dir = tmp_doc_dir.dir
       # arrange input
       out_dir_path = Pathname.new(root_dir).join("output")
@@ -67,9 +67,9 @@ class IndexHeadingTest < Minitest::Test
       assert_equal true , File.exist?(search_root.join(doc_2))
 
       # assert stuff of the json contents
-      File.open(search_root.join("heading_index.json")).each do |l|
-        puts l
-      end
+      # File.open(search_root.join("heading_index.json")).each do |l|
+      #   puts l
+      # end
     end
   end
 end
