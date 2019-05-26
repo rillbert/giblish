@@ -34,6 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "rake", "~> 11.0"
   spec.add_development_dependency "oga", "~> 2.15"
+  spec.add_development_dependency "rouge", "~> 3.3"
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.9"
