@@ -36,8 +36,11 @@ module Giblish
       @search_assets_path = @paths.dst_root_abs.realpath.join("search_assets")
     end
 
+
+    # convert all adoc files
+    # return true if all conversions went ok, false if at least one
+    # failed
     def convert
-      status = 0
       # collect all doc ids and enable replacement of known doc ids with
       # valid references to adoc files
       manage_doc_ids if @options[:resolveDocid]
@@ -47,6 +50,7 @@ module Giblish
 
       # traverse the src file tree and convert all files deemed as
       # adoc files
+      conv_error = false
       Find.find(@paths.src_root_abs) do |path|
         p = Pathname.new(path)
         begin
@@ -55,44 +59,44 @@ module Giblish
           str = "Error when converting file #{path.to_s}: #{e.message}\nBacktrace:\n"
           e.backtrace.each {|l| str << "   #{l}\n"}
           Giblog.logger.error {str}
-          status = 1
+          conv_error = true
         end
       end if @paths.src_root_abs.directory?
 
       # create necessary search assets if needed
       create_search_assets if @options[:make_searchable]
 
-      # check if we shall build index or not
-      return if @options[:suppressBuildRef]
-
-      # build a dependency graph (only if we resolve docids...)
-      dep_graph_exist = if @options[:resolveDocid]
-        if Giblish::GraphBuilderGraphviz.supported
-          gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-          @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
+      # build index and other fancy stuff if not suppressed
+      unless @options[:suppressBuildRef]
+        # build a dependency graph (only if we resolve docids...)
+        dep_graph_exist = if @options[:resolveDocid]
+          if Giblish::GraphBuilderGraphviz.supported
+            gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
+            @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
+          else
+            Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
+            Giblog.logger.warn { "The dependency graph will not be generated !!" }
+            false
+          end
         else
-          Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
-          Giblog.logger.warn { "The dependency graph will not be generated !!" }
           false
         end
-      else
-        false
+
+        # build a reference index
+        adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
+        ib = index_factory
+        @converter.convert_str(
+            ib.source(
+                dep_graph_exist,@options[:make_searchable]
+            ),
+            @paths.dst_root_abs, "index",
+            logger: adoc_logger)
+
+        # clean up cached files and adoc resources
+        remove_diagram_temps if dep_graph_exist
+        GC.start
       end
-
-      # build a reference index
-      adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
-      ib = index_factory
-      @converter.convert_str(
-          ib.source(
-              dep_graph_exist,@options[:make_searchable]
-          ),
-          @paths.dst_root_abs, "index",
-          logger: adoc_logger)
-
-      # clean up cached files and adoc resources
-      remove_diagram_temps if dep_graph_exist
-      GC.start
-      status
+      conv_error
     end
 
     protected
@@ -267,26 +271,31 @@ module Giblish
       @user_tags = select_user_tags(options[:gitTagRegexp])
     end
 
-    # Render the docs from each branch/tag and add info to the
-    # summary page
+    # Convert the docs from each branch/tag and add info to the
+    # summary page.
+    # return true if all conversions went ok, false if at least one
+    # failed
     def convert
-      status = 0
+      conv_error = false
       (@user_branches + @user_tags).each do |co|
-        convert_one_checkout(co)
+        conv_error = conv_error || convert_one_checkout(co)
       end
 
       # Render the summary page
       index_builder = GitSummaryIndexBuilder.new @git_repo,
                                                  @user_branches,
                                                  @user_tags
-      status = status + @converter.convert_str(
+
+      conv_error = conv_error || @converter.convert_str(
           index_builder.source,
           @master_paths.dst_root_abs,
           "index"
       )
+
       # clean up
       GC.start
-      status
+
+      conv_error
     end
 
     protected
@@ -360,6 +369,9 @@ module Giblish
       tags
     end
 
+    # convert all docs from one particular git commit
+    # returns true if at least one doc failed to convert
+    # and false if everything went ok.
     def convert_one_checkout(co)
       # determine if we are called with a tag or a branch
       is_tag = (co.respond_to?(:tag?) && co.tag?)

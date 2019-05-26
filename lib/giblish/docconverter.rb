@@ -85,7 +85,8 @@ module Giblish
     # the supplied string must pass asciidoctor without
     # any error to stderr, otherwise, nothing will be written
     # to disk.
-    # Returns: The resulting Asciidoctor::Document object
+    # Returns: whether any errors occured during conversion (true) or
+    # not (false).
     def convert_str(src_str, dst_dir, basename,logger: nil)
       index_opts = @converter_options.dup
 
@@ -100,21 +101,28 @@ module Giblish
       # load and convert the document using the converter options
       doc = nil, output = nil
 
-      # set a specific logger instance to-be-used by asciidoctor
-      index_opts[:logger] = logger unless logger.nil?
-      doc = Asciidoctor.load src_str, index_opts
-      output = doc.convert index_opts
+      begin
+        conv_error = false
+        # set a specific logger instance to-be-used by asciidoctor
+        index_opts[:logger] = logger unless logger.nil?
+        doc = Asciidoctor.load src_str, index_opts
+        output = doc.convert index_opts
 
-      index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
+        index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
 
-      if logger && logger.max_severity && logger.max_severity > Logger::Severity::WARN
-        raise RuntimeError, "Failed to convert string to asciidoc!! Will _not_ generate #{index_filepath.to_s}"
+        if logger && logger.max_severity && logger.max_severity > Logger::Severity::WARN
+          raise RuntimeError, "Failed to convert string to asciidoc!! Will _not_ generate #{index_filepath.to_s}"
+        end
+      rescue Exception => e
+        Giblog.logger.error(e)
+        conv_error = true
       end
+
 
       # write the converted document to an index file located at the
       # destination root
       doc.write output, index_filepath.to_s
-      doc
+      conv_error
     end
 
     protected

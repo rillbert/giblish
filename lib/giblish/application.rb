@@ -31,22 +31,22 @@ module Giblish
       Giblog.logger.debug { "cmd line args: #{cmdline.args}" }
 
       # Convert using given args
-      status = 0
+      conv_error = false
       begin
         if cmdline.args[:gitRepoRoot]
           Giblog.logger.info { "User asked to parse a git repo" }
           gc = GitRepoConverter.new cmdline.args
-          status = gc.convert
+          conv_error = gc.convert
         else
           tc = FileTreeConverter.new cmdline.args
-          status = tc.convert
+          conv_error = tc.convert
         end
         Giblog.logger.info { "Giblish is done!" }
-        status
       rescue Exception => e
         log_error e
-        1
+        conv_error = true
       end
+      conv_error ? 1 : 0
     end
 
     private
