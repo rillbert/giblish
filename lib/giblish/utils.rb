@@ -302,4 +302,40 @@ module Giblish
   module_function :which
 
 
+  # returns raw html that displays a search box to let the user
+  # acces the text search functionality.
+  #
+  # css          - the name of the css file to use for the search box layout
+  # cgi_path     - the path to a cgi script that implements the server side
+  #                functionality of searching the text
+  # path_manager - an instance of the path manager class to keep track of all
+  #                destinations.
+  def generate_search_box_html(css, cgi_path, paths)
+
+    # button with magnifying glass icon (not working when deployed)
+    # <button id="search" type="submit"><i class="fa fa-search"></i></button>
+    <<~SEARCH_INFO
+      ++++
+        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:380px">
+            Search all documents: 
+            <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
+            <button id="search" type="submit">Search</button>
+            <br>
+
+            <input id="ignorecase" type="checkbox" value="true" name="ignorecase" checked/>
+            <label for="ignorecase">Ignore Case</label>
+            &nbsp;&nbsp;
+            <input id="useregexp" type="checkbox" value="true" name="regexp"/>
+            <label for="useregexp">Use Regexp</label>
+
+            <input type="hidden" name="topdir" value="#{paths.dst_root_abs.to_s}"</input>
+            <input type="hidden" name="reltop" value="#{paths.reldir_from_web_root(paths.dst_root_abs)}"</input>
+            <input type="hidden" name="css" value="#{css}"</input>
+        </form>
+      ++++
+
+    SEARCH_INFO
+  end
+  module_function :add_search_box
+
 end
