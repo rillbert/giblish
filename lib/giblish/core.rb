@@ -72,7 +72,8 @@ module Giblish
         dep_graph_exist = if @options[:resolveDocid]
           if Giblish::GraphBuilderGraphviz.supported
             gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-            @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
+            errors = @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
+            !errors
           else
             Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
             Giblog.logger.warn { "The dependency graph will not be generated !!" }
