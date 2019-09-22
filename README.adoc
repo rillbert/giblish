@@ -174,3 +174,68 @@ cgi-script must be located at http://your_web_site.com/cgi-bin/giblish-search.cg
 and this gem provides a default implementation that you can copy from the .../lib
 folder to the correct destination.
 ====
+
+== Text search implementation
+
+The text search enables a user to search for a text string and receive matching
+sections in the documentation tree.
+
+To make this work, two things are needed
+
+ . the source text of all adoc files together with a JSON file that maps sections to
+   their line numbers. This 'search data' is collected by giblish when it generates the
+   html files to the destination directory. The JSON file and all adoc source files
+   are copied to a well-known place in the destination tree (see below).
+ . a server side script that
+ ** receive a text string to search for
+ ** parses the search data for matches to the text string
+ ** presents the result to the user
+
+This gem contains an example implementation of a server side script. It is implemented
+in ruby and uses 'grep' to parse the search data. It then generates a result page where
+each matching section is shown and when clicked, will navigate the user to that section
+in the corresponding document.
+
+=== Where the search data is stored
+
+The well-known place that giblish will copy the search data to is illustrated below:
+
+.When rendering documents from a git branch
+ dst_root_dir
+ |- branch_1_top_dir
+ |     |- index.html
+ |     |- file_1.html
+ |      |- dir_1
+ |     |   |- file2.html
+ |- branch_2_top_dir
+ |- branch_x_...
+ |- web_assets
+ |- search_assets
+ |     |- branch_1_top_dir
+ |           |- heading_index.json
+ |           |- file1.adoc
+ |           |- dir_1
+ |           |   |- file2.html
+ |           |- ...
+ |     |- branch_2_top_dir
+ |           | ...
+
+assume that the file tree looks like this when not
+rendering a git branch:
+
+.When rendering documents not in a git branch
+ dst_root_dir
+ |- index.html
+ |- file_1.html
+ |- dir_1
+ |   |- file2.html
+ |...
+ |- web_assets (only if a custom stylesheet is used...)
+ |- search_assets
+ |     |- heading_index.json
+ |     |- file1.adoc
+ |     |- dir_1
+ |     |   |- file2.html
+ |     |- ...
+
+
