@@ -180,12 +180,16 @@ folder to the correct destination.
 The text search enables a user to search for a text string and receive matching
 sections in the documentation tree.
 
-To make this work, two things are needed
+To make this work, three things are needed
 
  . the source text of all adoc files together with a JSON file that maps sections to
    their line numbers. This 'search data' is collected by giblish when it generates the
    html files to the destination directory. The JSON file and all adoc source files
    are copied to a well-known place in the destination tree (see below).
+ . an html form somewhere in the rendered pages that receives the user input (text string
+   and other parameters) to start a search.
+ ** giblish injects such an html form in the generated index page when the user
+    specifies the '-m' switch.
  . a server side script that
  ** receive a text string to search for
  ** parses the search data for matches to the text string
@@ -196,7 +200,7 @@ in ruby and uses 'grep' to parse the search data. It then generates a result pag
 each matching section is shown and when clicked, will navigate the user to that section
 in the corresponding document.
 
-=== Where the search data is stored
+=== Search data and html form parameters
 
 giblish will copy all search data to a 'search_assets' dir just under the destination
 root. This is illustrated below.
@@ -239,4 +243,13 @@ rendering a git branch:
  |     |   |- file2.adoc
  |     |- ...
 
+The parameters that is sent to the cgi script via the html form generated
+by giblish are:
 
+  * searchphrase -> the text string to search for
+  * ignorecase -> wether to ignore case or not
+  * useregexp -> wether the searchphrase above is treated as a regexp or
+    ordinary text
+  * css -> the css file name to use when styling the search result page
+  * topdir -> the absolute path to the root of the generated document tree
+  * reltop -> <clarify this>
