@@ -198,14 +198,15 @@ in the corresponding document.
 
 === Where the search data is stored
 
-The well-known place that giblish will copy the search data to is illustrated below:
+giblish will copy all search data to a 'search_assets' dir just under the destination
+root. This is illustrated below.
 
 .When rendering documents from a git branch
  dst_root_dir
  |- branch_1_top_dir
  |     |- index.html
  |     |- file_1.html
- |      |- dir_1
+ |     |- dir_1
  |     |   |- file2.html
  |- branch_2_top_dir
  |- branch_x_...
@@ -215,7 +216,7 @@ The well-known place that giblish will copy the search data to is illustrated be
  |           |- heading_index.json
  |           |- file1.adoc
  |           |- dir_1
- |           |   |- file2.html
+ |           |   |- file2.adoc
  |           |- ...
  |     |- branch_2_top_dir
  |           | ...
@@ -235,7 +236,7 @@ rendering a git branch:
  |     |- heading_index.json
  |     |- file1.adoc
  |     |- dir_1
- |     |   |- file2.html
+ |     |   |- file2.adoc
  |     |- ...
 
 
