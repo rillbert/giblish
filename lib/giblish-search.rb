@@ -410,10 +410,14 @@ end
 
 # Usage:
 #   to start a local web server for development work
-# giblish-giblish-search.rb <web_root>
+# giblish-search.rb <web_root>
 #
-#   to run as a cgi script via a previously setup web server:
-# giblish-giblish-search.rb
+#   to run as a cgi script via a previously setup web server
+# giblish-search.rb
+#
+# (note that you might need to rename the script to eg
+# giblish-search.cgi or similar depending on your web server
+# setup)
 #
 if __FILE__ == $PROGRAM_NAME
 
@@ -425,7 +429,6 @@ if __FILE__ == $PROGRAM_NAME
     cgi = CGI.new
     print cgi.header
     begin
-      # hello_world
       cgi_main cgi
     rescue Exception => e
       print e.message
