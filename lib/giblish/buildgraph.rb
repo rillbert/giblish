@@ -26,16 +26,18 @@ module Giblish
       @next_id = 0
       @processed_docs = processed_docs
       @paths = paths
-      @options = options.dup
-      @extension = options.key?(:extension) ? options[:extension] : "html"
+      @converter_options = options.dup
+      # @options = options.dup
+      @extension = @converter_options.key?(:extension) ? options[:extension] : "html"
       @docid_cache = DocidCollector.docid_cache
       @docid_deps =  DocidCollector.docid_deps
       @dep_graph = build_dep_graph
     end
 
     # get the asciidoc source for the document.
-    def source
+    def source(make_searchable = false)
       <<~DOC_STR
+        #{add_search_box if make_searchable}
         #{generate_header}
         #{generate_labels}
         #{generate_deps}
@@ -89,6 +91,15 @@ module Giblish
         }
         ....
       DOC_STR
+    end
+
+    def add_search_box
+      # TODO: Fix the hard-coded path
+      Giblish::generate_search_box_html(
+          @converter_options[:attributes]["stylesheet"],
+          "/cgi-bin/giblish-search.cgi",
+          @paths
+      )
     end
 
     def make_dot_entry(doc_dict, info)

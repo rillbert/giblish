@@ -71,8 +71,16 @@ module Giblish
         # build a dependency graph (only if we resolve docids...)
         dep_graph_exist = if @options[:resolveDocid]
           if Giblish::GraphBuilderGraphviz.supported
-            gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-            errors = @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
+            # gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
+            gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @converter.converter_options
+            puts gb.source(@options[:make_searchable])
+            errors = @converter.convert_str(
+                gb.source(
+                    @options[:make_searchable]
+                ),
+                @paths.dst_root_abs,
+                "graph"
+            )
             !errors
           else
             Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
@@ -90,7 +98,8 @@ module Giblish
             ib.source(
                 dep_graph_exist,@options[:make_searchable]
             ),
-            @paths.dst_root_abs, "index",
+            @paths.dst_root_abs,
+            "index",
             logger: adoc_logger)
 
         # clean up cached files and adoc resources

@@ -336,6 +336,6 @@ module Giblish
 
     SEARCH_INFO
   end
-  module_function :add_search_box
+  module_function :generate_search_box_html
 
 end
