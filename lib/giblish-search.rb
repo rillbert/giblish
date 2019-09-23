@@ -215,10 +215,7 @@ class SearchDocTree
   private
 
   def get_uri_top
-    if @input_data[:gitbranch]
-      return @input_data[:referer][0,@input_data[:referer].rindex('/')]
-    end
-    return @input_data[:referer].chomp('/')
+    return @input_data[:referer][0,@input_data[:referer].rindex('/')]
   end
 
   def wash_line line
@@ -239,6 +236,8 @@ class SearchDocTree
   # ...
   def format_search_adoc index,uri_top
     str = ""
+    # debug print referer...
+    # str << "uri_top: #{uri_top}\n"
     index.each do |file_info|
       filename = Pathname.new(file_info["filepath"]).basename
       str << "== #{file_info["title"]}\n\n"
