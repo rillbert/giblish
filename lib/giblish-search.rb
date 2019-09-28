@@ -349,21 +349,37 @@ def cgi_main cgi
     raise ScriptError, "Could not find search_assets dir!"
   end
 
-  # use a relative stylesheet (same as the index page was rendered with)
-  adoc_options =  {
+  # Set some reasonable default attributes and options
+  adoc_attributes = {
       "data-uri" => 1,
-      "linkcss" => 1,
-      "stylesdir" => input_data[:styles_top].to_s,
-      "stylesheet" => input_data[:client_css],
-      "copycss!" => 1
   }
+
+  converter_options = {
+      backend: "html5",
+      # need this to let asciidoctor include the default css if user
+      # has not specified any css
+      safe: Asciidoctor::SafeMode::SAFE,
+      header_footer: true,
+      attributes: adoc_attributes
+  }
+
+  # use a relative stylesheet (same as the index page was rendered with)
+  # if the script has received input in the client_css form field
+  if !input_data[:client_css].nil? && !input_data[:client_css].empty?
+    adoc_attributes.merge!({
+                            "linkcss" => 1,
+                            "stylesdir" => input_data[:styles_top].to_s,
+                            "stylesheet" => input_data[:client_css],
+                            "copycss!" => 1
+                        })
+  end
 
   # search the docs and render html
   sdt = SearchDocTree.new(input_data)
   docstr = sdt.search
 
   # send the result back to the client
-  print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
+  print Asciidoctor.convert(docstr, converter_options)
 end
 
 # assume that the file tree looks like this when running
