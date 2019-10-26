@@ -1,5 +1,6 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'giblish'
+require 'oga'
 
 require 'minitest/autorun'
 
@@ -90,9 +91,18 @@ module Giblish
         yield document
       end
 
-      def add_doc_from_str(doc_str)
+      # create an asciidoc file from the given string. If user supplies
+      # a subdir, the subdir will be created if not already existing and
+      # the file will be created under that subdir
+      def add_doc_from_str(doc_str,subdir=nil)
+        dst_dir = Pathname.new(@dir.to_s).realpath
+        if subdir
+          dst_dir = dst_dir.join(subdir)
+          FileUtils.mkdir_p(dst_dir)
+        end
+
         # create a temp file name
-        adoc_file = Tempfile.new(['gib_tst_','.adoc'],@dir)
+        adoc_file = Tempfile.new(['gib_tst_','.adoc'],dst_dir.to_s)
 
         # write doc to file and close
         adoc_file.puts doc_str
