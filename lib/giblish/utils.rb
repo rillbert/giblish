@@ -95,7 +95,7 @@ module Giblish
     #            tree
     # resource_dir - a string or pathname with the directory containing
     #                resources
-    def initialize(src_root, dst_root, resource_dir = nil, web_root = false)
+    def initialize(src_root, dst_root, resource_dir = nil, web_root = nil)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
@@ -152,19 +152,8 @@ module Giblish
       @dst_root_abs.relative_path_from(dst)
     end
 
-    def reldir_from_web_root(path)
-      p = self.class.closest_dir path
-      return p if @web_root_abs.nil?
-      p.relative_path_from(@web_root_abs)
-    end
-
-    def reldir_to_web_root(path)
-      p = self.class.closest_dir path
-      return p if @web_root_abs.nil?
-      @web_root_abs.relative_path_from(p)
-    end
-
     # return the destination dir corresponding to the given src path
+    # the src path must exist in the file system
     def dst_abs_from_src_abs(src_path)
       src_abs = (self.class.to_pathname src_path).realpath
       src_rel = reldir_from_src_root src_abs
@@ -178,6 +167,18 @@ module Giblish
       dst_abs = dst_abs_from_src_abs(src_filepath)
       dir = self.class.to_pathname(dir_path)
       dir.relative_path_from(dst_abs)
+    end
+
+    def reldir_from_web_root(path)
+      p = self.class.closest_dir path
+      return p if @web_root_abs.nil?
+      p.relative_path_from(@web_root_abs)
+    end
+
+    def reldir_to_web_root(path)
+      p = self.class.closest_dir path
+      return p if @web_root_abs.nil?
+      @web_root_abs.relative_path_from(p)
     end
 
     def adoc_output_file(infile_path, extension)
