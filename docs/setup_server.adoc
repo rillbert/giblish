@@ -1,0 +1,49 @@
+= Setup web site powered by giblish
+:imagesdir: setup_server_assets
+:numbered:
+
+== Purpose
+
+To describe how to setup a web site with documents automatically generated from a git repo.
+
+== Toolchain
+
+ * git
+ * giblish
+ * git server side hooks to kick-off the document rendering after a git push.
+ * a tool that can execute scripts after a git push. *Jenkins* is used in this instruction. Some advantages over calling giblish directly from a git hook:
+ ** the document rendering is asynchronous to the git push from the client.
+ ** the script executed by Jenkins (the 'pipeline' in Jenkis lingo) can be stored and versioned in the same git repo as the documents to be rendered.
+ * a web server to publish the rendered html documents.
+
+=== Sequence for rendering documents
+
+The following image shows how the sequence from user commit to rendered documents.
+
+image::Render Documents.png[]
+
+=== Sequence for viewing documents
+
+This is just the standard way of accessing a web site. The html page served by the web server will be the latest generated html page.
+
+image::View Documents.png[]
+
+== server side git hooks
+
+git supports hooks in several parts of the sequence of getting changes ommitted and pushed to a remote repo. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc]. See <<post-update-hook>> An example of a `post-update` hook that triggers Jenkins
+
+
+[appendix]
+[[post-update-hook]]
+== post-update hook
+
+Below is an example of a `post-update` hook that triggers Jenkins jobs after a push to a git repo. This hook should be installed on the server side git repository to trigger Jenkins builds
+
+.Example of a git hook triggering Jenkins builds
+----
+include::../docgen/scripts/githook_examples/post-update.example[]
+----
+
+== Jenkins pipeline script
+
+Below is a very basic example of a Jenkins pipeline that triggers giblish to render html and pdf documents located in a specific directory in a git repository.
