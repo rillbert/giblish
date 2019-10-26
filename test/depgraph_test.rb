@@ -12,14 +12,12 @@ class DepGraphTests < Minitest::Test
   end
 
   def test_graph_is_created_depending_on_graphviz
-    TmpDocDir.open() do |tmp_docs|
-      src_top = tmp_docs.dir + "/src_top"
+    TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
       dst_top = tmp_docs.dir + "/dst_top"
-      copy_test_docs_to_dir src_top
 
       args = ["--log-level", "info",
               "--resolve-docid",
-              src_top + "/wellformed/docidtest",
+              tmp_docs.src_data_top.join("wellformed/docidtest"),
               dst_top]
       status = Giblish.application.run_with_args args
       assert_equal 0, status
@@ -36,13 +34,11 @@ class DepGraphTests < Minitest::Test
   end
 
   def test_graph_is_not_created_without_option
-    TmpDocDir.open() do |tmp_docs|
-      src_top = tmp_docs.dir + "/src_top"
+    TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
       dst_top = tmp_docs.dir + "/dst_top"
-      copy_test_docs_to_dir src_top
 
       args = ["--log-level", "info",
-              src_top + "/wellformed/docidtest",
+              tmp_docs.src_data_top.join("wellformed/docidtest"),
               dst_top]
       status = Giblish.application.run_with_args args
       assert_equal 0, status

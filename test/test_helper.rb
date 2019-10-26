@@ -6,27 +6,34 @@ require 'minitest/autorun'
 
 module Giblish
   module TestUtils
-    def copy_test_docs_to_dir(dst_top)
-      # assume that the test docs reside at "../data/testdocs" relative to
-      # this file
-      testdir_root ||= File.expand_path(File.dirname(__FILE__))
-      src_root ||= "#{testdir_root}/../data/testdocs"
-
-      # copy everything to the destination
-      FileUtils.copy_entry(src_root,dst_top)
-    end
-
     class TmpDocDir
       attr_reader :adoc_filename
       attr_reader :dir
+      attr_reader :src_data_top
 
-      # enable a user of this class to do things like:
-      # TmpDocDir.open do |doc_dir|
-      # ...
+      # Creates a file area somewhere under /tmp.
+      #
+      # +preserve+ set to true if the created area should not be
+      # deleted automatically (default: false)
+      # +test_data_subdir+ set this to the subdir path where you
+      # want all files under "../data/testdocs" to be copied to
+      # in the created area. default is nil meaning no data is
+      # copied. If this is set to a subdir, that dir can be
+      # retrieved by accessing the @src_data_top attribute
+      #
+      # Use this as:
+      # TmpDocDir.open do |instance|
+      #   # to get the top dir
+      #   top_dir = instance.dir
+      #
+      #   ...do your tests here...
       # end
-      # and be sure that the dir is deleted afterwards
-      def self.open(preserve: false)
-        instance = TmpDocDir.new
+      #
+      # and be sure that the dir is deleted when the TmpDocDir goes
+      # out-of-scope
+      #
+      def self.open(preserve: false, test_data_subdir: nil)
+        instance = TmpDocDir.new(test_data_subdir)
         begin
           yield instance
         ensure
@@ -38,9 +45,24 @@ module Giblish
         FileUtils.remove_entry @dir
       end
 
-      def initialize
+      def initialize(test_data_subdir)
         @dir = Dir.mktmpdir
+        @src_data_top = nil
+        unless test_data_subdir.nil?
+          @src_data_top = Pathname.new(@dir).join(test_data_subdir)
+          copy_test_data @src_data_top
+        end
         @src_files = []
+      end
+
+      def copy_test_data(dst_top)
+        # assume that the test docs reside at "../data/testdocs" relative to
+        # this file
+        testdir_root ||= File.expand_path(File.dirname(__FILE__))
+        src_root ||= "#{testdir_root}/../data/testdocs"
+
+        # copy everything to the destination
+        FileUtils.copy_entry(src_root,dst_top.to_s)
       end
 
       # usage:

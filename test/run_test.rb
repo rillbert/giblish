@@ -23,14 +23,12 @@ class RunGiblishTest < Minitest::Test
   end
 
   def test_basic_html_conversion
-    TmpDocDir.open() do |tmp_docs|
-      src_top = tmp_docs.dir + "/src_top"
+    TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
       dst_top = tmp_docs.dir + "/dst_top"
-      copy_test_docs_to_dir src_top
 
       # act on the input data
       args = ["--log-level", "warn",
-              src_top,
+              tmp_docs.src_data_top,
               dst_top]
       status = Giblish.application.run_with_args args
       assert_equal 0,status
@@ -39,15 +37,13 @@ class RunGiblishTest < Minitest::Test
   end
 
   def test_basic_pdf_conversion
-    TmpDocDir.open() do |tmp_docs|
-      src_top = tmp_docs.dir + "/src_top"
+    TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
       dst_top = tmp_docs.dir + "/dst_top"
-      copy_test_docs_to_dir src_top
 
       # act on the input data
       args = ["--log-level", "warn",
               "-f", "pdf",
-              src_top,
+              tmp_docs.src_data_top,
               dst_top]
 
       status = Giblish.application.run_with_args args
