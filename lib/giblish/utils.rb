@@ -115,24 +115,69 @@ module Giblish
     end
 
     # Public: Get the relative path from the source root dir to the
-    #         source file dir.
+    #         directory where the supplied path points.
     #
-    # in_path - an absolute or relative path
+    # in_path - an absolute or relative path to a file or dir
     def reldir_from_src_root(in_path)
-      p = in_path.is_a?(Pathname) ? in_path : Pathname.new(in_path)
-
-      # Get absolute source dir path
-      src_abs = p.directory? ? p.realpath : p.dirname.realpath
-
-      # Get relative path from source root dir
-      src_abs.relative_path_from(@src_root_abs)
+      p = self.class.closest_dir in_path
+      p.relative_path_from(@src_root_abs)
     end
 
-    def reldir_from_web_root(in_path)
-      p = in_path.is_a?(Pathname) ? in_path : Pathname.new(in_path)
-      return p if @web_root_abs.nil?
+    # Public: Get the relative path from the
+    #         directory where the supplied path points to
+    #         the src root dir
+    #
+    # path - an absolute or relative path to a file or dir
+    def reldir_to_src_root(path)
+      src = self.class.closest_dir path
+      @src_root_abs.relative_path_from(src)
+    end
 
+    # Public: Get the relative path from the dst root dir to the
+    #         directory where the supplied path points.
+    #
+    # path - an absolute or relative path to a file or dir
+    def reldir_from_dst_root(path)
+      dst = self.class.closest_dir path
+      dst.relative_path_from(@dst_root_abs)
+    end
+
+    # Public: Get the relative path from the
+    #         directory where the supplied path points to
+    #         the dst root dir
+    #
+    # path - an absolute or relative path to a file or dir
+    def reldir_to_dst_root(path)
+      dst = self.class.closest_dir path
+      @dst_root_abs.relative_path_from(dst)
+    end
+
+    def reldir_from_web_root(path)
+      p = self.class.closest_dir path
+      return p if @web_root_abs.nil?
       p.relative_path_from(@web_root_abs)
+    end
+
+    def reldir_to_web_root(path)
+      p = self.class.closest_dir path
+      return p if @web_root_abs.nil?
+      @web_root_abs.relative_path_from(p)
+    end
+
+    # return the destination dir corresponding to the given src path
+    def dst_abs_from_src_abs(src_path)
+      src_abs = (self.class.to_pathname src_path).realpath
+      src_rel = reldir_from_src_root src_abs
+      @dst_root_abs.join(src_rel)
+    end
+
+    # return the relative path from a generated document to
+    # the supplied folder given the corresponding absolute source
+    # file path
+    def relpath_to_dir_after_generate(src_filepath,dir_path)
+      dst_abs = dst_abs_from_src_abs(src_filepath)
+      dir = self.class.to_pathname(dir_path)
+      dir.relative_path_from(dst_abs)
     end
 
     def adoc_output_file(infile_path, extension)
@@ -173,6 +218,12 @@ module Giblish
       dst_abs.relative_path_from(src_abs)
     end
 
+    # return a pathname, regardless if the given path is a Pathname or
+    # a string
+    def self.to_pathname(path)
+      path.is_a?(Pathname) ? path : Pathname.new(path)
+    end
+
     # Public: Get the basename for a file by replacing the file
     #         extention of the source file with the supplied one.
     #
@@ -196,7 +247,7 @@ module Giblish
     #          - the directory itself when called with an existing directory
     #          - the parent dir when called with a non-existing file/directory
     def self.closest_dir(in_path)
-      sr = in_path.is_a?(Pathname) ? in_path : Pathname.new(in_path)
+      sr = self.to_pathname(in_path)
       if sr.exist?
         sr.directory? ? sr.realpath : sr.dirname.realpath
       else
