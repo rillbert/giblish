@@ -2,7 +2,6 @@ require "test_helper"
 require_relative "../lib/giblish/utils.rb"
 
 class LinkCSSTest < Minitest::Test
-
   include Giblish::TestUtils
 
   @@test_doc = <<~EOF

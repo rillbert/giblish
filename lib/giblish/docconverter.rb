@@ -65,8 +65,6 @@ module Giblish
       # give derived classes the opportunity to set doc specific attributes
       add_doc_specific_attributes(filepath,@converter_options[:attributes])
 
-      Giblog.logger.info "attributes: #{@converter_options[:attributes]}"
-
       Giblog.logger.debug {"converter_options: #{@converter_options}"}
 
       # do the actual conversion
@@ -186,6 +184,24 @@ module Giblish
 
     protected
 
+    def add_doc_specific_attributes(src_filepath, attributes)
+      doc_attributes = {}
+      if @paths.resource_dir_abs and not @web_root
+        # user wants to use own styling without use of a
+        # web root. the correct css link is the relative path
+        # from the specific doc to the common css directory
+        css_rel_dir = @paths.relpath_to_dir_after_generate(
+            src_filepath,
+            @dst_css_dir
+        )
+        doc_attributes["stylesdir"] = css_rel_dir.to_s
+      end
+
+      attributes.merge!(doc_attributes)
+    end
+
+    private
+
     def get_common_attributes
       # Setting 'data-uri' makes asciidoctor embed images in the resulting
       # html file
@@ -217,25 +233,6 @@ module Giblish
       end
       html_attrib
     end
-
-    def add_doc_specific_attributes(src_filepath, attributes)
-
-      doc_attributes = {}
-      if @paths.resource_dir_abs and not @web_root
-        # user wants to use own styling without use of a
-        # web root. the correct css link is the relative path
-        # from the specific doc to the common css directory
-        css_rel_dir = @paths.relpath_to_dir_after_generate(
-            src_filepath,
-            @dst_css_dir
-        )
-        doc_attributes["stylesdir"] = css_rel_dir.to_s
-      end
-
-      attributes.merge!(doc_attributes)
-    end
-
-    private
 
     def copy_resource_dir(dst_dir)
       # create assets_dir and copy everything in the resource dir
@@ -273,76 +270,16 @@ module Giblish
 
       copy_resource_dir dst_dir
     end
-
-    # asset link cases:
-    # 1. src and destination (no git repo)
-    # 2. resource dir, src and destination (no git repo)
-    # 2. git branch, src and destination
-    # 3.
-    # source doc at:
-    # rendered doc at:  /var/www/html/docs/testdocs
-    # webroot: /var/www/html
-    # css link: href="/docs/testdocs/web_assets/css/vironova.css
-    #
-    # Return the path used in the html doc to find the css.
-    #
-    # 1. In the case of publishing to a web server (using -w)
-    # this path is relative to the DirectoryRoot but starting
-    # with a slash (eg. /website_1/web_assets)
-    # 2. In the case of publishing without a web server
-    # this path is relative to the repository root
-    # (eg ../../web_assets)    def set_backend_specific_attributes(src_filepath, attributes)
-    # def setup_stylesheet_attributes(css_dir)
-    #   return {} if @paths.resource_dir_abs.nil?
-    #
-    #   # use the supplied stylesheet if there is one
-    #   attrib = {"linkcss" => 1,
-    #             "stylesdir" => css_dir,
-    #             "stylesheet" => "giblish.css",
-    #             "copycss!" => 1}
-    #
-    #   Giblog.logger.debug {"stylesheet attributes: #{attrib}"}
-    #   attrib
-    # end
-    #
-    # # make sure that linked assets are available at dst_root
-    # def setup_web_assets(html_dir_root = nil)
-    #
-    #   # only set this up if user has specified a resource dir
-    #   return {} unless dst_asset_dir
-    #
-    #   unless html_dir_root
-    #     # link the css relative to the asset dir at the destination
-    #
-    #   end
-    #   # find the path to the assets dir that is correct when called from a url,
-    #   # taking the DirectoryRoot for the web site into consideration.
-    #   if html_dir_root
-    #     wr = dst_asset_dir.relative_path_from Pathname.new(html_dir_root)
-    #     Giblog.logger.info {"Relative web root: #{wr}"}
-    #     assets_dir = "/" << wr.to_s
-    #   end
-    #
-    #   Giblog.logger.info {"stylesheet dir: #{assets_dir}"}
-    #   setup_stylesheet_attributes "#{assets_dir}/css"
-    # end
   end
 
   class PdfConverter < DocConverter
     def initialize(paths, options)
       super paths, options
-    end
 
-    protected
-
-    def add_backend_options(options)
       # identify ourselves as a pdf converter
-      options.merge!({backend: "pdf", fileext: "pdf"})
-    end
-
-    def add_backend_attributes(attributes)
-      # add attributes for styling
-      attributes.merge!(setup_pdf_attribs)
+      add_backend_options({backend: "pdf", fileext: "pdf"})
+      # setup the attributes specific for this converter
+      add_backend_attributes(setup_pdf_attribs)
     end
 
     private
