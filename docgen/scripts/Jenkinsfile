@@ -5,8 +5,7 @@ pipeline {
             steps {
                 // render html versions of all docs found under the 'docs' subdir
                 // in the repo
-                // sh "giblish -n -f html -s giblish -r docgen/resources docs gendocs"
-                echo "will run giblish here..."
+                sh "giblish -n -f html -s giblish -r docgen/resources docs gendocs"
             }
         }
 //        stage('Render pdf documentation') {
