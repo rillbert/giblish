@@ -86,6 +86,7 @@ module Giblish
     attr_reader :src_root_abs
     attr_reader :dst_root_abs
     attr_reader :resource_dir_abs
+    attr_reader :web_root_abs
 
     # Public:
     #
@@ -104,7 +105,11 @@ module Giblish
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
 
       # Set web root if given by user
-      @web_root_abs = web_root ? Pathname.new(web_root) : nil
+      @web_root_abs = nil
+      if web_root
+        web_root = "/" + web_root unless web_root[0] == '/'
+        @web_root_abs = web_root ? Pathname.new(web_root) : nil
+      end
     end
 
     def dst_root_abs=(dst_root)
