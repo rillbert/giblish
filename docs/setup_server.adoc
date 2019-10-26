@@ -28,6 +28,24 @@ This is just the standard way of accessing a web site. The html page served by t
 
 image::View Documents.png[]
 
+== Server requirements
+
+The server that will render the documents need the following tools installed:
+
+ * git
+ * giblish
+
+The server that runs Jenkins will (of course) need Jenkins installed.
+
+=== Setup server for both Jenkins and doc rendering on Ubuntu 16.04
+
+The easiest setup is to use the same server to run Jenkins and to render the documents. For an Ubuntu 16.04 installation, you can install the needed tools as follows:
+
+ * install git `sudo apt install git`
+ * install Jenkins See https://www.digitalocean.com/community/tutorials/how-to-install-jenkins-on-ubuntu-16-04[this doc].
+ * install giblish `sudo gem install giblish`
+
+
 == server side git hooks
 
 git supports hooks in several parts of the sequence of getting changes ommitted and pushed to a remote repo. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc]. See <<post-update-hook>> An example of a `post-update` hook that triggers Jenkins
