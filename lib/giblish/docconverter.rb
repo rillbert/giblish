@@ -63,7 +63,7 @@ module Giblish
       set_common_doc_specific_options(filepath,logger)
 
       # give derived classes the opportunity to set doc specific attributes
-      add_doc_specific_attributes(filepath,@converter_options[:attributes])
+      add_doc_specific_attributes(filepath,true, @converter_options[:attributes])
 
       Giblog.logger.debug {"converter_options: #{@converter_options}"}
 
@@ -86,6 +86,7 @@ module Giblish
     # Returns: whether any errors occured during conversion (true) or
     # not (false).
     def convert_str(src_str, dst_dir, basename,logger: nil)
+
       index_opts = @converter_options.dup
 
       # use the same options as when converting all docs
@@ -95,6 +96,10 @@ module Giblish
       index_opts[:to_dir] = dst_dir.to_s
       index_opts[:base_dir] = dst_dir.to_s
       index_opts.delete_if {|k, _v| %i[to_file].include? k}
+
+      # give derived classes the opportunity to set doc specific attributes
+      index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
+      add_doc_specific_attributes(index_filepath,false, index_opts[:attributes])
 
       # load and convert the document using the converter options
       doc = nil, output = nil
@@ -106,20 +111,18 @@ module Giblish
         doc = Asciidoctor.load src_str, index_opts
         output = doc.convert index_opts
 
-        index_filepath = dst_dir + "#{basename}.#{index_opts[:fileext]}"
-
         if logger && logger.max_severity && logger.max_severity > Logger::Severity::WARN
           raise RuntimeError, "Failed to convert string to asciidoc!! Will _not_ generate #{index_filepath.to_s}"
         end
+
+        # write the converted document to an index file located at the
+        # destination root
+        doc.write output, index_filepath.to_s
       rescue Exception => e
         Giblog.logger.error(e)
         conv_error = true
       end
 
-
-      # write the converted document to an index file located at the
-      # destination root
-      doc.write output, index_filepath.to_s
       conv_error
     end
 
@@ -144,7 +147,7 @@ module Giblish
 
     # Hook for specific converters to inject attributes on a per-doc
     # basis
-    def add_doc_specific_attributes(src_filepath, attributes)
+    def add_doc_specific_attributes(filepath, is_src, attributes)
 
     end
 
@@ -184,16 +187,25 @@ module Giblish
 
     protected
 
-    def add_doc_specific_attributes(src_filepath, attributes)
+    def add_doc_specific_attributes(filepath, is_src_file, attributes)
       doc_attributes = {}
       if @paths.resource_dir_abs and not @web_root
         # user wants to use own styling without use of a
         # web root. the correct css link is the relative path
         # from the specific doc to the common css directory
-        css_rel_dir = @paths.relpath_to_dir_after_generate(
-            src_filepath,
-            @dst_css_dir
-        )
+        css_rel_dir = if is_src_file
+                        # the filepath is a src path
+                        @paths.relpath_to_dir_after_generate(
+                          filepath,
+                          @dst_css_dir
+                        )
+                      else
+                        # the given file path is the destination path of
+                        # the generated file, find the relative path to the
+                        # css dir
+                        dst_dir = PathManager.closest_dir(filepath)
+                        @dst_css_dir.relative_path_from(dst_dir)
+                      end
         doc_attributes["stylesdir"] = css_rel_dir.to_s
       end
 
