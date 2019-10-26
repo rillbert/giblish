@@ -51,6 +51,15 @@ module Giblish
       FileUtils.remove_dir @dst_root
     end
 
+    def copy_test_docs_to_dir(dst_top)
+      # assume that the test docs reside at "../data/testdocs" relative to
+      # this file
+      @testdir_root ||= File.expand_path(File.dirname(__FILE__))
+      @src_root ||= "#{@testdir_root}/../data/testdocs"
+
+      FileUtils.copy_entry(@src_root,dst_top)
+    end
+
     class TmpDocDir
       attr_reader :adoc_filename
       attr_reader :dir
