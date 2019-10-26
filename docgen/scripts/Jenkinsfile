@@ -1,0 +1,18 @@
+pipeline {
+    agent none
+    stages {
+        stage('Render html documentation') {
+            steps {
+                // render html versions of all docs found under the 'docs' subdir
+                // in the repo
+                // sh "giblish -n -f html -s giblish -r docgen/resources docs gendocs"
+                echo "will run giblish here..."
+            }
+        }
+//        stage('Render pdf documentation') {
+//            steps {
+//                sh "giblish -n -f pdf -s vironova-theme -r scripts/adocgen/resources Documents/MiniTEM/third_party_software/ MiniTEM/Deployment/doc"
+//            }
+//        }
+    }
+}
