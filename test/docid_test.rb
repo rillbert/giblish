@@ -6,20 +6,43 @@ class DocidCollectorTest < Minitest::Test
   include Giblish::TestUtils
 
   def setup
-    @src_root = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs"
-    setup_log_and_paths
+    # setup logging
+    Giblog.setup
   end
 
-  def teardown
-    teardown_log_and_paths dry_run: false
+  def test_basic_docid_resolution_html
+    TmpDocDir.open() do |tmp_docs|
+      src_top = tmp_docs.dir + "/src_top"
+      dst_top = tmp_docs.dir + "/dst_top"
+      copy_test_docs_to_dir src_top
+
+      # act on the input data
+      args = ["--log-level", "warn",
+              "-d",
+              Pathname.new(src_top).join("wellformed/docidtest").to_s,
+              dst_top.to_s]
+      status = Giblish.application.run_with_args args
+
+      # assert expected
+      assert_equal 0,status
+    end
   end
 
-  def test_collect_docids
-    args = ["-d",
-            @src_root,
-            @dst_root]
-    Giblish.application.run_with_args args
-    status = Giblish.application.run_with_args args
-    assert_equal 0, status
+  def test_basic_docid_resolution_pdf
+    TmpDocDir.open() do |tmp_docs|
+      src_top = tmp_docs.dir + "/src_top"
+      dst_top = tmp_docs.dir + "/dst_top"
+      copy_test_docs_to_dir src_top
+
+      args = ["--log-level", "warn",
+              "-d",
+              "-f", "pdf",
+              Pathname.new(src_top).join("wellformed/docidtest").to_s,
+              dst_top]
+
+      status = Giblish.application.run_with_args args
+      assert_equal 0,status
+    end
+
   end
 end

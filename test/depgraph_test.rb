@@ -12,7 +12,7 @@ class DepGraphTests < Minitest::Test
   end
 
   def test_graph_is_created_depending_on_graphviz
-    TmpDocDir.open(false) do |tmp_docs|
+    TmpDocDir.open() do |tmp_docs|
       src_top = tmp_docs.dir + "/src_top"
       dst_top = tmp_docs.dir + "/dst_top"
       copy_test_docs_to_dir src_top
@@ -36,7 +36,7 @@ class DepGraphTests < Minitest::Test
   end
 
   def test_graph_is_not_created_without_option
-    TmpDocDir.open(false) do |tmp_docs|
+    TmpDocDir.open() do |tmp_docs|
       src_top = tmp_docs.dir + "/src_top"
       dst_top = tmp_docs.dir + "/dst_top"
       copy_test_docs_to_dir src_top

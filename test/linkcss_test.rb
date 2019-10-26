@@ -53,7 +53,7 @@ class LinkCSSTest < Minitest::Test
 
   # this test shall generate a doc with asciidoctors default css
   def test_default_styling_without_webroot
-    TmpDocDir.open(false) do |tmp_docs|
+    TmpDocDir.open() do |tmp_docs|
       # act on the input data
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
       args = ["--log-level", "info",
@@ -77,7 +77,7 @@ class LinkCSSTest < Minitest::Test
   # this test shall generate a doc with asciidoctors default css
   # and not using the given webroot
   def test_default_styling_with_webroot
-    TmpDocDir.open(false) do |tmp_docs|
+    TmpDocDir.open() do |tmp_docs|
       # act on the input data
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
       args = ["--log-level", "info",
@@ -101,7 +101,7 @@ class LinkCSSTest < Minitest::Test
 
   # test that the css link is a relative link to the css file
   def test_custom_styling_without_webroot
-    TmpDocDir.open(false) do |tmp_docs|
+    TmpDocDir.open() do |tmp_docs|
       # create a resource dir
       r_dir = "#{tmp_docs.dir.to_s}/resources"
       create_resource_dir r_dir
@@ -131,7 +131,7 @@ class LinkCSSTest < Minitest::Test
 
   # test that the css link is a relative link to the css file
   def test_custom_styling_with_webroot
-    TmpDocDir.open(false) do |tmp_docs|
+    TmpDocDir.open() do |tmp_docs|
       # create a resource dir
       r_dir = "#{tmp_docs.dir.to_s}/resources"
       create_resource_dir r_dir
