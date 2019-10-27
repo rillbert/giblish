@@ -385,7 +385,7 @@ module Giblish
             <input id="useregexp" type="checkbox" value="true" name="regexp"/>
             <label for="useregexp">Use Regexp</label>
 
-            <input type="hidden" name="topdir" value="#{paths.dst_root_abs.to_s}"</input>
+            <input type="hidden" name="topdir" value="#{paths.dst_root_abs}"</input>
             <input type="hidden" name="reltop" value="#{paths.reldir_from_web_root(paths.dst_root_abs)}"</input>
             <input type="hidden" name="css" value="#{css}"</input>
         </form>

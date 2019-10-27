@@ -312,7 +312,7 @@ def cgi_main cgi
       ignorecase: cgi.has_key?("ignorecase"),
       useregexp: cgi.has_key?("useregexp"),
       doc_root_abs: Pathname.new(cgi["topdir"]),
-      referer_rel_top: Pathname.new("/#{cgi["reltop"]}"),
+      referer_rel_top: Pathname.new("#{cgi["reltop"]}"),
       referer: cgi.referer,
       uri_path: URI(cgi.referer).path,
       client_css: cgi["css"],
@@ -327,17 +327,16 @@ def cgi_main cgi
   #
   # if the source was rendered from a git branch, the paths
   # search_assets = <index_dir>/../search_assets/<branch_name>/
-  # styles_dir = ../web_assets/css
+  # styles_top = ../web_assets/css
   #
   # and if not, the path is
   # search_assets = <index_dir>/search_assets
-  # styles_dir = ./web_assets/css
+  # styles_top = /web_assets/css
+  # <link rel="stylesheet" href="/web_assets/css/virodoc.css">
   #
-  # The styles dir shall be a relative path
   if input_data[:doc_root_abs].join("./search_assets").exist?
     # this is not from a git branch
     input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
-    # input_data[:styles_top] = Pathname.new(input_data[:uri_path]).join("./web_assets/css")
     input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("web_assets/css")
     input_data[:gitbranch] = false
   elsif input_data[:doc_root_abs].join("../search_assets").exist?
@@ -366,9 +365,14 @@ def cgi_main cgi
   # use a relative stylesheet (same as the index page was rendered with)
   # if the script has received input in the client_css form field
   if !input_data[:client_css].nil? && !input_data[:client_css].empty?
+    css_path = if input_data[:styles_top].to_s[0] != '/'
+                 "/" + input_data[:styles_top].to_s
+               else
+                 input_data[:styles_top].to_s
+               end
     adoc_attributes.merge!({
                             "linkcss" => 1,
-                            "stylesdir" => input_data[:styles_top].to_s,
+                            "stylesdir" => css_path,
                             "stylesheet" => input_data[:client_css],
                             "copycss!" => 1
                         })
@@ -377,6 +381,17 @@ def cgi_main cgi
   # search the docs and render html
   sdt = SearchDocTree.new(input_data)
   docstr = sdt.search
+
+# used for debug purposes
+#   docstr = <<~EOF
+#
+#     #{input_data[:referer_rel_top]} is branch: #{input_data[:gitbranch]}
+#
+#     #{adoc_attributes.to_s}
+#
+#
+#     #{sdt.search}
+#   EOF
 
   # send the result back to the client
   print Asciidoctor.convert(docstr, converter_options)
