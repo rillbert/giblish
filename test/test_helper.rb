@@ -1,66 +1,39 @@
 $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'giblish'
+require 'oga'
 
 require 'minitest/autorun'
 
 module Giblish
   module TestUtils
-    # a path manager to query for src and dst paths
-    attr :paths
-    attr_accessor :testdir_root
-    attr_accessor :src_root
-    attr_accessor :dst_root
-    attr_reader :dir_created
-
-    # defaults to
-    # testdir_root = <working_dir>
-    # src_root = <working_dir>/../data/testdocs
-    # dst_root = <working_dir>/../testoutput
-    def setup_log_and_paths
-      # setup logging
-      Giblog.setup
-
-      # setup paths from previous user input or default
-      @testdir_root ||= File.expand_path(File.dirname(__FILE__))
-      @src_root ||= "#{@testdir_root}/../data/testdocs"
-      @dst_root ||= "#{@testdir_root}/../testoutput"
-
-      # create the dir if needed and keep track of if we created it
-      @dir_created = false
-      unless Dir.exist? @dst_root
-        FileUtils.mkdir_p @dst_root
-        @dir_created = true
-      end
-
-      # Instantiate a path manager with the given src and dst paths
-      @paths = Giblish::PathManager.new(@src_root, @dst_root)
-    end
-
-    def teardown_log_and_paths(dry_run: true)
-      if dry_run
-        Giblog.logger.info "Suppress deletion of #{@dst_root} due to a set 'dry_run' flag"
-        return
-      end
-
-      unless @dir_created
-        Giblog.logger.info "Suppress deletion of #{@dst_root}. It existed before the tests started."
-        return
-      end
-
-      FileUtils.remove_dir @dst_root
-    end
-
     class TmpDocDir
       attr_reader :adoc_filename
       attr_reader :dir
+      attr_reader :src_data_top
 
-      # enable a user of this class to do things like:
-      # TmpDocDir.open do |doc_dir|
-      # ...
+      # Creates a file area somewhere under /tmp.
+      #
+      # +preserve+ set to true if the created area should not be
+      # deleted automatically (default: false)
+      # +test_data_subdir+ set this to the subdir path where you
+      # want all files under "../data/testdocs" to be copied to
+      # in the created area. default is nil meaning no data is
+      # copied. If this is set to a subdir, that dir can be
+      # retrieved by accessing the @src_data_top attribute
+      #
+      # Use this as:
+      # TmpDocDir.open do |instance|
+      #   # to get the top dir
+      #   top_dir = instance.dir
+      #
+      #   ...do your tests here...
       # end
-      # and be sure that the dir is deleted afterwards
-      def self.open(preserve = false)
-        instance = TmpDocDir.new
+      #
+      # and be sure that the dir is deleted when the TmpDocDir goes
+      # out-of-scope
+      #
+      def self.open(preserve: false, test_data_subdir: nil)
+        instance = TmpDocDir.new(test_data_subdir)
         begin
           yield instance
         ensure
@@ -72,9 +45,24 @@ module Giblish
         FileUtils.remove_entry @dir
       end
 
-      def initialize
+      def initialize(test_data_subdir)
         @dir = Dir.mktmpdir
+        @src_data_top = nil
+        unless test_data_subdir.nil?
+          @src_data_top = Pathname.new(@dir).join(test_data_subdir)
+          copy_test_data @src_data_top
+        end
         @src_files = []
+      end
+
+      def copy_test_data(dst_top)
+        # assume that the test docs reside at "../data/testdocs" relative to
+        # this file
+        testdir_root ||= File.expand_path(File.dirname(__FILE__))
+        src_root ||= "#{testdir_root}/../data/testdocs"
+
+        # copy everything to the destination
+        FileUtils.copy_entry(src_root,dst_top.to_s)
       end
 
       # usage:
@@ -90,9 +78,18 @@ module Giblish
         yield document
       end
 
-      def add_doc_from_str(doc_str)
+      # create an asciidoc file from the given string. If user supplies
+      # a subdir, the subdir will be created if not already existing and
+      # the file will be created under that subdir
+      def add_doc_from_str(doc_str,subdir=nil)
+        dst_dir = Pathname.new(@dir.to_s).realpath
+        if subdir
+          dst_dir = dst_dir.join(subdir)
+          FileUtils.mkdir_p(dst_dir)
+        end
+
         # create a temp file name
-        adoc_file = Tempfile.new(['gib_tst_','.adoc'],@dir)
+        adoc_file = Tempfile.new(['gib_tst_','.adoc'],dst_dir.to_s)
 
         # write doc to file and close
         adoc_file.puts doc_str

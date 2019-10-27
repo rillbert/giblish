@@ -25,7 +25,7 @@ module Giblish
     # parent
     # message
     def file_log(filename)
-      o, e, s = exec_cmd("log", %w[--follow --date=iso --], filename)
+      o, e, s = exec_cmd("log", %w[--follow --date=iso --], "'#{filename}'")
       raise "Failed to get git log for #{filename}!!\n#{e}" if s.exitstatus != 0
 
       process_log_output(o)

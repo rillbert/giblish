@@ -86,6 +86,7 @@ module Giblish
     attr_reader :src_root_abs
     attr_reader :dst_root_abs
     attr_reader :resource_dir_abs
+    attr_reader :web_root_abs
 
     # Public:
     #
@@ -95,7 +96,7 @@ module Giblish
     #            tree
     # resource_dir - a string or pathname with the directory containing
     #                resources
-    def initialize(src_root, dst_root, resource_dir = nil, web_root = false)
+    def initialize(src_root, dst_root, resource_dir = nil, web_root = nil)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
@@ -104,7 +105,11 @@ module Giblish
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
 
       # Set web root if given by user
-      @web_root_abs = web_root ? Pathname.new(web_root) : nil
+      @web_root_abs = nil
+      if web_root
+        web_root = "/" + web_root unless web_root[0] == '/'
+        @web_root_abs = web_root ? Pathname.new(web_root) : nil
+      end
     end
 
     def dst_root_abs=(dst_root)
@@ -115,24 +120,70 @@ module Giblish
     end
 
     # Public: Get the relative path from the source root dir to the
-    #         source file dir.
+    #         directory where the supplied path points.
     #
-    # in_path - an absolute or relative path
+    # in_path - an absolute or relative path to a file or dir
     def reldir_from_src_root(in_path)
-      p = in_path.is_a?(Pathname) ? in_path : Pathname.new(in_path)
-
-      # Get absolute source dir path
-      src_abs = p.directory? ? p.realpath : p.dirname.realpath
-
-      # Get relative path from source root dir
-      src_abs.relative_path_from(@src_root_abs)
+      p = self.class.closest_dir in_path
+      p.relative_path_from(@src_root_abs)
     end
 
-    def reldir_from_web_root(in_path)
-      p = in_path.is_a?(Pathname) ? in_path : Pathname.new(in_path)
-      return p if @web_root_abs.nil?
+    # Public: Get the relative path from the
+    #         directory where the supplied path points to
+    #         the src root dir
+    #
+    # path - an absolute or relative path to a file or dir
+    def reldir_to_src_root(path)
+      src = self.class.closest_dir path
+      @src_root_abs.relative_path_from(src)
+    end
 
+    # Public: Get the relative path from the dst root dir to the
+    #         directory where the supplied path points.
+    #
+    # path - an absolute or relative path to a file or dir
+    def reldir_from_dst_root(path)
+      dst = self.class.closest_dir path
+      dst.relative_path_from(@dst_root_abs)
+    end
+
+    # Public: Get the relative path from the
+    #         directory where the supplied path points to
+    #         the dst root dir
+    #
+    # path - an absolute or relative path to a file or dir
+    def reldir_to_dst_root(path)
+      dst = self.class.closest_dir path
+      @dst_root_abs.relative_path_from(dst)
+    end
+
+    # return the destination dir corresponding to the given src path
+    # the src path must exist in the file system
+    def dst_abs_from_src_abs(src_path)
+      src_abs = (self.class.to_pathname src_path).realpath
+      src_rel = reldir_from_src_root src_abs
+      @dst_root_abs.join(src_rel)
+    end
+
+    # return the relative path from a generated document to
+    # the supplied folder given the corresponding absolute source
+    # file path
+    def relpath_to_dir_after_generate(src_filepath,dir_path)
+      dst_abs = dst_abs_from_src_abs(src_filepath)
+      dir = self.class.to_pathname(dir_path)
+      dir.relative_path_from(dst_abs)
+    end
+
+    def reldir_from_web_root(path)
+      p = self.class.closest_dir path
+      return p if @web_root_abs.nil?
       p.relative_path_from(@web_root_abs)
+    end
+
+    def reldir_to_web_root(path)
+      p = self.class.closest_dir path
+      return p if @web_root_abs.nil?
+      @web_root_abs.relative_path_from(p)
     end
 
     def adoc_output_file(infile_path, extension)
@@ -173,6 +224,12 @@ module Giblish
       dst_abs.relative_path_from(src_abs)
     end
 
+    # return a pathname, regardless if the given path is a Pathname or
+    # a string
+    def self.to_pathname(path)
+      path.is_a?(Pathname) ? path : Pathname.new(path)
+    end
+
     # Public: Get the basename for a file by replacing the file
     #         extention of the source file with the supplied one.
     #
@@ -196,7 +253,7 @@ module Giblish
     #          - the directory itself when called with an existing directory
     #          - the parent dir when called with a non-existing file/directory
     def self.closest_dir(in_path)
-      sr = in_path.is_a?(Pathname) ? in_path : Pathname.new(in_path)
+      sr = self.to_pathname(in_path)
       if sr.exist?
         sr.directory? ? sr.realpath : sr.dirname.realpath
       else
@@ -301,5 +358,41 @@ module Giblish
   end
   module_function :which
 
+
+  # returns raw html that displays a search box to let the user
+  # acces the text search functionality.
+  #
+  # css          - the name of the css file to use for the search box layout
+  # cgi_path     - the path to a cgi script that implements the server side
+  #                functionality of searching the text
+  # path_manager - an instance of the path manager class to keep track of all
+  #                destinations.
+  def generate_search_box_html(css, cgi_path, paths)
+
+    # button with magnifying glass icon (not working when deployed)
+    # <button id="search" type="submit"><i class="fa fa-search"></i></button>
+    <<~SEARCH_INFO
+      ++++
+        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:380px">
+            Search all documents: 
+            <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
+            <button id="search" type="submit">Search</button>
+            <br>
+
+            <input id="ignorecase" type="checkbox" value="true" name="ignorecase" checked/>
+            <label for="ignorecase">Ignore Case</label>
+            &nbsp;&nbsp;
+            <input id="useregexp" type="checkbox" value="true" name="regexp"/>
+            <label for="useregexp">Use Regexp</label>
+
+            <input type="hidden" name="topdir" value="#{paths.dst_root_abs}"</input>
+            <input type="hidden" name="reltop" value="#{paths.reldir_from_web_root(paths.dst_root_abs)}"</input>
+            <input type="hidden" name="css" value="#{css}"</input>
+        </form>
+      ++++
+
+    SEARCH_INFO
+  end
+  module_function :generate_search_box_html
 
 end

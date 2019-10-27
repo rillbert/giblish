@@ -215,10 +215,7 @@ class SearchDocTree
   private
 
   def get_uri_top
-    if @input_data[:gitbranch]
-      return @input_data[:referer][0,@input_data[:referer].rindex('/')]
-    end
-    return @input_data[:referer].chomp('/')
+    return @input_data[:referer][0,@input_data[:referer].rindex('/')]
   end
 
   def wash_line line
@@ -239,6 +236,8 @@ class SearchDocTree
   # ...
   def format_search_adoc index,uri_top
     str = ""
+    # debug print referer...
+    # str << "uri_top: #{uri_top}\n"
     index.each do |file_info|
       filename = Pathname.new(file_info["filepath"]).basename
       str << "== #{file_info["title"]}\n\n"
@@ -313,7 +312,7 @@ def cgi_main cgi
       ignorecase: cgi.has_key?("ignorecase"),
       useregexp: cgi.has_key?("useregexp"),
       doc_root_abs: Pathname.new(cgi["topdir"]),
-      referer_rel_top: Pathname.new("/#{cgi["reltop"]}"),
+      referer_rel_top: Pathname.new("#{cgi["reltop"]}"),
       referer: cgi.referer,
       uri_path: URI(cgi.referer).path,
       client_css: cgi["css"],
@@ -328,17 +327,16 @@ def cgi_main cgi
   #
   # if the source was rendered from a git branch, the paths
   # search_assets = <index_dir>/../search_assets/<branch_name>/
-  # styles_dir = ../web_assets/css
+  # styles_top = ../web_assets/css
   #
   # and if not, the path is
   # search_assets = <index_dir>/search_assets
-  # styles_dir = ./web_assets/css
+  # styles_top = /web_assets/css
+  # <link rel="stylesheet" href="/web_assets/css/virodoc.css">
   #
-  # The styles dir shall be a relative path
   if input_data[:doc_root_abs].join("./search_assets").exist?
     # this is not from a git branch
     input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
-    # input_data[:styles_top] = Pathname.new(input_data[:uri_path]).join("./web_assets/css")
     input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("web_assets/css")
     input_data[:gitbranch] = false
   elsif input_data[:doc_root_abs].join("../search_assets").exist?
@@ -350,21 +348,53 @@ def cgi_main cgi
     raise ScriptError, "Could not find search_assets dir!"
   end
 
-  # use a relative stylesheet (same as the index page was rendered with)
-  adoc_options =  {
+  # Set some reasonable default attributes and options
+  adoc_attributes = {
       "data-uri" => 1,
-      "linkcss" => 1,
-      "stylesdir" => input_data[:styles_top].to_s,
-      "stylesheet" => input_data[:client_css],
-      "copycss!" => 1
   }
+
+  converter_options = {
+      backend: "html5",
+      # need this to let asciidoctor include the default css if user
+      # has not specified any css
+      safe: Asciidoctor::SafeMode::SAFE,
+      header_footer: true,
+      attributes: adoc_attributes
+  }
+
+  # use a relative stylesheet (same as the index page was rendered with)
+  # if the script has received input in the client_css form field
+  if !input_data[:client_css].nil? && !input_data[:client_css].empty?
+    css_path = if input_data[:styles_top].to_s[0] != '/'
+                 "/" + input_data[:styles_top].to_s
+               else
+                 input_data[:styles_top].to_s
+               end
+    adoc_attributes.merge!({
+                            "linkcss" => 1,
+                            "stylesdir" => css_path,
+                            "stylesheet" => input_data[:client_css],
+                            "copycss!" => 1
+                        })
+  end
 
   # search the docs and render html
   sdt = SearchDocTree.new(input_data)
   docstr = sdt.search
 
+# used for debug purposes
+#   docstr = <<~EOF
+#
+#     #{input_data[:referer_rel_top]} is branch: #{input_data[:gitbranch]}
+#
+#     #{adoc_attributes.to_s}
+#
+#
+#     #{sdt.search}
+#   EOF
+
   # send the result back to the client
-  print Asciidoctor.convert docstr, header_footer: true, attributes: adoc_options
+  print Asciidoctor.convert(docstr, converter_options)
 end
 
 # assume that the file tree looks like this when running
@@ -410,10 +440,14 @@ end
 
 # Usage:
 #   to start a local web server for development work
-# giblish-giblish-search.rb <web_root>
+# giblish-search.rb <web_root>
 #
-#   to run as a cgi script via a previously setup web server:
-# giblish-giblish-search.rb
+#   to run as a cgi script via a previously setup web server
+# giblish-search.rb
+#
+# (note that you might need to rename the script to eg
+# giblish-search.cgi or similar depending on your web server
+# setup)
 #
 if __FILE__ == $PROGRAM_NAME
 
@@ -425,7 +459,6 @@ if __FILE__ == $PROGRAM_NAME
     cgi = CGI.new
     print cgi.header
     begin
-      # hello_world
       cgi_main cgi
     rescue Exception => e
       print e.message

@@ -58,33 +58,13 @@ module Giblish
 
     def add_search_box
       # TODO: Fix the hard-coded path
-      cgi_path = "/cgi-bin/giblish-search.cgi"
-      css = @converter.converter_options[:attributes]["stylesheet"]
-
-      # button with magnifying glass icon (not working when deployed)
-      # <button id="search" type="submit"><i class="fa fa-search"></i></button>
-      <<~SEARCH_INFO
-      ++++
-        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:380px">
-            Search all documents: 
-            <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
-            <button id="search" type="submit">Search</button>
-            <br>
-
-            <input id="ignorecase" type="checkbox" value="true" name="ignorecase" checked/>
-            <label for="ignorecase">Ignore Case</label>
-            &nbsp;&nbsp;
-            <input id="useregexp" type="checkbox" value="true" name="regexp"/>
-            <label for="useregexp">Use Regexp</label>
-
-            <input type="hidden" name="topdir" value="#{@paths.dst_root_abs.to_s}"</input>
-            <input type="hidden" name="reltop" value="#{@paths.reldir_from_web_root(@paths.dst_root_abs)}"</input>
-            <input type="hidden" name="css" value="#{css}"</input>
-        </form>
-      ++++
-
-      SEARCH_INFO
+      Giblish::generate_search_box_html(
+          @converter.converter_options[:attributes]["stylesheet"],
+          "/cgi-bin/giblish-search.cgi",
+          @paths
+      )
     end
+
     def get_docid_statistics
       largest = ""
       clash = []

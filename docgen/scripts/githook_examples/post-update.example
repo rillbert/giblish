@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# This hook script kicks-in after git has completed
+# a push, it will thus never be able to abort a push.
+#
+# This hook will:
+# - ping Jenkins to trigger any builds related to the
+#   git push
+
+# let the user perfoming a git push know that we actually do something
+echo "Start post-update"
+
+# Hit Jenkins to initiate a Jenkins poll for which jobs that shall be started as
+# consequence of a push to a specific git repo. The generic format for this is:
+# curl <jenkins_url>/git/notifyCommit?url=<git repo url>
+#
+# If jenkins is accessible on http://jenkins.example.com:8080 and
+# you want to initiate a poll for jobs associated with the giblish repository on
+# github located at https://github.com/rillbert/giblish.git
+# you would use the following:
+curl http://jenkins.example.com:8080/git/notifyCommit?url=https://github.com/rillbert/giblish.git
+
+# Tell user we're done
+echo "Finished post-update"

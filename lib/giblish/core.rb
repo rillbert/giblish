@@ -69,37 +69,52 @@ module Giblish
       # build index and other fancy stuff if not suppressed
       unless @options[:suppressBuildRef]
         # build a dependency graph (only if we resolve docids...)
-        dep_graph_exist = if @options[:resolveDocid]
-          if Giblish::GraphBuilderGraphviz.supported
-            gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-            @converter.convert_str(gb.source, @paths.dst_root_abs, "graph")
-          else
-            Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
-            Giblog.logger.warn { "The dependency graph will not be generated !!" }
-            false
-          end
-        else
-          false
-        end
+        dep_graph_exist = @options[:resolveDocid] && build_graph_page
 
         # build a reference index
-        adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
-        ib = index_factory
-        @converter.convert_str(
-            ib.source(
-                dep_graph_exist,@options[:make_searchable]
-            ),
-            @paths.dst_root_abs, "index",
-            logger: adoc_logger)
-
-        # clean up cached files and adoc resources
-        remove_diagram_temps if dep_graph_exist
-        GC.start
+        build_index_page(dep_graph_exist)
       end
       conv_error
     end
 
     protected
+
+    def build_graph_page
+      if Giblish::GraphBuilderGraphviz.supported
+        # gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
+        gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @converter.converter_options
+        errors = @converter.convert_str(
+            gb.source(
+                @options[:make_searchable]
+            ),
+            @paths.dst_root_abs,
+            "graph"
+        )
+        remove_diagram_temps unless errors
+        !errors
+      else
+        Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
+        Giblog.logger.warn { "The dependency graph will not be generated !!" }
+        false
+      end
+    end
+
+    def build_index_page(dep_graph_exist)
+      # build a reference index
+      adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
+      ib = index_factory
+      @converter.convert_str(
+          ib.source(
+              dep_graph_exist,@options[:make_searchable]
+          ),
+          @paths.dst_root_abs,
+          "index",
+          logger: adoc_logger
+      )
+
+      # clean up cached files and adoc resources
+      GC.start
+    end
 
     # get the correct index builder type depending on supplied
     # user options

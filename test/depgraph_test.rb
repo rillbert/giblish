@@ -7,41 +7,45 @@ class DepGraphTests < Minitest::Test
   include Giblish::TestUtils
 
   def setup
-    @src_root = "#{File.expand_path(File.dirname(__FILE__))}/../data/testdocs"
-    setup_log_and_paths
-  end
-
-  def teardown
-    teardown_log_and_paths dry_run: false
+    # setup logging
+    Giblog.setup
   end
 
   def test_graph_is_created_depending_on_graphviz
-    args = ["--log-level",
-            "info",
-            "--resolve-docid",
-            @src_root + "/wellformed/docidtest",
-            @dst_root]
-    status = Giblish.application.run_with_args args
-    assert_equal 0, status
+    TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
+      dst_top = tmp_docs.dir + "/dst_top"
 
-    if Giblish::which("dot")
-      assert (File.exist? @dst_root+"/graph.html")
-    elsif
-      assert (!File.exist? @dst_root+"/graph.html")
+      args = ["--log-level", "info",
+              "--resolve-docid",
+              tmp_docs.src_data_top.join("wellformed/docidtest"),
+              dst_top]
+      status = Giblish.application.run_with_args args
+      assert_equal 0, status
+
+      if Giblish::which("dot")
+        assert (File.exist? dst_top + "/graph.html")
+      elsif
+        assert (!File.exist? dst_top + "/graph.html")
+      end
+
+      assert (File.exist? dst_top + "/index.html")
+      assert (!File.exist? dst_top + "/docdeps.svg")
     end
-    assert (File.exist? @dst_root+"/index.html")
-    assert (!File.exist? @dst_root+"/docdeps.svg")
   end
 
   def test_graph_is_not_created_without_option
-    args = ["--log-level",
-            "info",
-            @src_root + "/wellformed/docidtest",
-            @dst_root]
-    status = Giblish.application.run_with_args args
-    assert_equal 0, status
-    assert (!File.exist? @dst_root+"/graph.html")
-    assert (File.exist? @dst_root+"/index.html")
-    assert (!File.exist? @dst_root+"/docdeps.svg")
+    TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
+      dst_top = tmp_docs.dir + "/dst_top"
+
+      args = ["--log-level", "info",
+              tmp_docs.src_data_top.join("wellformed/docidtest"),
+              dst_top]
+      status = Giblish.application.run_with_args args
+      assert_equal 0, status
+
+      assert (!File.exist? dst_top + "/graph.html")
+      assert (File.exist? dst_top + "/index.html")
+      assert (!File.exist? dst_top + "/docdeps.svg")
+    end
   end
 end
