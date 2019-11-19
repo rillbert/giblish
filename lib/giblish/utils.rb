@@ -270,7 +270,7 @@ module Giblish
     # Returns: the root direcotry of the git repo or nil if the input path
     #          does not reside within a git repo.
     def self.find_gitrepo_root(dirpath)
-      Pathname.new(dirpath).expand_path.ascend do |p|
+      Pathname.new(dirpath).realpath.ascend do |p|
         git_dir = p.join(".git")
         return p if git_dir.directory?
       end
