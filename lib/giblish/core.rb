@@ -194,8 +194,8 @@ module Giblish
 
     # predicate that decides if a path is a asciidoc file or not
     def adocfile?(path)
-      fs = path.basename.to_s
-
+#      fs = path.basename.to_s
+      fs = path.to_s
       unless @options[:excludeRegexp].nil?
         # exclude file if user wishes
         er = Regexp.new @options[:excludeRegexp]
