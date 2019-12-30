@@ -365,9 +365,10 @@ module Giblish
   # css          - the name of the css file to use for the search box layout
   # cgi_path     - the path to a cgi script that implements the server side
   #                functionality of searching the text
-  # path_manager - an instance of the path manager class to keep track of all
-  #                destinations.
-  def generate_search_box_html(css, cgi_path, paths)
+  # opts:
+  # :topdir => string # the absolute path to the root dir of the generated docs
+  # :reltop => string # the relative path to the web root
+  def generate_search_box_html(css, cgi_path, opts)
 
     # button with magnifying glass icon (not working when deployed)
     # <button id="search" type="submit"><i class="fa fa-search"></i></button>
@@ -385,8 +386,8 @@ module Giblish
             <input id="useregexp" type="checkbox" value="true" name="regexp"/>
             <label for="useregexp">Use Regexp</label>
 
-            <input type="hidden" name="topdir" value="#{paths.dst_root_abs}"</input>
-            <input type="hidden" name="reltop" value="#{paths.reldir_from_web_root(paths.dst_root_abs)}"</input>
+            <input type="hidden" name="topdir" value="#{opts[:topdir]}"</input>
+            <input type="hidden" name="reltop" value="#{opts[:reltop]}"</input>
             <input type="hidden" name="css" value="#{css}"</input>
         </form>
       ++++

@@ -17,6 +17,10 @@ module Giblish
       @converter = converter
       @src_str = ""
       @manage_docid = handle_docid
+      @search_opts = {
+          topdir: @paths.web_root_abs,
+          reltop: "."
+      }
     end
 
     def source(dep_graph_exists = false, make_searchable = false)
@@ -58,10 +62,11 @@ module Giblish
 
     def add_search_box
       # TODO: Fix the hard-coded path
+
       Giblish::generate_search_box_html(
           @converter.converter_options[:attributes]["stylesheet"],
           "/cgi-bin/giblish-search.cgi",
-          @paths
+          @search_opts
       )
     end
 
@@ -317,6 +322,14 @@ module Giblish
       rescue Exception => e
         Giblog.logger.error {"No git repo! exception: #{e.message}"}
       end
+
+      # make sure that the topdir includes the branch name
+      # TODO: this probably breaks down for tags...
+      @search_opts = {
+          topdir: @paths.web_root_abs.join(@git_repo.current_branch),
+          reltop: "."
+      }
+
     end
 
     protected
