@@ -367,7 +367,8 @@ module Giblish
   #                functionality of searching the text
   # opts:
   # :topdir => string # the absolute path to the root dir of the generated docs
-  # :reltop => string # the relative path to the web root
+  # :branch_dir => string # the name of the top directory for the rendered
+  #                         git branch/tag or nil if no git repo is used.
   def generate_search_box_html(css, cgi_path, opts)
 
     # button with magnifying glass icon (not working when deployed)
@@ -387,7 +388,7 @@ module Giblish
             <label for="useregexp">Use Regexp</label>
 
             <input type="hidden" name="topdir" value="#{opts[:topdir]}"</input>
-            <input type="hidden" name="reltop" value="#{opts[:reltop]}"</input>
+            <input type="hidden" name="branchdir" value="#{opts[:branch_dir]}"</input>
             <input type="hidden" name="css" value="#{css}"</input>
         </form>
       ++++

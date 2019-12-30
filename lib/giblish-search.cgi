@@ -367,7 +367,7 @@ def cgi_main cgi
    end
 
   input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
-  unless input_data[:branch_dir].nil?
+  unless input_data[:branch_dir].empty?
     # this is from a git branch
     input_data[:search_top] = input_data[:search_top].join(input_data[:branch_dir])
   end

@@ -19,7 +19,7 @@ module Giblish
       @manage_docid = handle_docid
       @search_opts = {
           topdir: @paths.web_root_abs,
-          reltop: "."
+          branch_dir: ""
       }
     end
 
@@ -61,8 +61,6 @@ module Giblish
     end
 
     def add_search_box
-      # TODO: Fix the hard-coded path
-
       Giblish::generate_search_box_html(
           @converter.converter_options[:attributes]["stylesheet"],
           "/cgi-bin/giblish-search.cgi",
@@ -323,11 +321,11 @@ module Giblish
         Giblog.logger.error {"No git repo! exception: #{e.message}"}
       end
 
-      # make sure that the topdir includes the branch name
-      # TODO: this probably breaks down for tags...
+      # the top dir is the same for all branches but the
+      # branch_dir is specific for each branch/tag
       @search_opts = {
-          topdir: @paths.web_root_abs.join(@git_repo.current_branch),
-          reltop: "."
+          topdir: @paths.web_root_abs,
+          branch_dir: @paths.dst_root_abs.basename
       }
 
     end
