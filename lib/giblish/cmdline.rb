@@ -31,15 +31,15 @@ class CmdLineParser
                              For html this is a name of a css file, for pdf, this is
                              the name of an yml file. If no style is given 'giblish'
                              is used as default.
-  -i --include <regexp>      include only files with a filename that matches the supplied
+  -i --include <regexp>      include only files with a path that matches the supplied
                              regexp (defaults to '.*\.(?i)adoc$' meaning it matches all
                              files ending in .adoc case-insensitive). The matching is made
-                             on the _file name only_, not the full path (i.e. for the full
-                             path /my/file.adoc, only file.adoc is used in the matching).
-  -j --exclude <regexp>      exclude files with filenames matching the supplied
+                             on the full path (i.e. the regex '^.*my.*' matches the path 
+                             /my/file.adoc).
+  -j --exclude <regexp>      exclude files with a path that matches the supplied
                              regexp (no files are excluded by default). The matching is made
-                             on the _file name only_, not the full path (i.e. for the full
-                             path /my/file.adoc, only file.adoc is used in the matching).
+                             on the full path (i.e. the regex '^.*my.*' matches the path 
+                             /my/file.adoc).
   -w --web-root <path>       Specifies the top dir (DirectoryRoot) of a file system
                              tree published by a web server. This switch is only used
                              when generating html. The typical use case is that giblish
