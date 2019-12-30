@@ -312,7 +312,7 @@ def cgi_main cgi
       ignorecase: cgi.has_key?("ignorecase"),
       useregexp: cgi.has_key?("useregexp"),
       doc_root_abs: Pathname.new(cgi["topdir"]),
-      referer_rel_top: Pathname.new("#{cgi["reltop"]}"),
+      branch_dir: cgi["branchdir"],
       referer: cgi.referer,
       uri_path: URI(cgi.referer).path,
       client_css: cgi["css"],
@@ -320,32 +320,60 @@ def cgi_main cgi
       styles_top: nil
   }
 
-  # fixup paths depending on git branch or not
+# assume that the file tree looks like this when rendering
+# a git branch:
+#
+# root_dir
+# |- index.html (the generated index of rendered git branches and tags)
+# |- branch_1_top_dir
+# |     |- index.html (the generated index of this branch)
+# |     |- file_1.html
+# |     |- dir_1
+# |     |   |- file2.html
+# |- branch_2_top_dir
+# |- branch_x_...
+# |- web_assets (only if a custom stylesheet is used...)
+# |- search_assets
+# |     |- branch_1_top_dir
+# |           |- heading_index.json
+# |           |- file1.adoc
+# |           |- dir_1
+# |           |   |- file2.html
+# |           |- ...
+# |     |- branch_2_top_dir
+# |           | ...
+
+# assume that the file tree looks like this when not
+# rendering a git branch:
+#
+# root_dir
+# |- index.html  (the generated index of all rendered files)
+# |- file_1.html
+# |- dir_1
+# |   |- file2.html
+# |...
+# |- web_assets (only if a custom stylesheet is used...)
+# |- search_assets
+# |     |- heading_index.json
+# |     |- file1.adoc
+# |     |- dir_1
+# |     |   |- file2.html
+# |     |- ...
+  # search_assets and styles_top shall be absolute paths
   #
-  # search_assets is an absolute path
-  # styles_top is a relative path
-  #
-  # if the source was rendered from a git branch, the paths
-  # search_assets = <index_dir>/../search_assets/<branch_name>/
-  # styles_top = ../web_assets/css
-  #
-  # and if not, the path is
-  # search_assets = <index_dir>/search_assets
-  # styles_top = /web_assets/css
-  # <link rel="stylesheet" href="/web_assets/css/virodoc.css">
-  #
-  if input_data[:doc_root_abs].join("./search_assets").exist?
-    # this is not from a git branch
-    input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
-    input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("web_assets/css")
-    input_data[:gitbranch] = false
-  elsif input_data[:doc_root_abs].join("../search_assets").exist?
+  input_data[:styles_top] = input_data[:doc_root_abs].join("./web_assets/css")
+   unless input_data[:styles_top].exist?
+     raise ScriptError, "Could not find styles_top dir!"
+   end
+
+  input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
+  unless input_data[:branch_dir].nil?
     # this is from a git branch
-    input_data[:search_top] = input_data[:doc_root_abs].join("../search_assets").join(input_data[:doc_root_abs].basename)
-    input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("../web_assets/css")
-    input_data[:gitbranch] = true
-  else
+    input_data[:search_top] = input_data[:search_top].join(input_data[:branch_dir])
+  end
+  unless input_data[:search_assets].exist?
     raise ScriptError, "Could not find search_assets dir!"
+  end
   end
 
   # Set some reasonable default attributes and options
@@ -362,7 +390,7 @@ def cgi_main cgi
       attributes: adoc_attributes
   }
 
-  # use a relative stylesheet (same as the index page was rendered with)
+  # use the same stylesheet as the documents were rendered with.
   # if the script has received input in the client_css form field
   if !input_data[:client_css].nil? && !input_data[:client_css].empty?
     css_path = if input_data[:styles_top].to_s[0] != '/'
@@ -396,46 +424,6 @@ def cgi_main cgi
   # send the result back to the client
   print Asciidoctor.convert(docstr, converter_options)
 end
-
-# assume that the file tree looks like this when running
-# on a git branch:
-#
-# dst_root_dir
-# |- branch_1_top_dir
-# |     |- index.html
-# |     |- file_1.html
-# |     |- dir_1
-# |     |   |- file2.html
-# |- branch_2_top_dir
-# |- branch_x_...
-# |- web_assets
-# |- search_assets
-# |     |- branch_1_top_dir
-# |           |- heading_index.json
-# |           |- file1.adoc
-# |           |- dir_1
-# |           |   |- file2.html
-# |           |- ...
-# |     |- branch_2_top_dir
-# |           | ...
-
-# assume that the file tree looks like this when not
-# rendering a git branch:
-#
-# dst_root_dir
-# |- index.html
-# |- file_1.html
-# |- dir_1
-# |   |- file2.html
-# |...
-# |- web_assets (only if a custom stylesheet is used...)
-# |- search_assets
-# |     |- heading_index.json
-# |     |- file1.adoc
-# |     |- dir_1
-# |     |   |- file2.html
-# |     |- ...
-
 
 
 # Usage:
