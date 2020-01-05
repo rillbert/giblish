@@ -1,0 +1,12 @@
+= Changelog for giblish
+
+== v0.6.2
+
+ * take the idprefix and idseparator into account when indexing sections for text search
+ * *Breaking change* include the entire path in the -i and -j options
+ * *Breaking change* remove the hard-coded arguments to the search box html so that one can generate the docs to a destination that is not the same as the final one.
+ ** TODO: implement and test this for both git and non-git cases, with custom css
+ * make the magnifying glass icon work
+ ** TODO: implement this
+ * update README file
+ ** TODO: implement this
