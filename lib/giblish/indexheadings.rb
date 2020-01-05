@@ -41,7 +41,18 @@ module Giblish
     # of this class for each processed file
     @heading_index = {"file_infos" => []}
 
+    # prio order:
+    # 1. values in this hash
+    # 2. values taken from the document
+    # 3. default values
+    @id_elements = {
+#        prefix: "_",
+#        separator: "_"
+    }
+
     class << self
+      attr_accessor :id_elements
+
       def heading_index
         @heading_index
       end
@@ -67,7 +78,7 @@ module Giblish
         end
 
         Giblog.logger.info { "writing json to #{dst_dir.join("heading_index.json").to_s}" }
-        File.open(dst_dir.join("heading_index.json").to_s,"w") do |f|
+        File.open(dst_dir.join("heading_index.json").to_s, "w") do |f|
           f.write(heading_index.to_json)
         end
       end
@@ -87,6 +98,10 @@ module Giblish
       # processed the text)
       title = find_title reader.lines
 
+      # make sure we use the correct id elements when indexing
+      # sections
+      opts = set_id_attributes(reader.lines)
+
       # Index all headings in the doc
       Giblog.logger.debug { "indexing headings in #{src_path}" }
       sections = []
@@ -96,7 +111,7 @@ module Giblish
           "sections" => sections
       }
 
-      index_sections(reader,file_info_hash)
+      index_sections(reader, file_info_hash, opts)
 
       heading_index["file_infos"] << file_info_hash
       reader
@@ -105,7 +120,7 @@ module Giblish
     private
 
     # build the 'sections' array
-    def index_sections(reader, file_info_hash)
+    def index_sections(reader, file_info_hash, opts)
       sections = file_info_hash["sections"]
 
       heading_regex = Regexp.new(/^=+\s+(.*)$/)
@@ -137,17 +152,17 @@ module Giblish
           m = heading_regex.match(line)
           if m
             # we have an anchor and got a heading as expected, index it
-            section = { "id" => match_str }
+            section = {"id" => match_str}
             section["title"] = m[1].strip
             section["line_no"] = line_no
             sections << section
           else
-            Giblog.logger.debug {"Did not index the anchor: #{match_str} at line #{line_no}, probably not associated with a heading."}
+            Giblog.logger.debug { "Did not index the anchor: #{match_str} at line #{line_no}, probably not associated with a heading." }
           end
           state = :text
         when :heading
           # we got a heading without an accompanying anchor, index it
-          section = { "id" => get_unique_id(file_info_hash, match_str) }
+          section = {"id" => get_unique_id(file_info_hash, match_str, opts)}
           section["title"] = m[1].strip
           section["line_no"] = line_no
           sections << section
@@ -168,8 +183,46 @@ module Giblish
       title
     end
 
-    def get_unique_id(doc_heading_dict, heading_str)
-      id_base = Giblish.to_valid_id(heading_str)
+    # id elements prio:
+    # 1. values in class variable
+    # 2. values taken from doc
+    # 3. default values
+    def set_id_attributes(lines)
+      # default values
+      result = {
+          id_prefix: "_",
+          id_separator: "_"
+      }
+
+      # check if the doc specifies id attributes
+      Giblish.process_header_lines(lines) do |line|
+        m = /^:idprefix:(.*)$/.match(line)
+        n = /^:idseparator:(.*)$/.match(line)
+        if m
+          # We found a id prefix
+          result[:id_prefix] = m[1].strip
+        end
+        if n
+          # We found a id separator
+          result[:id_separator] = n[1].strip
+        end
+      end
+
+
+      if IndexHeadings.id_elements.has_key?(:id_prefix)
+        result[:id_prefix] = IndexHeadings.id_elements[:id_prefix]
+      end
+
+      if IndexHeadings.id_elements.has_key?(:id_separator)
+        result[:id_separator] = IndexHeadings.id_elements[:id_separator]
+      end
+
+      result
+    end
+
+    def get_unique_id(doc_heading_dict, heading_str, opts)
+
+      id_base = Giblish.to_valid_id(heading_str, opts[:id_prefix], opts[:id_separator])
       return id_base if !doc_heading_dict.key? id_base
 
       # handle the case with several sections with the same name
@@ -190,7 +243,6 @@ module Giblish
     end
   end
 
-
   # Helper method to register the docid preprocessor extension with
   # the asciidoctor engine.
   def register_index_heading_extension
@@ -198,5 +250,6 @@ module Giblish
       preprocessor IndexHeadings
     end
   end
+
   module_function :register_index_heading_extension
 end

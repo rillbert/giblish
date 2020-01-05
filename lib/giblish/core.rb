@@ -46,7 +46,7 @@ module Giblish
       manage_doc_ids if @options[:resolveDocid]
 
       # register add-on for handling searchability
-      manage_searchability if @options[:make_searchable]
+      manage_searchability(@options) if @options[:make_searchable]
 
       # traverse the src file tree and convert all files deemed as
       # adoc files
@@ -206,12 +206,23 @@ module Giblish
       return !ir.match(fs).nil?
     end
 
-    def manage_searchability
+    def manage_searchability(opts)
       # register the extension
       Giblish.register_index_heading_extension
 
       # make sure we start from a clean slate
       IndexHeadings.clear_index
+
+      # propagate user-given id attributes to the indexing class
+      attr = opts[:attributes]
+      if !attr.nil?
+        if attr.has_key?("idprefix")
+          IndexHeadings.id_elements[:id_prefix] = attr["idprefix"]
+        end
+        if attr.has_key?("idseparator")
+          IndexHeadings.id_elements[:id_separator] = attr["idseparator"]
+        end
+      end
     end
 
     # top_dir

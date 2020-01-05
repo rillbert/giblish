@@ -334,10 +334,10 @@ module Giblish
   module_function :with_captured_stderr
 
   # transforms strings to valid asciidoctor id strings
-  def to_valid_id(input_str)
-    id_str = "_#{input_str.strip.downcase}"
-    id_str.gsub!(%r{[^a-z0-9]+},"_")
-    id_str.chomp('_')
+  def to_valid_id(input_str,id_prefix="_", id_separator="_")
+    id_str = input_str.strip.downcase.gsub(%r{[^a-z0-9]+}, id_separator)
+    id_str = "#{id_prefix}#{id_str}"
+    id_str.chomp(id_separator)
   end
   module_function :to_valid_id
 
