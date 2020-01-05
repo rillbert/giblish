@@ -239,8 +239,9 @@ module Giblish
           # css link is the relative path from the web root to the
           # css file. This is true for all documents
           wr_rel = @dst_css_dir.relative_path_from @web_root
-          Giblog.logger.info {"Relative web root: #{wr_rel}"}
           html_attrib["stylesdir"] = "/" << wr_rel.to_s
+          Giblog.logger.info {"Rendered docs expect a css at: #{html_attrib["stylesdir"]}"}
+          Giblog.logger.info {"The expected css is named: #{html_attrib["stylesheet"]}"}
         end
       end
       html_attrib

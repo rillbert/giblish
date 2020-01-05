@@ -18,6 +18,7 @@ module Giblish
       @src_str = ""
       @manage_docid = handle_docid
       @search_opts = {
+          reltop: "./",
           topdir: @paths.web_root_abs,
           branch_dir: ""
       }
@@ -324,6 +325,7 @@ module Giblish
       # the top dir is the same for all branches but the
       # branch_dir is specific for each branch/tag
       @search_opts = {
+          reltop: "../",
           topdir: @paths.web_root_abs,
           branch_dir: @paths.dst_root_abs.basename
       }

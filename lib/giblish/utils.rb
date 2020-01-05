@@ -362,11 +362,12 @@ module Giblish
   # returns raw html that displays a search box to let the user
   # acces the text search functionality.
   #
-  # css          - the name of the css file to use for the search box layout
-  # cgi_path     - the path to a cgi script that implements the server side
+  # css          - the name of the css file to use for the search result layout
+  # cgi_path     - the (uri) path to a cgi script that implements the server side
   #                functionality of searching the text
   # opts:
-  # :topdir => string # the absolute path to the root dir of the generated docs
+  # :topdir => string     # the absolute filesystem path to the root dir of the generated docs
+  # :reltop => string     # the relative path to the directory containing the 'web_assets' dir
   # :branch_dir => string # the name of the top directory for the rendered
   #                         git branch/tag or nil if no git repo is used.
   def generate_search_box_html(css, cgi_path, opts)
@@ -384,12 +385,14 @@ module Giblish
             <input id="ignorecase" type="checkbox" value="true" name="ignorecase" checked/>
             <label for="ignorecase">Ignore Case</label>
             &nbsp;&nbsp;
-            <input id="useregexp" type="checkbox" value="true" name="regexp"/>
+            <input id="useregexp" type="checkbox" value="true" name="useregexp"/>
             <label for="useregexp">Use Regexp</label>
+
+            <input type="hidden" name="reltop" value="#{opts[:reltop]}"</input>
+            <input type="hidden" name="css" value="#{css}"</input>
 
             <input type="hidden" name="topdir" value="#{opts[:topdir]}"</input>
             <input type="hidden" name="branchdir" value="#{opts[:branch_dir]}"</input>
-            <input type="hidden" name="css" value="#{css}"</input>
         </form>
       ++++
 

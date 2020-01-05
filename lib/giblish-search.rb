@@ -9,7 +9,7 @@ require "uri/generic"
 
 class GrepDocTree
   Line_info = Struct.new(:line, :line_no) {
-    def initialize(line,line_no)
+    def initialize(line, line_no)
       self.line = line
       self.line_no = Integer(line_no)
     end
@@ -22,8 +22,8 @@ class GrepDocTree
   # :useregexp
   def initialize(grep_opts)
     @grep_opts = "-nHr --include '*.adoc' "
-    @grep_opts += "-i " if grep_opts.has_key? :ignorecase
-    @grep_opts += "-F " unless grep_opts.has_key? :useregexp
+    @grep_opts += "-i " if grep_opts[:ignorecase]
+    @grep_opts += "-F " unless grep_opts[:useregexp]
 
     @search_root = grep_opts[:search_top]
     @input = grep_opts[:search_phrase]
@@ -36,7 +36,7 @@ class GrepDocTree
 
   def grep
     # This console code sequence will only show the matching word in bold ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=
-    grep_env="GREP_COLORS=\"ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=\""
+    grep_env = "GREP_COLORS=\"ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=\""
     @grep_opts += " --color=always"
 
 
@@ -44,8 +44,8 @@ class GrepDocTree
 
     begin
       @output.force_encoding(Encoding::UTF_8)
-      @output.gsub!(/\x1b\[01m\x1b\[K/,"##")
-      @output.gsub!(/\x1b\[m\x1b\[K/,"##")
+      @output.gsub!(/\x1b\[01m\x1b\[K/, "##")
+      @output.gsub!(/\x1b\[m\x1b\[K/, "##")
     rescue StandardError => e
       print e.message
       print e.backtrace.inspect
@@ -87,7 +87,7 @@ class GrepDocTree
     matches = []
 
     # for each file with at least one match
-    @match_index.each do |file_path,match_infos|
+    @match_index.each do |file_path, match_infos|
       # assume that max one file with the specified path
       # exists
       files = heading_db["file_infos"].select do |fi|
@@ -97,7 +97,7 @@ class GrepDocTree
 
       file_anchors = construct_user_info files.first, match_infos
       matches << file_anchors
-      end
+    end
     matches
   end
 
@@ -155,7 +155,7 @@ class GrepDocTree
   def formatted_output
     # assume we have an updated index
     adoc_str = ""
-    @match_index.each do |k,v|
+    @match_index.each do |k, v|
       adoc_str += "#{k}::\n"
       v.each { |line_info|
         adoc_str += "#{line_info.line_no} : #{line_info.line}\n"
@@ -177,10 +177,10 @@ class GrepDocTree
   def grep2hash(base_dir)
     @match_index = {}
     @output.split("\n").each do |line|
-      tokens = line.split(":",3)
+      tokens = line.split(":", 3)
 
       # remove all lines starting with :<attrib>:
-      tokens[2].gsub!(/^:[[:graph:]]+:.*$/,"")
+      tokens[2].gsub!(/^:[[:graph:]]+:.*$/, "")
       next if tokens[2].empty?
 
       # remove everything above the repo root from the filepath
@@ -215,14 +215,14 @@ class SearchDocTree
   private
 
   def get_uri_top
-    return @input_data[:referer][0,@input_data[:referer].rindex('/')]
+    return @input_data[:referer][0, @input_data[:referer].rindex('/')]
   end
 
   def wash_line line
     # remove any '::'
-    result = line.gsub(/::*/,"")
+    result = line.gsub(/::*/, "")
     # remove =,| at the start of a line
-    result.gsub!(/^[=|]+/,"")
+    result.gsub!(/^[=|]+/, "")
     result
   end
 
@@ -234,19 +234,19 @@ class SearchDocTree
   # line_1
   # line_2
   # ...
-  def format_search_adoc index,uri_top
+  def format_search_adoc index, uri_top
     str = ""
     # debug print referer...
     # str << "uri_top: #{uri_top}\n"
     index.each do |file_info|
       filename = Pathname.new(file_info["filepath"]).basename
       str << "== #{file_info["title"]}\n\n"
-      file_info["matches"].each do |section_id, info |
+      file_info["matches"].each do |section_id, info|
         str << "#{uri_top}/#{info["location"]}[#{info["section_title"]}]::\n\n"
         # str << "<<#{info["location"]},#{info["section_title"]}>>::\n\n"
         str << "[subs=\"quotes\"]\n"
         str << "----\n"
-        info["lines"].each do | line |
+        info["lines"].each do |line|
           str << "-- #{wash_line(line)}\n"
         end.join("\n\n")
         str << "----\n"
@@ -255,11 +255,59 @@ class SearchDocTree
     end
 
     <<~ADOC
-    = Search Result
+      = Search Result
 
-    #{str}
+      #{str}
     ADOC
   end
+end
+
+
+# return a relative path to the css file to use for styling
+#
+# @param referer   the URI returned via the CGI object
+# @param reltop    the relative path from the referer to the directory
+#                  where the web_assets dir is located
+# @param css_name  the file name of the css file
+# @return          a relative path that can be used to retrieve the css
+#                  style sheet
+def get_css_attributes(referer, reltop, css_name)
+
+  if css_name.nil? || css_name.empty?
+    # no css given, rely on asciidoctor's defaults.
+    return {}
+  end
+
+  # make a relative path eg the path /mydir/myreferer.html
+  # will be transformed into ./mydir
+  reldir = Pathname.new(".#{URI(referer).path}").parent
+
+  # add the 'well-known' css directories and make sure the path starts with a
+  # slash.
+  css_path = Pathname.new("/").join(reldir).join(reltop).join("web_assets/css").cleanpath()
+
+  {
+      "linkcss" => 1,
+      "stylesdir" => css_path.to_s,
+      "stylesheet" => css_name,
+      "copycss!" => 1,
+  }
+end
+
+# Return the file system path to where the text files used for search
+# are located.
+# @param doc_root_abs (Pathname) the absolute path to the root dir for
+#                                the generated documents
+# @param branch_dir (string)     the name of the directory where a specific
+#                                git branch is located under the root dir or
+#                                the empty string if this is not a git branch
+def get_abs_search_asset_path(doc_root_abs, branch_dir = "")
+  p = doc_root_abs.join("./search_assets")
+  unless branch_dir.empty?
+    # this is from a git branch
+    p = p.join(branch_dir)
+  end
+  p
 end
 
 def init_web_server web_root
@@ -271,12 +319,14 @@ def init_web_server web_root
   server = WEBrick::HTTPServer.new(
       :Port => 8000,
       :DocumentRoot => root,
-      :Logger => WEBrick::Log.new("webrick.log",WEBrick::Log::DEBUG)
+      :Logger => WEBrick::Log.new("webrick.log", WEBrick::Log::DEBUG)
   )
 
   puts "WEBrick instance now listening to localhost:8000"
 
-  trap 'INT' do server.shutdown end
+  trap 'INT' do
+    server.shutdown
+  end
 
   server.start
 end
@@ -313,11 +363,10 @@ def cgi_main cgi
       useregexp: cgi.has_key?("useregexp"),
       doc_root_abs: Pathname.new(cgi["topdir"]),
       branch_dir: cgi["branchdir"],
+      reltop: cgi["reltop"],
       referer: cgi.referer,
-      uri_path: URI(cgi.referer).path,
       client_css: cgi["css"],
-      search_top: nil,
-      styles_top: nil
+      search_top: nil
   }
 
 # assume that the file tree looks like this when rendering
@@ -359,27 +408,25 @@ def cgi_main cgi
 # |     |- dir_1
 # |     |   |- file2.html
 # |     |- ...
-  # search_assets and styles_top shall be absolute paths
-  #
-  input_data[:styles_top] = input_data[:doc_root_abs].join("./web_assets/css")
-   unless input_data[:styles_top].exist?
-     raise ScriptError, "Could not find styles_top dir!"
-   end
 
-  input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
-  unless input_data[:branch_dir].empty?
-    # this is from a git branch
-    input_data[:search_top] = input_data[:search_top].join(input_data[:branch_dir])
-  end
-  unless input_data[:search_assets].exist?
-    raise ScriptError, "Could not find search_assets dir!"
-  end
+  input_data[:search_top] = get_abs_search_asset_path(input_data[:doc_root_abs], input_data[:branch_dir])
+  unless input_data[:search_top].exist?
+    raise ScriptError, "Could not find search_assets dir (#{input_data[:search_top]}) !"
   end
 
-  # Set some reasonable default attributes and options
+# Set some reasonable default attributes and options
   adoc_attributes = {
       "data-uri" => 1,
   }
+# use the same stylesheet as the documents were rendered with.
+# if the script has received input in the client_css form field
+  adoc_attributes.merge!(
+      get_css_attributes(
+          input_data[:referer],
+          input_data[:reltop],
+          input_data[:client_css]
+      )
+  )
 
   converter_options = {
       backend: "html5",
@@ -390,48 +437,43 @@ def cgi_main cgi
       attributes: adoc_attributes
   }
 
-  # use the same stylesheet as the documents were rendered with.
-  # if the script has received input in the client_css form field
-  if !input_data[:client_css].nil? && !input_data[:client_css].empty?
-    css_path = if input_data[:styles_top].to_s[0] != '/'
-                 "/" + input_data[:styles_top].to_s
-               else
-                 input_data[:styles_top].to_s
-               end
-    adoc_attributes.merge!({
-                            "linkcss" => 1,
-                            "stylesdir" => css_path,
-                            "stylesheet" => input_data[:client_css],
-                            "copycss!" => 1
-                        })
-  end
 
-  # search the docs and render html
+# search the docs and render html
   sdt = SearchDocTree.new(input_data)
   docstr = sdt.search
 
 # used for debug purposes
 #   docstr = <<~EOF
 #
-#     #{input_data[:referer_rel_top]} is branch: #{input_data[:gitbranch]}
+#    == Data
+#
+#    |===
+#    |search phrase: |->#{input_data[:search_phrase]}<-
+#    |ignore case?: |#{input_data[:ignorecase]}
+#    |use regexp?: |#{input_data[:useregexp]}
+#    |css_rel_path: |#{input_data[:styles_top]}
+#    |search asset path: |#{input_data[:search_top]}
+#    |===
 #
 #     #{adoc_attributes.to_s}
+#
+#     #{input_data.to_s}
 #
 #
 #     #{sdt.search}
 #   EOF
 
-  # send the result back to the client
+# send the result back to the client
   print Asciidoctor.convert(docstr, converter_options)
 end
 
 
 # Usage:
 #   to start a local web server for development work
-# giblish-search.rb <web_root>
+# ruby giblish-search.cgi <web_root>
 #
 #   to run as a cgi script via a previously setup web server
-# giblish-search.rb
+# giblish-search.cgi
 #
 # (note that you might need to rename the script to eg
 # giblish-search.cgi or similar depending on your web server
@@ -450,6 +492,8 @@ if __FILE__ == $PROGRAM_NAME
       cgi_main cgi
     rescue Exception => e
       print e.message
+      print ""
+      print e.backtrace
       exit 1
     end
     exit 0
