@@ -372,14 +372,15 @@ module Giblish
   #                         git branch/tag or nil if no git repo is used.
   def generate_search_box_html(css, cgi_path, opts)
 
-    # button with magnifying glass icon (not working when deployed)
-    # <button id="search" type="submit"><i class="fa fa-search"></i></button>
+    # Replace the button with the below to use a text-only version of the btn
+    # <button id="search" type="submit">Search</button>
     <<~SEARCH_INFO
       ++++
-        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:380px">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:790px">
             Search all documents: 
             <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
-            <button id="search" type="submit">Search</button>
+            <button id="search" type="submit"><i class="fa fa-search"></i></button>
             <br>
 
             <input id="ignorecase" type="checkbox" value="true" name="ignorecase" checked/>
