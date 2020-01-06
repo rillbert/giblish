@@ -10,3 +10,4 @@
  ** TODO: implement this
  * handle the case where a 'index.adoc' file exists
  ** TODO: think about this
+ * maybe fix the hard-coded path to the giblish-search.cgi util

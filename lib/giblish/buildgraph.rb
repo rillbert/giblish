@@ -32,6 +32,11 @@ module Giblish
       @docid_cache = DocidCollector.docid_cache
       @docid_deps =  DocidCollector.docid_deps
       @dep_graph = build_dep_graph
+      @search_opts = {
+          reltop: "./",
+          topdir: @paths.web_root_abs,
+          branch_dir: ""
+      }
     end
 
     # get the asciidoc source for the document.
@@ -44,6 +49,15 @@ module Giblish
         #{generate_deps}
         #{generate_footer}
       DOC_STR
+    end
+
+    def cleanup
+      # remove cache dir and svg image created by asciidoctor-diagram
+      # when creating the document dependency graph
+      adoc_diag_cache = @paths.dst_root_abs.join(".asciidoctor")
+      FileUtils.remove_dir(adoc_diag_cache) if adoc_diag_cache.directory?
+      Giblog.logger.info {"Removing cached files at: #{@paths.dst_root_abs.join("docdeps.svg").to_s}"}
+      @paths.dst_root_abs.join("docdeps.svg").delete
     end
 
     private
@@ -101,11 +115,10 @@ module Giblish
     end
 
     def add_search_box
-      # TODO: Fix the hard-coded path
       Giblish::generate_search_box_html(
           @converter_options[:attributes]["stylesheet"],
           "/cgi-bin/giblish-search.cgi",
-          @paths
+          @search_opts
       )
     end
 
@@ -194,4 +207,19 @@ module Giblish
       "_generated_id_#{@next_id.to_s.rjust(4, '0')}"
     end
   end
+
+  class GitGraphBuilderGraphviz < GraphBuilderGraphviz
+    def initialize(processed_docs, paths, options = {}, git_repo)
+      super(processed_docs, paths, options)
+      @search_opts = {
+          reltop: "../",
+          topdir: @paths.web_root_abs,
+          branch_dir: @paths.dst_root_abs.basename
+      }
+
+    end
+
+  end
 end
+
+

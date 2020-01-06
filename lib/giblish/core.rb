@@ -80,23 +80,24 @@ module Giblish
     protected
 
     def build_graph_page
-      if Giblish::GraphBuilderGraphviz.supported
-        # gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, {extension: @converter.converter_options[:fileext]}
-        gb = Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @converter.converter_options
+      begin
+        adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
+        gb = graph_builder_factory
         errors = @converter.convert_str(
             gb.source(
                 @options[:make_searchable]
             ),
             @paths.dst_root_abs,
-            "graph"
+            "graph",
+            logger: adoc_logger
         )
-        remove_diagram_temps unless errors
+        gb.cleanup
         !errors
-      else
-        Giblog.logger.warn { "Lacking access to needed tools for generating a visual dependency graph." }
+      rescue Exception => e
+        Giblog.logger.warn { e.message }
         Giblog.logger.warn { "The dependency graph will not be generated !!" }
-        false
       end
+      false
     end
 
     def build_index_page(dep_graph_exist)
@@ -122,6 +123,10 @@ module Giblish
       raise "Internal logic error!" if @options[:suppressBuildRef]
       SimpleIndexBuilder.new(@processed_docs, @converter, @paths,
                              @options[:resolveDocid])
+    end
+
+    def graph_builder_factory
+      Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @converter.converter_options
     end
 
     # get the correct converter type
@@ -167,15 +172,6 @@ module Giblish
     def create_search_asset_dir
       Dir.exist?(@search_assets_path) || FileUtils.mkdir_p(@search_assets_path.to_s)
       @search_assets_path
-    end
-
-    # remove cache dir and svg image created by asciidoctor-diagram
-    # when creating the document dependency graph
-    def remove_diagram_temps
-      adoc_diag_cache = @paths.dst_root_abs.join(".asciidoctor")
-      FileUtils.remove_dir(adoc_diag_cache) if adoc_diag_cache.directory?
-      Giblog.logger.info {"Removing cached files at: #{@paths.dst_root_abs.join("docdeps.svg").to_s}"}
-      @paths.dst_root_abs.join("docdeps.svg").delete
     end
 
     # convert a single adoc doc to whatever the user wants
@@ -328,6 +324,10 @@ module Giblish
     def index_factory
       GitRepoIndexBuilder.new(@processed_docs, @converter, @paths,
                               @options[:resolveDocid], @options[:gitRepoRoot])
+    end
+
+    def graph_builder_factory
+      Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @converter.converter_options,@git_repo
     end
 
     def add_doc(adoc, adoc_stderr)
