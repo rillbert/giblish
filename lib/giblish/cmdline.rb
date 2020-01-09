@@ -30,8 +30,11 @@ class CmdLineParser
   -s --style <name>          The style information used when converting the documents
                              using the -r option for specifying resource directories.
                              For html this is a name of a css file, for pdf, this is
-                             the name of an yml file. If no style is given 'giblish'
-                             is used as default.
+                             the name of an yml file. You can specify only the 
+                             basename of the file and giblish will use the suffix
+                             associated with the output format (i.e specify 'mystyle'
+                             and the mystyle.css and mystyle.yml will be used for html
+                             and pdf generation respectively)
   -i --include <regexp>      include only files with a path that matches the supplied
                              regexp (defaults to '.*\.(?i)adoc$' meaning it matches all
                              files ending in .adoc case-insensitive). The matching is made
