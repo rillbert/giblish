@@ -104,12 +104,13 @@ module Giblish
       # build a reference index
       adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
       ib = index_factory
+      index_base_name = construct_file_name(@paths.dst_root_abs)
       @converter.convert_str(
           ib.source(
               dep_graph_exist,@options[:make_searchable]
           ),
           @paths.dst_root_abs,
-          "index",
+          index_base_name,
           logger: adoc_logger
       )
 
@@ -168,6 +169,17 @@ module Giblish
     end
 
     private
+
+    def construct_file_name(dst_dir)
+      count = 0
+      basename = "index"
+      puts dst_dir.join(basename + ".html")
+      while dst_dir.join(basename + ".html").exist?
+        count += 1
+        basename = "#{basename}_#{count}"
+      end
+      return basename
+    end
 
     def create_search_asset_dir
       Dir.exist?(@search_assets_path) || FileUtils.mkdir_p(@search_assets_path.to_s)
