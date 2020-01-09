@@ -173,7 +173,6 @@ module Giblish
     def construct_file_name(dst_dir)
       count = 0
       basename = "index"
-      puts dst_dir.join(basename + ".html")
       while dst_dir.join(basename + ".html").exist?
         count += 1
         basename = "#{basename}_#{count}"
