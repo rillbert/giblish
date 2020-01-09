@@ -12,7 +12,10 @@ Gem::Specification.new do |spec|
   spec.email         = ["anders.rillbert@kutso.se"]
 
   spec.summary       = "A tool for publishing asciidoc docs stored in git repos"
-  spec.description   = "A tool for publishing asciidoc docs stored in git repos"
+  spec.description   = <<~EOF
+                           giblish generates indexed and searchable documents from a tree of
+                           asciidoc files.
+                       EOF
   spec.homepage      = "https://github.com/rillbert/giblish"
   spec.license       = "MIT"
   spec.required_ruby_version = ">= 2.3"
@@ -38,8 +41,8 @@ Gem::Specification.new do |spec|
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.10"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 1.5"]
-  spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.beta.6"]
+  spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.rc.1"]
   spec.add_runtime_dependency "git", "~> 1.3"
   spec.add_runtime_dependency "rouge", "~> 3.3"
-  spec.add_runtime_dependency "prawn-svg", "~> 0.29.1"
+  spec.add_runtime_dependency "prawn-svg", "~> 0.30.0"
 end
