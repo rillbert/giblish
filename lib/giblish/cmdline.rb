@@ -20,6 +20,7 @@ class CmdLineParser
                              *html* is used if -f is not supplied
   -n --no-build-ref          suppress generation of a reference document at the destination
                              tree root.
+  --index-basename           set the name of the generated index file (default 'index').  
   -r --resource-dir <dir>    specify a directory where fonts, themes, css and other
                              central stuff needed for document generation are located.
                              The resources are expected to be located in a subfolder
@@ -159,6 +160,7 @@ ENDHELP
         excludeRegexp: nil,
         flatten: false,
         suppressBuildRef: false,
+        indexBaseName: "index",
         localRepoOnly: false,
         resolveDocid: false,
         make_searchable: false,
@@ -180,6 +182,7 @@ ENDHELP
         when "-f", "--format   "    then next_arg = :format
         when "-r", "--resource-dir" then next_arg = :resourceDir
         when "-n", "--no-build-ref" then @args[:suppressBuildRef] = true
+        when "--index-basename"     then next_arg = :indexBaseName
         when "-i", "--include"      then next_arg = :includeRegexp
         when "-j", "--exclude"      then next_arg = :excludeRegexp
         when "-g", "--git-branches" then next_arg = :gitBranchRegexp

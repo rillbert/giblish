@@ -7,7 +7,6 @@
  * take the idprefix and idseparator into account when indexing sections for text search
  * Add the font awesome css as link to search box and use the magnifying glass icon
  * update README file
- * handle the case where a 'index.adoc' file exists by renaming the generated index page to
-   index_N.html where N is the first number that makes a unique filename in the destination
-   directory.
+ * handle the case where a 'index.adoc' file exists by making the basename configurable using the
+   '--index-basename' flag.
  * update the dependencies to the latest asciidoctor-pdf release
