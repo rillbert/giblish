@@ -42,7 +42,7 @@ class IndexHeadingTest < Minitest::Test
   end
 
   def test_create_search_index
-    TmpDocDir.open do |tmp_doc_dir|
+    TmpDocDir.open() do |tmp_doc_dir|
       root_dir = tmp_doc_dir.dir
       # arrange input
       out_dir_path = Pathname.new(root_dir).join("output")

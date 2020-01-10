@@ -80,13 +80,42 @@ module Giblish
     end
   end
 
+  class DeploymentPaths
+
+    attr_reader :web_path
+
+    def initialize(web_path, search_asset_path)
+      @search_assets_path = if search_asset_path.nil?
+                              nil
+                            else
+                              Pathname.new("/#{search_asset_path.to_s}").cleanpath
+                            end
+      @web_path = if web_path.nil?
+                    nil
+                  else
+                    Pathname.new("/#{web_path.to_s}/web_assets").cleanpath
+                  end
+    end
+
+    def search_assets_path(branch_dir=nil)
+      if branch_dir.nil?
+        @search_assets_path
+      else
+        @search_assets_path.join(branch_dir)
+      end
+    end
+
+    def search_assets_path=(path)
+      @search_assets_path = path
+    end
+  end
+
   # Helper class to ease construction of different paths for input and output
   # files and directories
   class PathManager
     attr_reader :src_root_abs
     attr_reader :dst_root_abs
     attr_reader :resource_dir_abs
-    attr_reader :web_root_abs
 
     # Public:
     #
@@ -96,20 +125,13 @@ module Giblish
     #            tree
     # resource_dir - a string or pathname with the directory containing
     #                resources
-    def initialize(src_root, dst_root, resource_dir = nil, web_root = nil)
+    def initialize(src_root, dst_root, resource_dir = nil)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
 
       # Make sure that the resource dir exists if user gives a path to it
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
-
-      # Set web root if given by user
-      @web_root_abs = nil
-      if web_root
-        web_root = "/" + web_root unless web_root[0] == '/'
-        @web_root_abs = web_root ? Pathname.new(web_root) : nil
-      end
     end
 
     def dst_root_abs=(dst_root)
@@ -172,18 +194,6 @@ module Giblish
       dst_abs = dst_abs_from_src_abs(src_filepath)
       dir = self.class.to_pathname(dir_path)
       dir.relative_path_from(dst_abs)
-    end
-
-    def reldir_from_web_root(path)
-      p = self.class.closest_dir path
-      return p if @web_root_abs.nil?
-      p.relative_path_from(@web_root_abs)
-    end
-
-    def reldir_to_web_root(path)
-      p = self.class.closest_dir path
-      return p if @web_root_abs.nil?
-      @web_root_abs.relative_path_from(p)
     end
 
     def adoc_output_file(infile_path, extension)
@@ -366,10 +376,12 @@ module Giblish
   # cgi_path     - the (uri) path to a cgi script that implements the server side
   #                functionality of searching the text
   # opts:
-  # :topdir => string     # the absolute filesystem path to the root dir of the generated docs
-  # :reltop => string     # the relative path to the directory containing the 'web_assets' dir
-  # :branch_dir => string # the name of the top directory for the rendered
-  #                         git branch/tag or nil if no git repo is used.
+  # :web_assets_top => string   # the path to the 'web_assets' dir as seen when serving
+  #                               the web server (eg www.mysite.com/blah/doc_root ->
+  #                               web_assets_top shall be '/blah/doc_root')
+  # :search_assets_top => string   # the path to where the 'heading.json' file is located (
+  #                                  as seen from the local file system on the machine that
+  #                                  runs the search script)
   def generate_search_box_html(css, cgi_path, opts)
 
     # Replace the button with the below to use a text-only version of the btn
@@ -389,11 +401,9 @@ module Giblish
             <input id="useregexp" type="checkbox" value="true" name="useregexp"/>
             <label for="useregexp">Use Regexp</label>
 
-            <input type="hidden" name="reltop" value="#{opts[:reltop]}"</input>
+            <input type="hidden" name="searchassetstop" value="#{opts[:search_assets_top]}"</input>
+            <input type="hidden" name="webassetstop" value="#{opts[:web_assets_top]}"</input>
             <input type="hidden" name="css" value="#{css}"</input>
-
-            <input type="hidden" name="topdir" value="#{opts[:topdir]}"</input>
-            <input type="hidden" name="branchdir" value="#{opts[:branch_dir]}"</input>
         </form>
       ++++
 

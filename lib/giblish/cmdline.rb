@@ -44,13 +44,14 @@ class CmdLineParser
                              regexp (no files are excluded by default). The matching is made
                              on the full path (i.e. the regex '^.*my.*' matches the path 
                              /my/file.adoc).
-  -w --web-root <path>       Specifies the top dir (DirectoryRoot) of a file system
-                             tree published by a web server. This switch is only used
-                             when generating html. The typical use case is that giblish
-                             is used to generate html docs which are linked to a css.
-                             The css link needs to be relative to the top of the web
-                             tree (DirectoryRoot on Apache) and not the full absolute
-                             path to the css directory.
+  -w --web-path <path>       Specifies the URL path to where the generated html documents
+                             will be deployed (only needed when serving the html docs via
+                             a web server).
+                             E.g.
+                             If the docs are deployed to 'www.example.com/site_1/blah', 
+                             this flag shall be set to '/site_1/blah'. This switch is only
+                             used when generating html. giblish use this to link the deployed
+                             html docs with the correct stylesheet. 
   -g --git-branches <regExp> if the source_dir_top is located within a git repo,
                              generate docs for all _remote branches on origin_ that matches
                              the given regular expression. Each git branch will
@@ -100,6 +101,15 @@ class CmdLineParser
                              An implementation of the giblish-search cgi-script is found
                              within the lib folder of this gem, you can copy that to your
                              cgi-bin dir in your webserver and rename it from .rb to .cgi
+  -mp, --search-assets-deploy <path> the absolute path to the 'search_assets' folder where the search
+                             script can find the data needed for implementing the text search
+                             (default is <dst_dir_top>).
+                             Set this to the file system path where the generated html
+                             docs will be deployed (if different from dst_dir_top):
+                             E.g.
+                             If the generated html docs will be deployed to the folder 
+                             '/var/www/mysite/blah/mydocs,'
+                             this is what you shall set the path to. 
   --log-level                set the log level explicitly. Must be one of
                              debug, info (default), warn, error or fatal.
 ENDHELP
@@ -166,8 +176,9 @@ ENDHELP
         indexBaseName: "index",
         localRepoOnly: false,
         resolveDocid: false,
-        make_searchable: false,
-        webRoot: false
+        makeSearchable: false,
+        searchAssetsDeploy: nil,
+        webPath: nil
     }
 
     # set default log level
@@ -193,9 +204,10 @@ ENDHELP
         when "-c", "--local-only"   then @args[:localRepoOnly] = true
         when "-a", "--attribute"    then next_arg = :attributes
         when "-d", "--resolve-docid" then @args[:resolveDocid] = true
-        when "-m", "--make-searchable" then @args[:make_searchable] = true
+        when "-m", "--make-searchable" then @args[:makeSearchable] = true
+        when "-mp", "--search-assets-deploy" then next_arg = :searchAssetsDeploy
         when "-s", "--style"        then next_arg = :userStyle
-        when "-w", "--web-root"     then next_arg = :webRoot
+        when "-w", "--web-path"     then next_arg = :webPath
         when "--log-level"          then next_arg = :logLevel
         else
           if next_arg
@@ -230,9 +242,12 @@ ENDHELP
     if !@args[:resourceDir] && @args[:userStyle]
       puts "Error: The given style would not be used since no resource dir "\
            "was specified (-s specified without -r)"
-    elsif @args[:make_searchable] && @args[:format] != "html"
+    elsif @args[:makeSearchable] && @args[:format] != "html"
       puts "Error: The --make-searchable option is only supported for "\
-           "html rendering"
+           "html rendering."
+    elsif @args[:searchAssetsDeploy] && !@args[:makeSearchable]
+      puts "Error: The --search-assets-deploy (-mp) flag is only supported in "\
+           "combination with the --make-searchable (-m) flag."
     else
       return
     end

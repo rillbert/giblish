@@ -28,12 +28,26 @@ module Giblish
       @paths = Giblish::PathManager.new(
           @options[:srcDirRoot],
           @options[:dstDirRoot],
-          @options[:resourceDir],
-          @options[:webRoot]
+          @options[:resourceDir]
+      )
+
+      if @options[:searchAssetsDeploy].nil?
+        # set the search asset path to <dst_root_abs>/search_assets
+        search_asset_path = @paths.dst_root_abs.join("search_assets")
+        # make sure that it exists
+        search_asset_path.mkpath
+        search_asset_path = search_asset_path.realpath
+      else
+        # use the path given by the user
+        search_asset_path = @options[:searchAssetsDeploy]
+      end
+
+      @deploy_info = Giblish::DeploymentPaths.new(
+          @options[:webPath],
+          search_asset_path
       )
       @processed_docs = []
       @converter = converter_factory
-      @search_assets_path = @paths.dst_root_abs.realpath.join("search_assets")
     end
 
 
@@ -46,7 +60,7 @@ module Giblish
       manage_doc_ids if @options[:resolveDocid]
 
       # register add-on for handling searchability
-      manage_searchability(@options) if @options[:make_searchable]
+      manage_searchability(@options) if @options[:makeSearchable]
 
       # traverse the src file tree and convert all files deemed as
       # adoc files
@@ -64,7 +78,7 @@ module Giblish
       end if @paths.src_root_abs.directory?
 
       # create necessary search assets if needed
-      create_search_assets if @options[:make_searchable]
+      create_search_assets if @options[:makeSearchable]
 
       # build index and other fancy stuff if not suppressed
       unless @options[:suppressBuildRef]
@@ -85,7 +99,7 @@ module Giblish
         gb = graph_builder_factory
         errors = @converter.convert_str(
             gb.source(
-                @options[:make_searchable]
+                @options[:makeSearchable]
             ),
             @paths.dst_root_abs,
             "graph",
@@ -106,7 +120,7 @@ module Giblish
       ib = index_factory
       @converter.convert_str(
           ib.source(
-              dep_graph_exist,@options[:make_searchable]
+              dep_graph_exist,@options[:makeSearchable]
           ),
           @paths.dst_root_abs,
           @options[:indexBaseName],
@@ -121,21 +135,22 @@ module Giblish
     # user options
     def index_factory
       raise "Internal logic error!" if @options[:suppressBuildRef]
-      SimpleIndexBuilder.new(@processed_docs, @converter, @paths,
+      SimpleIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
                              @options[:resolveDocid])
     end
 
     def graph_builder_factory
-      Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @converter.converter_options
+      Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @deploy_info,
+                                        @converter.converter_options
     end
 
     # get the correct converter type
     def converter_factory
       case @options[:format]
         when "html" then
-          HtmlConverter.new @paths, @options
+          HtmlConverter.new @paths, @deploy_info, @options
         when "pdf" then
-          PdfConverter.new @paths, @options
+          PdfConverter.new @paths, @deploy_info, @options
         else
           raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
       end
@@ -168,11 +183,6 @@ module Giblish
     end
 
     private
-
-    def create_search_asset_dir
-      Dir.exist?(@search_assets_path) || FileUtils.mkdir_p(@search_assets_path.to_s)
-      @search_assets_path
-    end
 
     # convert a single adoc doc to whatever the user wants
     def to_asciidoc(filepath)
@@ -241,7 +251,8 @@ module Giblish
     # | ...
     def create_search_assets
       # get the proper dir for the search assets
-      assets_dir = create_search_asset_dir
+      assets_dir = @deploy_info.search_assets_path
+      Dir.exist?(assets_dir) || FileUtils.mkdir_p(assets_dir.to_s)
 
       # store the JSON file
       IndexHeadings.serialize assets_dir, @paths.src_root_abs
@@ -286,6 +297,7 @@ module Giblish
       # cache the top of the tree since we need to redefine the
       # paths per branch/tag later on.
       @master_paths = @paths.dup
+      @master_deployment_info = @deploy_info.dup
       @git_repo_root = options[:gitRepoRoot]
       @git_repo = init_git_repo @git_repo_root, options[:localRepoOnly]
       @user_branches = select_user_branches(options[:gitBranchRegexp])
@@ -322,12 +334,13 @@ module Giblish
     protected
 
     def index_factory
-      GitRepoIndexBuilder.new(@processed_docs, @converter, @paths,
+      GitRepoIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
                               @options[:resolveDocid], @options[:gitRepoRoot])
     end
 
     def graph_builder_factory
-      Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @converter.converter_options,@git_repo
+      Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @deploy_info,
+                                           @converter.converter_options,@git_repo
     end
 
     def add_doc(adoc, adoc_stderr)
@@ -416,7 +429,8 @@ module Giblish
       # Update needed base class members before converting a new checkout
       @processed_docs = []
       @paths.dst_root_abs = @master_paths.dst_root_abs.realpath.join(dir_name)
-      @search_assets_path = @master_paths.dst_root_abs.realpath.join("search_assets").join(dir_name)
+      @deploy_info.search_assets_path = @master_deployment_info.search_assets_path.nil? ?
+              nil : @master_deployment_info.search_assets_path.join(dir_name)
 
       # Parse and convert docs using given args
       Giblog.logger.info {"Convert docs into dir #{@paths.dst_root_abs}"}

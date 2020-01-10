@@ -3,7 +3,11 @@
 == v0.7.0
 
  * *Breaking change* include the entire path in the -i and -j options
- * *Breaking change* remove the hard-coded arguments to the search box html so that one can generate the docs to a destination that is not the same as the final one.
+ * *Breaking change* change the meaning of the -w flag (and rename the long form to --web-path)
+   and add the -mp flag.
+   This was done as a means to remove the hard-coded arguments to the search box html so that one
+   can generate html docs to a destination that is not the same as the one where they are deployed
+   on a web server.
  * take the idprefix and idseparator into account when indexing sections for text search
  * Add the font awesome css as link to search box and use the magnifying glass icon
  * update README file

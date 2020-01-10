@@ -14,7 +14,7 @@ module Giblish
 
     # Supported options:
     # :extension - file extension for URL links (default is .html)
-    def initialize(processed_docs, paths, options = {})
+    def initialize(processed_docs, paths, deployment_info, options = {})
 
       # this class relies on graphwiz (dot), make sure we can access that
       raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported
@@ -26,6 +26,7 @@ module Giblish
       @next_id = 0
       @processed_docs = processed_docs
       @paths = paths
+      @deployment_info = deployment_info
       @converter_options = options.dup
       # @options = options.dup
       @extension = @converter_options.key?(:extension) ? options[:extension] : "html"
@@ -33,9 +34,8 @@ module Giblish
       @docid_deps =  DocidCollector.docid_deps
       @dep_graph = build_dep_graph
       @search_opts = {
-          reltop: "./",
-          topdir: @paths.web_root_abs,
-          branch_dir: ""
+          web_assets_top: @deployment_info.web_path,
+          search_assets_top: @deployment_info.search_assets_path,
       }
     end
 
@@ -209,16 +209,9 @@ module Giblish
   end
 
   class GitGraphBuilderGraphviz < GraphBuilderGraphviz
-    def initialize(processed_docs, paths, options = {}, git_repo)
-      super(processed_docs, paths, options)
-      @search_opts = {
-          reltop: "../",
-          topdir: @paths.web_root_abs,
-          branch_dir: @paths.dst_root_abs.basename
-      }
-
+    def initialize(processed_docs, paths, deployment_info, options = {}, git_repo)
+      super(processed_docs, paths, deployment_info, options)
     end
-
   end
 end
 

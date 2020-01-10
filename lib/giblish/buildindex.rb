@@ -10,17 +10,17 @@ module Giblish
   # Base class with common functionality for all index builders
   class BasicIndexBuilder
     # set up the basic index building info
-    def initialize(processed_docs, converter, path_manager, handle_docid = false)
+    def initialize(processed_docs, converter, path_manager, deployment_info, handle_docid = false)
       @paths = path_manager
+      @deployment_info = deployment_info
       @nof_missing_titles = 0
       @processed_docs = processed_docs
       @converter = converter
       @src_str = ""
       @manage_docid = handle_docid
       @search_opts = {
-          reltop: "./",
-          topdir: @paths.web_root_abs,
-          branch_dir: ""
+          web_assets_top: @deployment_info.web_path,
+          search_assets_top: @deployment_info.search_assets_path,
       }
     end
 
@@ -299,16 +299,16 @@ module Giblish
 
   # A simple index generator that shows a table with the generated documents
   class SimpleIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, converter, path_manager, manage_docid = false)
-      super processed_docs, converter, path_manager, manage_docid
+    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid = false)
+      super processed_docs, converter, path_manager, deployment_info, manage_docid
     end
   end
 
   # Builds an index of the generated documents and includes some git metadata
   # from the repository
   class GitRepoIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, converter, path_manager, manage_docid, git_repo_root)
-      super processed_docs, converter, path_manager, manage_docid
+    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid, git_repo_root)
+      super processed_docs, converter, path_manager, deployment_info, manage_docid
 
       # no repo root given...
       return unless git_repo_root
@@ -321,15 +321,6 @@ module Giblish
       rescue Exception => e
         Giblog.logger.error {"No git repo! exception: #{e.message}"}
       end
-
-      # the top dir is the same for all branches but the
-      # branch_dir is specific for each branch/tag
-      @search_opts = {
-          reltop: "../",
-          topdir: @paths.web_root_abs,
-          branch_dir: @paths.dst_root_abs.basename
-      }
-
     end
 
     protected

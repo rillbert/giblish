@@ -25,7 +25,7 @@ class GrepDocTree
     @grep_opts += "-i " if grep_opts[:ignorecase]
     @grep_opts += "-F " unless grep_opts[:useregexp]
 
-    @search_root = grep_opts[:search_top]
+    @search_root = grep_opts[:searchassetstop]
     @input = grep_opts[:search_phrase]
 
     @output = ""
@@ -198,8 +198,7 @@ class SearchDocTree
 
   def search
     # read the heading_db from file
-    jsonpath = @input_data[:search_top].join("heading_index.json")
-    src_index = {}
+    jsonpath = @input_data[:searchassetstop].join("heading_index.json")
     json = File.read(jsonpath.to_s)
     src_index = JSON.parse(json)
 
@@ -262,54 +261,6 @@ class SearchDocTree
   end
 end
 
-
-# return a relative path to the css file to use for styling
-#
-# @param referer   the URI returned via the CGI object
-# @param reltop    the relative path from the referer to the directory
-#                  where the web_assets dir is located
-# @param css_name  the file name of the css file
-# @return          a relative path that can be used to retrieve the css
-#                  style sheet
-def get_css_attributes(referer, reltop, css_name)
-
-  if css_name.nil? || css_name.empty?
-    # no css given, rely on asciidoctor's defaults.
-    return {}
-  end
-
-  # make a relative path eg the path /mydir/myreferer.html
-  # will be transformed into ./mydir
-  reldir = Pathname.new(".#{URI(referer).path}").parent
-
-  # add the 'well-known' css directories and make sure the path starts with a
-  # slash.
-  css_path = Pathname.new("/").join(reldir).join(reltop).join("web_assets/css").cleanpath()
-
-  {
-      "linkcss" => 1,
-      "stylesdir" => css_path.to_s,
-      "stylesheet" => css_name,
-      "copycss!" => 1,
-  }
-end
-
-# Return the file system path to where the text files used for search
-# are located.
-# @param doc_root_abs (Pathname) the absolute path to the root dir for
-#                                the generated documents
-# @param branch_dir (string)     the name of the directory where a specific
-#                                git branch is located under the root dir or
-#                                the empty string if this is not a git branch
-def get_abs_search_asset_path(doc_root_abs, branch_dir = "")
-  p = doc_root_abs.join("./search_assets")
-  unless branch_dir.empty?
-    # this is from a git branch
-    p = p.join(branch_dir)
-  end
-  p
-end
-
 def init_web_server web_root
   require 'webrick'
 
@@ -355,19 +306,6 @@ def hello_world
   print "<br>"
 end
 
-def cgi_main cgi
-  # retrieve the form data supplied by user
-  input_data = {
-      search_phrase: cgi["searchphrase"],
-      ignorecase: cgi.has_key?("ignorecase"),
-      useregexp: cgi.has_key?("useregexp"),
-      doc_root_abs: Pathname.new(cgi["topdir"]),
-      branch_dir: cgi["branchdir"],
-      reltop: cgi["reltop"],
-      referer: cgi.referer,
-      client_css: cgi["css"],
-      search_top: nil
-  }
 
 # assume that the file tree looks like this when rendering
 # a git branch:
@@ -409,24 +347,34 @@ def cgi_main cgi
 # |     |   |- file2.html
 # |     |- ...
 
-  input_data[:search_top] = get_abs_search_asset_path(input_data[:doc_root_abs], input_data[:branch_dir])
-  unless input_data[:search_top].exist?
-    raise ScriptError, "Could not find search_assets dir (#{input_data[:search_top]}) !"
+def cgi_main(cgi, debug_mode = false)
+  # retrieve the form data supplied by user
+  input_data = {
+      search_phrase: cgi["searchphrase"],
+      ignorecase: cgi.has_key?("ignorecase"),
+      useregexp: cgi.has_key?("useregexp"),
+      searchassetstop: Pathname.new(
+          cgi.has_key?("searchassetstop") ? cgi["searchassetstop"] : ""),
+      webassetstop: Pathname.new(
+          cgi.has_key?("webassetstop") ? cgi["webassetstop"] : ""),
+      client_css:
+          cgi.has_key?("css") ? cgi["css"] : "",
+      referer: cgi.referer
+  }
+
+  if input_data[:searchassetstop].nil? || !Dir.exist?(input_data[:searchassetstop])
+    raise ScriptError, "Could not find search_assets dir (#{input_data[:searchassetstop]}) !"
   end
 
-# Set some reasonable default attributes and options
+# Set attributes so that the generated result page uses the same
+# css as the other docs
   adoc_attributes = {
       "data-uri" => 1,
+      "linkcss" => 1,
+      "stylesdir" => "#{input_data[:webassetstop]}/css",
+      "stylesheet" => input_data[:client_css],
+      "copycss!" => 1
   }
-# use the same stylesheet as the documents were rendered with.
-# if the script has received input in the client_css form field
-  adoc_attributes.merge!(
-      get_css_attributes(
-          input_data[:referer],
-          input_data[:reltop],
-          input_data[:client_css]
-      )
-  )
 
   converter_options = {
       backend: "html5",
@@ -442,26 +390,21 @@ def cgi_main cgi
   sdt = SearchDocTree.new(input_data)
   docstr = sdt.search
 
-# used for debug purposes
-#   docstr = <<~EOF
-#
-#    == Data
-#
-#    |===
-#    |search phrase: |->#{input_data[:search_phrase]}<-
-#    |ignore case?: |#{input_data[:ignorecase]}
-#    |use regexp?: |#{input_data[:useregexp]}
-#    |css_rel_path: |#{input_data[:styles_top]}
-#    |search asset path: |#{input_data[:search_top]}
-#    |===
-#
-#     #{adoc_attributes.to_s}
-#
-#     #{input_data.to_s}
-#
-#
-#     #{sdt.search}
-#   EOF
+  if debug_mode
+    # print some useful data for debugging
+    docstr = <<~EOF
+
+      == Input data
+
+      #{input_data.to_s}
+
+      == Adoc attributes
+
+       #{adoc_attributes.to_s}
+
+       #{docstr}
+    EOF
+  end
 
 # send the result back to the client
   print Asciidoctor.convert(docstr, converter_options)
@@ -489,7 +432,7 @@ if __FILE__ == $PROGRAM_NAME
     cgi = CGI.new
     print cgi.header
     begin
-      cgi_main cgi
+      cgi_main(cgi,true)
     rescue Exception => e
       print e.message
       print ""
