@@ -356,9 +356,9 @@ def cgi_main(cgi, debug_mode = false)
       searchassetstop: Pathname.new(
           cgi.has_key?("searchassetstop") ? cgi["searchassetstop"] : ""),
       webassetstop: Pathname.new(
-          cgi.has_key?("webassetstop") ? cgi["webassetstop"] : ""),
+          cgi.has_key?("webassetstop") ? cgi["webassetstop"] : nil),
       client_css:
-          cgi.has_key?("css") ? cgi["css"] : "",
+          cgi.has_key?("css") ? cgi["css"] : nil,
       referer: cgi.referer
   }
 
@@ -366,15 +366,22 @@ def cgi_main(cgi, debug_mode = false)
     raise ScriptError, "Could not find search_assets dir (#{input_data[:searchassetstop]}) !"
   end
 
-# Set attributes so that the generated result page uses the same
-# css as the other docs
   adoc_attributes = {
       "data-uri" => 1,
-      "linkcss" => 1,
-      "stylesdir" => "#{input_data[:webassetstop]}/css",
-      "stylesheet" => input_data[:client_css],
-      "copycss!" => 1
   }
+
+# Set attributes so that the generated result page uses the same
+# css as the other docs
+  if !input_data[:client_css].nil? && !input_data[:webassetstop].nil?
+    adoc_attributes.merge!(
+        {
+            "linkcss" => 1,
+            "stylesdir" => "#{input_data[:webassetstop]}/css",
+            "stylesheet" => input_data[:client_css],
+            "copycss!" => 1
+        }
+    )
+  end
 
   converter_options = {
       backend: "html5",
@@ -432,7 +439,7 @@ if __FILE__ == $PROGRAM_NAME
     cgi = CGI.new
     print cgi.header
     begin
-      cgi_main(cgi,true)
+      cgi_main(cgi, true)
     rescue Exception => e
       print e.message
       print ""

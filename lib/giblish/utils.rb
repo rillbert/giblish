@@ -133,10 +133,23 @@ module Giblish
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
 
-      @search_assets_abs = get_search_dir(create_search_asset_dir)
+      self.search_assets_abs = create_search_asset_dir ?
+                                   @dst_root_abs.join("search_assets") : nil
 
       # Make sure that the resource dir exists if user gives a path to it
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
+    end
+
+    def search_assets_abs=(path)
+      if path.nil?
+        @search_assets_abs = nil
+        return
+      end
+      # Make sure that the destination root exists and expand it to an
+      # absolute path
+      dir = Pathname.new(path)
+      dir.mkpath
+      @search_assets_abs = dir.realpath
     end
 
     def dst_root_abs=(dst_root)
@@ -290,18 +303,6 @@ module Giblish
         return p if git_dir.directory?
       end
     end
-
-    private
-    def get_search_dir(create_dir)
-      if create_dir
-        dir = Pathname.new(self.dst_root_abs.join("search_assets"))
-        dir.mkpath
-        dir
-      else
-        nil
-      end
-    end
-
   end # end of PathManager
 
   # Helper method that provides the user with a way of processing only the
@@ -420,7 +421,7 @@ module Giblish
 
             <input type="hidden" name="searchassetstop" value="#{opts[:search_assets_top]}"</input>
             <input type="hidden" name="webassetstop" value="#{opts[:web_assets_top]}"</input>
-            <input type="hidden" name="css" value="#{css}"</input>
+            #{'<input type="hidden" name="css" value="' + css +'"</input>"' unless css.nil? }
         </form>
       ++++
 

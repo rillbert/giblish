@@ -426,8 +426,12 @@ module Giblish
       # Update needed base class members before converting a new checkout
       @processed_docs = []
       @paths.dst_root_abs = @master_paths.dst_root_abs.realpath.join(dir_name)
-      @deploy_info.search_assets_path = @master_deployment_info.search_assets_path.nil? ?
-                                            nil : @master_deployment_info.search_assets_path.join(dir_name)
+
+      if @options[:makeSearchable] && !@master_deployment_info.search_assets_path.nil?
+        @paths.search_assets_abs = @master_paths.search_assets_abs.join(dir_name)
+        @deploy_info.search_assets_path = @master_deployment_info.search_assets_path.join(dir_name)
+        Giblog.logger.info { "will store search data in #{@paths.search_assets_abs}" }
+      end
 
       # Parse and convert docs using given args
       Giblog.logger.info { "Convert docs into dir #{@paths.dst_root_abs}" }
