@@ -116,6 +116,7 @@ module Giblish
     attr_reader :src_root_abs
     attr_reader :dst_root_abs
     attr_reader :resource_dir_abs
+    attr_reader :search_assets_abs
 
     # Public:
     #
@@ -125,10 +126,14 @@ module Giblish
     #            tree
     # resource_dir - a string or pathname with the directory containing
     #                resources
-    def initialize(src_root, dst_root, resource_dir = nil)
+    # create_search_asset_dir - true if this instance shall create a dir for storing
+    #                search artefacts, false otherwise
+    def initialize(src_root, dst_root, resource_dir = nil,create_search_asset_dir=false)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
+
+      @search_assets_abs = get_search_dir(create_search_asset_dir)
 
       # Make sure that the resource dir exists if user gives a path to it
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
@@ -285,6 +290,18 @@ module Giblish
         return p if git_dir.directory?
       end
     end
+
+    private
+    def get_search_dir(create_dir)
+      if create_dir
+        dir = Pathname.new(self.dst_root_abs.join("search_assets"))
+        dir.mkpath
+        dir
+      else
+        nil
+      end
+    end
+
   end # end of PathManager
 
   # Helper method that provides the user with a way of processing only the

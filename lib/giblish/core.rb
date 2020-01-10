@@ -28,23 +28,21 @@ module Giblish
       @paths = Giblish::PathManager.new(
           @options[:srcDirRoot],
           @options[:dstDirRoot],
-          @options[:resourceDir]
+          @options[:resourceDir],
+          @options[:makeSearchable]
       )
 
-      if @options[:searchAssetsDeploy].nil?
-        # set the search asset path to <dst_root_abs>/search_assets
-        search_asset_path = @paths.dst_root_abs.join("search_assets")
-        # make sure that it exists
-        search_asset_path.mkpath
-        search_asset_path = search_asset_path.realpath
-      else
-        # use the path given by the user
-        search_asset_path = @options[:searchAssetsDeploy]
-      end
+      # set the path to the search data that will be sent to the cgi search script
+      deploy_search_path = if @options[:makeSearchable]
+                            @options[:searchAssetsDeploy].nil? ?
+                                @paths.search_assets_abs : Pathname.new(@options[:searchAssetsDeploy]).join("search_assets")
+                          else
+                            nil
+                          end
 
       @deploy_info = Giblish::DeploymentPaths.new(
           @options[:webPath],
-          search_asset_path
+          deploy_search_path
       )
       @processed_docs = []
       @converter = converter_factory
@@ -71,8 +69,8 @@ module Giblish
           to_asciidoc(p) if adocfile? p
         rescue Exception => e
           str = "Error when converting file #{path.to_s}: #{e.message}\nBacktrace:\n"
-          e.backtrace.each {|l| str << "   #{l}\n"}
-          Giblog.logger.error {str}
+          e.backtrace.each { |l| str << "   #{l}\n" }
+          Giblog.logger.error { str }
           conv_error = true
         end
       end if @paths.src_root_abs.directory?
@@ -120,7 +118,7 @@ module Giblish
       ib = index_factory
       @converter.convert_str(
           ib.source(
-              dep_graph_exist,@options[:makeSearchable]
+              dep_graph_exist, @options[:makeSearchable]
           ),
           @paths.dst_root_abs,
           @options[:indexBaseName],
@@ -147,12 +145,12 @@ module Giblish
     # get the correct converter type
     def converter_factory
       case @options[:format]
-        when "html" then
-          HtmlConverter.new @paths, @deploy_info, @options
-        when "pdf" then
-          PdfConverter.new @paths, @deploy_info, @options
-        else
-          raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
+      when "html" then
+        HtmlConverter.new @paths, @deploy_info, @options
+      when "pdf" then
+        PdfConverter.new @paths, @deploy_info, @options
+      else
+        raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
       end
     end
 
@@ -163,7 +161,7 @@ module Giblish
       Giblog.logger.debug do
         "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}"
       end
-      Giblog.logger.debug {"Doc attributes: #{adoc.attributes}"}
+      Giblog.logger.debug { "Doc attributes: #{adoc.attributes}" }
 
       info = DocInfo.new(adoc: adoc, dst_root_abs: @paths.dst_root_abs, adoc_stderr: adoc_stderr)
       @processed_docs << info
@@ -189,7 +187,7 @@ module Giblish
       adoc = nil
       begin
         adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
-        adoc = @converter.convert(filepath,logger: adoc_logger)
+        adoc = @converter.convert(filepath, logger: adoc_logger)
 
         add_doc(adoc, adoc_logger.user_info_str.string)
       rescue Exception => e
@@ -251,8 +249,7 @@ module Giblish
     # | ...
     def create_search_assets
       # get the proper dir for the search assets
-      assets_dir = @deploy_info.search_assets_path
-      Dir.exist?(assets_dir) || FileUtils.mkdir_p(assets_dir.to_s)
+      assets_dir = @paths.search_assets_abs
 
       # store the JSON file
       IndexHeadings.serialize assets_dir, @paths.src_root_abs
@@ -340,7 +337,7 @@ module Giblish
 
     def graph_builder_factory
       Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @deploy_info,
-                                           @converter.converter_options,@git_repo
+                                           @converter.converter_options, @git_repo
     end
 
     def add_doc(adoc, adoc_stderr)
@@ -393,7 +390,7 @@ module Giblish
         # match branches but remove eventual HEAD -> ... entry
         regexp.match b.name unless b.name =~ /^HEAD/
       end
-      Giblog.logger.debug {"selected git branches: #{user_checkouts}"}
+      Giblog.logger.debug { "selected git branches: #{user_checkouts}" }
       user_checkouts
     end
 
@@ -414,12 +411,12 @@ module Giblish
       # determine if we are called with a tag or a branch
       is_tag = (co.respond_to?(:tag?) && co.tag?)
 
-      Giblog.logger.info {"Checking out #{co.name}"}
+      Giblog.logger.info { "Checking out #{co.name}" }
       @git_repo.checkout co.name
 
       unless is_tag
         # if this is a branch, make sure it is up-to-date
-        Giblog.logger.info {"Merging with origin/#{co.name}"}
+        Giblog.logger.info { "Merging with origin/#{co.name}" }
         @git_repo.merge "origin/#{co.name}"
       end
 
@@ -430,10 +427,10 @@ module Giblish
       @processed_docs = []
       @paths.dst_root_abs = @master_paths.dst_root_abs.realpath.join(dir_name)
       @deploy_info.search_assets_path = @master_deployment_info.search_assets_path.nil? ?
-              nil : @master_deployment_info.search_assets_path.join(dir_name)
+                                            nil : @master_deployment_info.search_assets_path.join(dir_name)
 
       # Parse and convert docs using given args
-      Giblog.logger.info {"Convert docs into dir #{@paths.dst_root_abs}"}
+      Giblog.logger.info { "Convert docs into dir #{@paths.dst_root_abs}" }
       # parent_convert
       FileTreeConverter.instance_method(:convert).bind(self).call
     end
