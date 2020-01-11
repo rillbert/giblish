@@ -30,8 +30,9 @@ module Giblish
     # the path manager used by this converter
     attr_accessor :paths
 
-    def initialize(paths, options)
+    def initialize(paths, deployment_info, options)
       @paths = paths
+      @deployment_info = deployment_info
       @user_style = options[:userStyle]
       @converter_options = COMMON_CONVERTER_OPTS.dup
 
@@ -168,16 +169,13 @@ module Giblish
 
   # Converts asciidoc files to html5 output.
   class HtmlConverter < DocConverter
-    def initialize(paths, options)
-      super paths, options
+    def initialize(paths, deployment_info, options)
+      super paths, deployment_info, options
 
       # validate that things are ok on the resource front
       # and copy if needed
       @dst_asset_dir = @paths.dst_root_abs.join("web_assets")
       validate_and_copy_resources @dst_asset_dir
-
-      # convenience path to css dir
-      @dst_css_dir = @dst_asset_dir.join("css")
 
       # identify ourselves as an html converter
       add_backend_options({backend: "html5", fileext: "html"})
@@ -188,28 +186,45 @@ module Giblish
     protected
 
     def add_doc_specific_attributes(filepath, is_src_file, attributes)
-      doc_attributes = {}
-      if @paths.resource_dir_abs and not @web_root
-        # user wants to use own styling without use of a
-        # web root. the correct css link is the relative path
-        # from the specific doc to the common css directory
-        css_rel_dir = if is_src_file
-                        # the filepath is a src path
-                        @paths.relpath_to_dir_after_generate(
-                          filepath,
-                          @dst_css_dir
-                        )
-                      else
-                        # the given file path is the destination path of
-                        # the generated file, find the relative path to the
-                        # css dir
-                        dst_dir = PathManager.closest_dir(filepath)
-                        @dst_css_dir.relative_path_from(dst_dir)
-                      end
-        doc_attributes["stylesdir"] = css_rel_dir.to_s
+      doc_attrib = {}
+      if @paths.resource_dir_abs
+        # user has given a resource dir, use the css from that dir
+        doc_attrib.merge!(
+            {
+                "linkcss" => 1,
+                "stylesheet" => @user_style ||= "giblish.css",
+                "copycss!" => 1
+            }
+        )
+        if @deployment_info.web_path.nil?
+          # user wants to deploy without web server, the css
+          # link shall thus be the relative path from the
+          # generated doc to the css directory
+          dst_css_dir = @dst_asset_dir.join("css")
+          css_rel_dir = if is_src_file
+                          # the filepath is a src path
+                          @paths.relpath_to_dir_after_generate(
+                              filepath,
+                              dst_css_dir
+                          )
+                        else
+                          # the given file path is the destination path of
+                          # the generated file, find the relative path to the
+                          # css dir
+                          dst_dir = PathManager.closest_dir(filepath)
+                          dst_css_dir.relative_path_from(dst_dir)
+                        end
+          doc_attrib["stylesdir"] = css_rel_dir.to_s
+        else
+          # user has given a web deployment path, the css shall then
+          # be linked using that path
+          doc_attrib["stylesdir"] = @deployment_info.web_path.join("css").cleanpath.to_s
+        end
       end
+        Giblog.logger.debug {"Rendered docs expect a css at: #{doc_attrib["stylesdir"]}"}
+        Giblog.logger.debug {"The expected css is named: #{doc_attrib["stylesheet"]}"}
 
-      attributes.merge!(doc_attributes)
+      attributes.merge!(doc_attrib)
     end
 
     private
@@ -220,29 +235,6 @@ module Giblish
       html_attrib = {
           "data-uri" => 1,
       }
-
-      if @paths.resource_dir_abs
-        # user wants to use own styling, set common attributes
-        html_attrib.merge!(
-            {
-                "linkcss" => 1,
-                "stylesheet" => @user_style ||= "giblish.css",
-                "copycss!" => 1
-            }
-        )
-
-        # check if user wants to use a web root path
-        @web_root = @paths.web_root_abs
-
-        if @web_root
-          # if user requested a web root to be used, the correct
-          # css link is the relative path from the web root to the
-          # css file. This is true for all documents
-          wr_rel = @dst_css_dir.relative_path_from @web_root
-          Giblog.logger.info {"Relative web root: #{wr_rel}"}
-          html_attrib["stylesdir"] = "/" << wr_rel.to_s
-        end
-      end
       html_attrib
     end
 
@@ -285,8 +277,8 @@ module Giblish
   end
 
   class PdfConverter < DocConverter
-    def initialize(paths, options)
-      super paths, options
+    def initialize(paths, deployment_info, options)
+      super paths, deployment_info, options
 
       # identify ourselves as a pdf converter
       add_backend_options({backend: "pdf", fileext: "pdf"})

@@ -80,13 +80,43 @@ module Giblish
     end
   end
 
+  class DeploymentPaths
+
+    attr_reader :web_path
+
+    def initialize(web_path, search_asset_path)
+      @search_assets_path = if search_asset_path.nil?
+                              nil
+                            else
+                              Pathname.new("/#{search_asset_path.to_s}").cleanpath
+                            end
+      @web_path = if web_path.nil?
+                    nil
+                  else
+                    Pathname.new("/#{web_path.to_s}/web_assets").cleanpath
+                  end
+    end
+
+    def search_assets_path(branch_dir=nil)
+      if branch_dir.nil?
+        @search_assets_path
+      else
+        @search_assets_path.join(branch_dir)
+      end
+    end
+
+    def search_assets_path=(path)
+      @search_assets_path = path
+    end
+  end
+
   # Helper class to ease construction of different paths for input and output
   # files and directories
   class PathManager
     attr_reader :src_root_abs
     attr_reader :dst_root_abs
     attr_reader :resource_dir_abs
-    attr_reader :web_root_abs
+    attr_reader :search_assets_abs
 
     # Public:
     #
@@ -96,20 +126,30 @@ module Giblish
     #            tree
     # resource_dir - a string or pathname with the directory containing
     #                resources
-    def initialize(src_root, dst_root, resource_dir = nil, web_root = nil)
+    # create_search_asset_dir - true if this instance shall create a dir for storing
+    #                search artefacts, false otherwise
+    def initialize(src_root, dst_root, resource_dir = nil,create_search_asset_dir=false)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
 
+      self.search_assets_abs = create_search_asset_dir ?
+                                   @dst_root_abs.join("search_assets") : nil
+
       # Make sure that the resource dir exists if user gives a path to it
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
+    end
 
-      # Set web root if given by user
-      @web_root_abs = nil
-      if web_root
-        web_root = "/" + web_root unless web_root[0] == '/'
-        @web_root_abs = web_root ? Pathname.new(web_root) : nil
+    def search_assets_abs=(path)
+      if path.nil?
+        @search_assets_abs = nil
+        return
       end
+      # Make sure that the destination root exists and expand it to an
+      # absolute path
+      dir = Pathname.new(path)
+      dir.mkpath
+      @search_assets_abs = dir.realpath
     end
 
     def dst_root_abs=(dst_root)
@@ -172,18 +212,6 @@ module Giblish
       dst_abs = dst_abs_from_src_abs(src_filepath)
       dir = self.class.to_pathname(dir_path)
       dir.relative_path_from(dst_abs)
-    end
-
-    def reldir_from_web_root(path)
-      p = self.class.closest_dir path
-      return p if @web_root_abs.nil?
-      p.relative_path_from(@web_root_abs)
-    end
-
-    def reldir_to_web_root(path)
-      p = self.class.closest_dir path
-      return p if @web_root_abs.nil?
-      @web_root_abs.relative_path_from(p)
     end
 
     def adoc_output_file(infile_path, extension)
@@ -334,10 +362,10 @@ module Giblish
   module_function :with_captured_stderr
 
   # transforms strings to valid asciidoctor id strings
-  def to_valid_id(input_str)
-    id_str = "_#{input_str.strip.downcase}"
-    id_str.gsub!(%r{[^a-z0-9]+},"_")
-    id_str.chomp('_')
+  def to_valid_id(input_str,id_prefix="_", id_separator="_")
+    id_str = input_str.strip.downcase.gsub(%r{[^a-z0-9]+}, id_separator)
+    id_str = "#{id_prefix}#{id_str}"
+    id_str.chomp(id_separator)
   end
   module_function :to_valid_id
 
@@ -362,32 +390,38 @@ module Giblish
   # returns raw html that displays a search box to let the user
   # acces the text search functionality.
   #
-  # css          - the name of the css file to use for the search box layout
-  # cgi_path     - the path to a cgi script that implements the server side
+  # css          - the name of the css file to use for the search result layout
+  # cgi_path     - the (uri) path to a cgi script that implements the server side
   #                functionality of searching the text
-  # path_manager - an instance of the path manager class to keep track of all
-  #                destinations.
-  def generate_search_box_html(css, cgi_path, paths)
+  # opts:
+  # :web_assets_top => string   # the path to the 'web_assets' dir as seen when serving
+  #                               the web server (eg www.mysite.com/blah/doc_root ->
+  #                               web_assets_top shall be '/blah/doc_root')
+  # :search_assets_top => string   # the path to where the 'heading.json' file is located (
+  #                                  as seen from the local file system on the machine that
+  #                                  runs the search script)
+  def generate_search_box_html(css, cgi_path, opts)
 
-    # button with magnifying glass icon (not working when deployed)
-    # <button id="search" type="submit"><i class="fa fa-search"></i></button>
+    # Replace the button with the below to use a text-only version of the btn
+    # <button id="search" type="submit">Search</button>
     <<~SEARCH_INFO
       ++++
-        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:380px">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:790px">
             Search all documents: 
             <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
-            <button id="search" type="submit">Search</button>
+            <button id="search" type="submit"><i class="fa fa-search"></i></button>
             <br>
 
             <input id="ignorecase" type="checkbox" value="true" name="ignorecase" checked/>
             <label for="ignorecase">Ignore Case</label>
             &nbsp;&nbsp;
-            <input id="useregexp" type="checkbox" value="true" name="regexp"/>
+            <input id="useregexp" type="checkbox" value="true" name="useregexp"/>
             <label for="useregexp">Use Regexp</label>
 
-            <input type="hidden" name="topdir" value="#{paths.dst_root_abs}"</input>
-            <input type="hidden" name="reltop" value="#{paths.reldir_from_web_root(paths.dst_root_abs)}"</input>
-            <input type="hidden" name="css" value="#{css}"</input>
+            <input type="hidden" name="searchassetstop" value="#{opts[:search_assets_top]}"</input>
+            <input type="hidden" name="webassetstop" value="#{opts[:web_assets_top]}"</input>
+            #{'<input type="hidden" name="css" value="' + css +'"</input>' unless css.nil? }
         </form>
       ++++
 

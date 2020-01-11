@@ -9,7 +9,7 @@ require "uri/generic"
 
 class GrepDocTree
   Line_info = Struct.new(:line, :line_no) {
-    def initialize(line,line_no)
+    def initialize(line, line_no)
       self.line = line
       self.line_no = Integer(line_no)
     end
@@ -22,10 +22,10 @@ class GrepDocTree
   # :useregexp
   def initialize(grep_opts)
     @grep_opts = "-nHr --include '*.adoc' "
-    @grep_opts += "-i " if grep_opts.has_key? :ignorecase
-    @grep_opts += "-F " unless grep_opts.has_key? :useregexp
+    @grep_opts += "-i " if grep_opts[:ignorecase]
+    @grep_opts += "-F " unless grep_opts[:useregexp]
 
-    @search_root = grep_opts[:search_top]
+    @search_root = grep_opts[:searchassetstop]
     @input = grep_opts[:search_phrase]
 
     @output = ""
@@ -36,7 +36,7 @@ class GrepDocTree
 
   def grep
     # This console code sequence will only show the matching word in bold ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=
-    grep_env="GREP_COLORS=\"ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=\""
+    grep_env = "GREP_COLORS=\"ms=01:mc=:sl=:cx=:fn=:ln=:bn=:se=\""
     @grep_opts += " --color=always"
 
 
@@ -44,8 +44,8 @@ class GrepDocTree
 
     begin
       @output.force_encoding(Encoding::UTF_8)
-      @output.gsub!(/\x1b\[01m\x1b\[K/,"##")
-      @output.gsub!(/\x1b\[m\x1b\[K/,"##")
+      @output.gsub!(/\x1b\[01m\x1b\[K/, "##")
+      @output.gsub!(/\x1b\[m\x1b\[K/, "##")
     rescue StandardError => e
       print e.message
       print e.backtrace.inspect
@@ -87,7 +87,7 @@ class GrepDocTree
     matches = []
 
     # for each file with at least one match
-    @match_index.each do |file_path,match_infos|
+    @match_index.each do |file_path, match_infos|
       # assume that max one file with the specified path
       # exists
       files = heading_db["file_infos"].select do |fi|
@@ -97,7 +97,7 @@ class GrepDocTree
 
       file_anchors = construct_user_info files.first, match_infos
       matches << file_anchors
-      end
+    end
     matches
   end
 
@@ -155,7 +155,7 @@ class GrepDocTree
   def formatted_output
     # assume we have an updated index
     adoc_str = ""
-    @match_index.each do |k,v|
+    @match_index.each do |k, v|
       adoc_str += "#{k}::\n"
       v.each { |line_info|
         adoc_str += "#{line_info.line_no} : #{line_info.line}\n"
@@ -177,10 +177,10 @@ class GrepDocTree
   def grep2hash(base_dir)
     @match_index = {}
     @output.split("\n").each do |line|
-      tokens = line.split(":",3)
+      tokens = line.split(":", 3)
 
       # remove all lines starting with :<attrib>:
-      tokens[2].gsub!(/^:[[:graph:]]+:.*$/,"")
+      tokens[2].gsub!(/^:[[:graph:]]+:.*$/, "")
       next if tokens[2].empty?
 
       # remove everything above the repo root from the filepath
@@ -198,8 +198,7 @@ class SearchDocTree
 
   def search
     # read the heading_db from file
-    jsonpath = @input_data[:search_top].join("heading_index.json")
-    src_index = {}
+    jsonpath = @input_data[:searchassetstop].join("heading_index.json")
     json = File.read(jsonpath.to_s)
     src_index = JSON.parse(json)
 
@@ -215,14 +214,14 @@ class SearchDocTree
   private
 
   def get_uri_top
-    return @input_data[:referer][0,@input_data[:referer].rindex('/')]
+    return @input_data[:referer][0, @input_data[:referer].rindex('/')]
   end
 
   def wash_line line
     # remove any '::'
-    result = line.gsub(/::*/,"")
+    result = line.gsub(/::*/, "")
     # remove =,| at the start of a line
-    result.gsub!(/^[=|]+/,"")
+    result.gsub!(/^[=|]+/, "")
     result
   end
 
@@ -234,19 +233,19 @@ class SearchDocTree
   # line_1
   # line_2
   # ...
-  def format_search_adoc index,uri_top
+  def format_search_adoc index, uri_top
     str = ""
     # debug print referer...
     # str << "uri_top: #{uri_top}\n"
     index.each do |file_info|
       filename = Pathname.new(file_info["filepath"]).basename
       str << "== #{file_info["title"]}\n\n"
-      file_info["matches"].each do |section_id, info |
+      file_info["matches"].each do |section_id, info|
         str << "#{uri_top}/#{info["location"]}[#{info["section_title"]}]::\n\n"
         # str << "<<#{info["location"]},#{info["section_title"]}>>::\n\n"
         str << "[subs=\"quotes\"]\n"
         str << "----\n"
-        info["lines"].each do | line |
+        info["lines"].each do |line|
           str << "-- #{wash_line(line)}\n"
         end.join("\n\n")
         str << "----\n"
@@ -255,9 +254,9 @@ class SearchDocTree
     end
 
     <<~ADOC
-    = Search Result
+      = Search Result
 
-    #{str}
+      #{str}
     ADOC
   end
 end
@@ -271,12 +270,14 @@ def init_web_server web_root
   server = WEBrick::HTTPServer.new(
       :Port => 8000,
       :DocumentRoot => root,
-      :Logger => WEBrick::Log.new("webrick.log",WEBrick::Log::DEBUG)
+      :Logger => WEBrick::Log.new("webrick.log", WEBrick::Log::DEBUG)
   )
 
   puts "WEBrick instance now listening to localhost:8000"
 
-  trap 'INT' do server.shutdown end
+  trap 'INT' do
+    server.shutdown
+  end
 
   server.start
 end
@@ -305,110 +306,20 @@ def hello_world
   print "<br>"
 end
 
-def cgi_main cgi
-  # retrieve the form data supplied by user
-  input_data = {
-      search_phrase: cgi["searchphrase"],
-      ignorecase: cgi.has_key?("ignorecase"),
-      useregexp: cgi.has_key?("useregexp"),
-      doc_root_abs: Pathname.new(cgi["topdir"]),
-      referer_rel_top: Pathname.new("#{cgi["reltop"]}"),
-      referer: cgi.referer,
-      uri_path: URI(cgi.referer).path,
-      client_css: cgi["css"],
-      search_top: nil,
-      styles_top: nil
-  }
 
-  # fixup paths depending on git branch or not
-  #
-  # search_assets is an absolute path
-  # styles_top is a relative path
-  #
-  # if the source was rendered from a git branch, the paths
-  # search_assets = <index_dir>/../search_assets/<branch_name>/
-  # styles_top = ../web_assets/css
-  #
-  # and if not, the path is
-  # search_assets = <index_dir>/search_assets
-  # styles_top = /web_assets/css
-  # <link rel="stylesheet" href="/web_assets/css/virodoc.css">
-  #
-  if input_data[:doc_root_abs].join("./search_assets").exist?
-    # this is not from a git branch
-    input_data[:search_top] = input_data[:doc_root_abs].join("./search_assets")
-    input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("web_assets/css")
-    input_data[:gitbranch] = false
-  elsif input_data[:doc_root_abs].join("../search_assets").exist?
-    # this is from a git branch
-    input_data[:search_top] = input_data[:doc_root_abs].join("../search_assets").join(input_data[:doc_root_abs].basename)
-    input_data[:styles_top] = Pathname.new(input_data[:referer_rel_top]).join("../web_assets/css")
-    input_data[:gitbranch] = true
-  else
-    raise ScriptError, "Could not find search_assets dir!"
-  end
-
-  # Set some reasonable default attributes and options
-  adoc_attributes = {
-      "data-uri" => 1,
-  }
-
-  converter_options = {
-      backend: "html5",
-      # need this to let asciidoctor include the default css if user
-      # has not specified any css
-      safe: Asciidoctor::SafeMode::SAFE,
-      header_footer: true,
-      attributes: adoc_attributes
-  }
-
-  # use a relative stylesheet (same as the index page was rendered with)
-  # if the script has received input in the client_css form field
-  if !input_data[:client_css].nil? && !input_data[:client_css].empty?
-    css_path = if input_data[:styles_top].to_s[0] != '/'
-                 "/" + input_data[:styles_top].to_s
-               else
-                 input_data[:styles_top].to_s
-               end
-    adoc_attributes.merge!({
-                            "linkcss" => 1,
-                            "stylesdir" => css_path,
-                            "stylesheet" => input_data[:client_css],
-                            "copycss!" => 1
-                        })
-  end
-
-  # search the docs and render html
-  sdt = SearchDocTree.new(input_data)
-  docstr = sdt.search
-
-# used for debug purposes
-#   docstr = <<~EOF
+# assume that the file tree looks like this when rendering
+# a git branch:
 #
-#     #{input_data[:referer_rel_top]} is branch: #{input_data[:gitbranch]}
-#
-#     #{adoc_attributes.to_s}
-#
-#
-#     #{sdt.search}
-#   EOF
-
-  # send the result back to the client
-  print Asciidoctor.convert(docstr, converter_options)
-end
-
-# assume that the file tree looks like this when running
-# on a git branch:
-#
-# dst_root_dir
+# root_dir
+# |- index.html (the generated index of rendered git branches and tags)
 # |- branch_1_top_dir
-# |     |- index.html
+# |     |- index.html (the generated index of this branch)
 # |     |- file_1.html
 # |     |- dir_1
 # |     |   |- file2.html
 # |- branch_2_top_dir
 # |- branch_x_...
-# |- web_assets
+# |- web_assets (only if a custom stylesheet is used...)
 # |- search_assets
 # |     |- branch_1_top_dir
 # |           |- heading_index.json
@@ -422,8 +333,8 @@ end
 # assume that the file tree looks like this when not
 # rendering a git branch:
 #
-# dst_root_dir
-# |- index.html
+# root_dir
+# |- index.html  (the generated index of all rendered files)
 # |- file_1.html
 # |- dir_1
 # |   |- file2.html
@@ -436,14 +347,83 @@ end
 # |     |   |- file2.html
 # |     |- ...
 
+def cgi_main(cgi, debug_mode = false)
+  # retrieve the form data supplied by user
+  input_data = {
+      search_phrase: cgi["searchphrase"],
+      ignorecase: cgi.has_key?("ignorecase"),
+      useregexp: cgi.has_key?("useregexp"),
+      searchassetstop: Pathname.new(
+          cgi.has_key?("searchassetstop") ? cgi["searchassetstop"] : ""),
+      webassetstop: Pathname.new(
+          cgi.has_key?("webassetstop") ? cgi["webassetstop"] : nil),
+      client_css:
+          cgi.has_key?("css") ? cgi["css"] : nil,
+      referer: cgi.referer
+  }
+
+  if input_data[:searchassetstop].nil? || !Dir.exist?(input_data[:searchassetstop])
+    raise ScriptError, "Could not find search_assets dir (#{input_data[:searchassetstop]}) !"
+  end
+
+  adoc_attributes = {
+      "data-uri" => 1,
+  }
+
+# Set attributes so that the generated result page uses the same
+# css as the other docs
+  if !input_data[:client_css].nil? && !input_data[:webassetstop].nil?
+    adoc_attributes.merge!(
+        {
+            "linkcss" => 1,
+            "stylesdir" => "#{input_data[:webassetstop]}/css",
+            "stylesheet" => input_data[:client_css],
+            "copycss!" => 1
+        }
+    )
+  end
+
+  converter_options = {
+      backend: "html5",
+      # need this to let asciidoctor include the default css if user
+      # has not specified any css
+      safe: Asciidoctor::SafeMode::SAFE,
+      header_footer: true,
+      attributes: adoc_attributes
+  }
+
+
+# search the docs and render html
+  sdt = SearchDocTree.new(input_data)
+  docstr = sdt.search
+
+  if debug_mode
+    # print some useful data for debugging
+    docstr = <<~EOF
+
+      == Input data
+
+      #{input_data.to_s}
+
+      == Adoc attributes
+
+       #{adoc_attributes.to_s}
+
+       #{docstr}
+    EOF
+  end
+
+# send the result back to the client
+  print Asciidoctor.convert(docstr, converter_options)
+end
 
 
 # Usage:
 #   to start a local web server for development work
-# giblish-search.rb <web_root>
+# ruby giblish-search.cgi <web_root>
 #
 #   to run as a cgi script via a previously setup web server
-# giblish-search.rb
+# giblish-search.cgi
 #
 # (note that you might need to rename the script to eg
 # giblish-search.cgi or similar depending on your web server
@@ -459,9 +439,11 @@ if __FILE__ == $PROGRAM_NAME
     cgi = CGI.new
     print cgi.header
     begin
-      cgi_main cgi
+      cgi_main(cgi, false)
     rescue Exception => e
       print e.message
+      print ""
+      print e.backtrace
       exit 1
     end
     exit 0

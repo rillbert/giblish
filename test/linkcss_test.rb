@@ -52,9 +52,11 @@ class LinkCSSTest < Minitest::Test
   end
 
   # this test shall generate a doc with asciidoctors default css
+  # embedded in the doc
+  #  giblish src dst
   def test_default_styling_without_webroot
     TmpDocDir.open() do |tmp_docs|
-      # act on the input data
+      # create a doc under .../src_root/subdir
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
       args = ["--log-level", "info",
               tmp_docs.dir,
@@ -63,7 +65,7 @@ class LinkCSSTest < Minitest::Test
 
       # assert that the css link is only the google font api
       # used by asciidoctor by default
-      tmp_docs.check_result_html adoc_filename do |html_tree|
+      tmp_docs.check_html_dom adoc_filename do |html_tree|
         html_tree.xpath('html/head/link').each do |csslink|
           assert_equal "stylesheet", csslink.get("rel")
           assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic," +
@@ -75,10 +77,11 @@ class LinkCSSTest < Minitest::Test
   end
 
   # this test shall generate a doc with asciidoctors default css
-  # and not using the given webroot
+  # embedded in the docs (the given webroot will not be used)
+  #  giblish -w '/my/webserver/topdir' src dst
   def test_default_styling_with_webroot
     TmpDocDir.open() do |tmp_docs|
-      # act on the input data
+      # create a doc under the .../subdir folder
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
       args = ["--log-level", "info",
               "-w", "/my/webserver/topdir",
@@ -88,8 +91,8 @@ class LinkCSSTest < Minitest::Test
 
       # assert that the css link is only the google font api
       # used by asciidoctor by default
-      tmp_docs.check_result_html adoc_filename do |html_tree|
-        html_tree.xpath('html/head/link').each do |csslink|
+      tmp_docs.check_html_dom adoc_filename do |html_dom|
+        html_dom.xpath('html/head/link').each do |csslink|
           assert_equal "stylesheet", csslink.get("rel")
           assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic," +
                            "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
@@ -99,7 +102,17 @@ class LinkCSSTest < Minitest::Test
     end
   end
 
-  # test that the css link is a relative link to the css file
+  # test that the css link is a relative link to the css file in the
+  # local file system when user does not give web path
+  #
+  # giblish -r <resource_dir> src dst
+  # shall yield:
+  # dst
+  # |- subdir
+  # |    |- file.html (href ../web_assets/css/giblish.css)
+  # |- web_assets
+  # |    |- css
+  #          |- giblish.css
   def test_custom_styling_without_webroot
     TmpDocDir.open() do |tmp_docs|
       # create a resource dir
@@ -116,7 +129,7 @@ class LinkCSSTest < Minitest::Test
 
       # assert that the css link is relative to the specific
       # css file (../web_assets/css/giblish.css)
-      tmp_docs.check_result_html adoc_filename do |html_tree|
+      tmp_docs.check_html_dom adoc_filename do |html_tree|
         css_links = html_tree.xpath('html/head/link')
         assert_equal 1,css_links.count
 
@@ -130,14 +143,15 @@ class LinkCSSTest < Minitest::Test
   end
 
   # test that the css link is a relative link to the css file
+  # giblish -w /my/web/root -r <resource_dir> -s custom src dst
   def test_custom_styling_with_webroot
     TmpDocDir.open() do |tmp_docs|
       # create a resource dir
       r_dir = "#{tmp_docs.dir.to_s}/resources"
       create_resource_dir r_dir
 
-      web_root = Pathname(tmp_docs.dir).join("..").realpath
-      # act on the input data
+      web_root = Pathname("/my/web/root")
+      # create a doc in the 'subdir' folder.
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
       args = ["--log-level", "info",
               "-w", web_root.to_s,
@@ -147,14 +161,11 @@ class LinkCSSTest < Minitest::Test
               tmp_docs.dir]
       Giblish.application.run_with_args args
 
-      # this is a bit contrived but it was difficult to get this path
-      expected_csslink = Pathname.new(tmp_docs.dir).join("web_assets/css/custom.css")
-      expected_csslink = expected_csslink.relative_path_from(Pathname.new(tmp_docs.dir).join(".."))
-      expected_csslink = "/" + expected_csslink.to_s
+      # the link shall work when the doc is published on a web server
+      # under the given web path
+      expected_csslink = Pathname.new("/my/web/root/web_assets/css/custom.css")
 
-      # assert that the css link is relative to the specified
-      # webroot
-      tmp_docs.check_result_html adoc_filename do |html_tree|
+      tmp_docs.check_html_dom adoc_filename do |html_tree|
         css_links = html_tree.xpath('html/head/link')
         assert_equal 1,css_links.count
 

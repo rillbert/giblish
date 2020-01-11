@@ -45,7 +45,7 @@ class AttributesTest < Minitest::Test
       Giblish.application.run_with_args args
 
       # assert that the expected matches the actual
-      tmp_docs.check_result_html adoc_filename do |html_tree|
+      tmp_docs.check_html_dom adoc_filename do |html_tree|
         ref_nr = 0
         html_tree.css('a').each do |n|
           assert_equal expected_ref_text[ref_nr], n.text
@@ -70,7 +70,7 @@ class AttributesTest < Minitest::Test
       Giblish.application.run_with_args args
 
       # assert that the expected matches the actual
-      tmp_docs.check_result_html adoc_filename do |html_tree|
+      tmp_docs.check_html_dom adoc_filename do |html_tree|
         ref_nr = 0
         html_tree.css('a').each do |n|
           assert_equal expected_ref_text[ref_nr], n.text
@@ -98,7 +98,7 @@ class AttributesTest < Minitest::Test
       Giblish.application.run_with_args args
 
       # assert that the expected matches the actual
-      tmp_docs.check_result_html adoc_filename do |html_tree|
+      tmp_docs.check_html_dom adoc_filename do |html_tree|
         ref_nr = 0
         # assert that the xref==full behaves as expected
         html_tree.css('a').each do |n|

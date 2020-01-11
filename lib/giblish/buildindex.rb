@@ -10,13 +10,18 @@ module Giblish
   # Base class with common functionality for all index builders
   class BasicIndexBuilder
     # set up the basic index building info
-    def initialize(processed_docs, converter, path_manager, handle_docid = false)
+    def initialize(processed_docs, converter, path_manager, deployment_info, handle_docid = false)
       @paths = path_manager
+      @deployment_info = deployment_info
       @nof_missing_titles = 0
       @processed_docs = processed_docs
       @converter = converter
       @src_str = ""
       @manage_docid = handle_docid
+      @search_opts = {
+          web_assets_top: @deployment_info.web_path,
+          search_assets_top: @deployment_info.search_assets_path,
+      }
     end
 
     def source(dep_graph_exists = false, make_searchable = false)
@@ -57,11 +62,10 @@ module Giblish
     end
 
     def add_search_box
-      # TODO: Fix the hard-coded path
       Giblish::generate_search_box_html(
           @converter.converter_options[:attributes]["stylesheet"],
           "/cgi-bin/giblish-search.cgi",
-          @paths
+          @search_opts
       )
     end
 
@@ -295,16 +299,16 @@ module Giblish
 
   # A simple index generator that shows a table with the generated documents
   class SimpleIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, converter, path_manager, manage_docid = false)
-      super processed_docs, converter, path_manager, manage_docid
+    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid = false)
+      super processed_docs, converter, path_manager, deployment_info, manage_docid
     end
   end
 
   # Builds an index of the generated documents and includes some git metadata
   # from the repository
   class GitRepoIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, converter, path_manager, manage_docid, git_repo_root)
-      super processed_docs, converter, path_manager, manage_docid
+    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid, git_repo_root)
+      super processed_docs, converter, path_manager, deployment_info, manage_docid
 
       # no repo root given...
       return unless git_repo_root

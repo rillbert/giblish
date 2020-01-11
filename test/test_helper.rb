@@ -69,7 +69,7 @@ module Giblish
       # tmp_docs.check_result_html adoc_filename do |html_tree|
       #   <process the html tree>
       # end
-      def check_result_html filename
+      def check_html_dom filename
         html_file = Pathname.new(filename.gsub(/\.adoc$/,'.html'))
 
         # parse the generated html and return the result to the user
