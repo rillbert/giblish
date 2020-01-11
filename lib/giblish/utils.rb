@@ -421,7 +421,7 @@ module Giblish
 
             <input type="hidden" name="searchassetstop" value="#{opts[:search_assets_top]}"</input>
             <input type="hidden" name="webassetstop" value="#{opts[:web_assets_top]}"</input>
-            #{'<input type="hidden" name="css" value="' + css +'"</input>"' unless css.nil? }
+            #{'<input type="hidden" name="css" value="' + css +'"</input>' unless css.nil? }
         </form>
       ++++
 
