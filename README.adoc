@@ -12,7 +12,7 @@ a destination directory tree containing the corresponding html or pdf files
 and adds some handy tools for easier navigation of the resulting files.
 
 An example of how giblish can generate the master branch of the official asciidoc.org
-documentation git repo can be found at http://www.rillbert.se/adocorg/with_search/
+documentation git repo can be found at http://www.rillbert.se/adoc/examples/adocorg/master/myindex.html
 
 The added tools include:
 
@@ -265,9 +265,7 @@ server (e.g. Apache). You can use the cgi script included in the giblish
 gem to provide text search capabilities.
 
 Here is an example of how to publish the docs in the official asciidoctor.org git
-repo to a web server, including index pages and text search. The example assumes that
-you have one machine where you generate the documents and another machine that runs
-a web server to which you have ssh access.
+repo to a web server, including index pages and text search.
 
 NOTE: No consideration has been taken to how permissions are set up on the web server.
 Just running the below commands as-is on e.g.a standard apache set-up will bail out
@@ -275,28 +273,41 @@ with 'permission denied' errors.
 
 ==== Generating the html documents
 
-The following commands will generate the asciidoctor.org documentation in a format
-suitable for publishing via a web server:
+The example assumes that you have one machine where you generate the documents and another
+machine that runs a web server to which you have ssh access.
+
+The generated docs shall be accessible via _www.example.com/adocorg/with_search_
+
+You need to provide two pieces of deployment info to giblish when generating the documents:
+
+ * the uri path where to access the deployed docs (/adocorg/with_search in this example)
+ * the path in the local file system on the web server where the search data can be accessed
+   (/var/www/html/site_1/adocorg/with_search in this example)
+
+The following commands will generate the asciidoctor.org documentation and deploy the result
+to the web server.
 
  . Clone the asciidoctor doc repo to your development machine
 +
  git clone https://github.com/asciidoctor/asciidoctor.org.git
 
- . Generate html documentation suitable for publishing from your web server (in this
-   example, the root of the generated html docs will be stored under
-   `/var/www/adocorg/with_search` on the web server).
+ . Generate the html documentation with the correct deployment info
 +
- giblish -j '^.*_include.*' -m -w /var/www/adocorg/with_search -g master asciidoctor.org/docs ./generated_docs
+ giblish -j '^.*_include.*' -m -mp /var/www/html/site_1/adocorg/with_search -w /adocorg/with_search -g master --index-basename "myindex" asciidoctor.org/docs ./generated_docs
 +
 Explanation of the parameters and arguments::
  * *pass:[-j '^.*_include.*']* - exclude everything in the __include_ directory. (the
                                  asciidoctor.org repo stores partial docs here).
  * *-m* - assemble the necessary search data to support text search and include this data as part of
           the generated documents.
- * *-w /var/www/adocorg/with_search* - the top dir for the generated html docs in the web server's
-                                       file system.
+ * *-mp /var/www/html/site_1/adocorg/with_search* - the file system path on the deployment machine where
+                                                    the search data is located
+ * *-w /adocorg/with_search* - the uri path to the deployed docs
  * *-g master* - publish all git branches that matches the regexp 'master' (i.e. only the 'master'
                  branch).
+ * *--index-basename "myindex"* - change the default name (index) that giblish uses for the generated
+                                  index page. This is needed since asciidoctor.org contains an
+                                  "index.adoc" file that would otherwise be overwritten by giblish.
  * *asciidoctor.org/docs* - the root of the source document tree.
  * *./generated_docs* - a temporary storage for the generated html docs on the local system.
 +
@@ -306,16 +317,13 @@ Explanation of the parameters and arguments::
  scp -r ./generated_docs rillbert@my.web.server.org:/var/www/adocorg/with_search/.
 +
 
-Note that it is important that the destination folder on the web server is the one you specified
-with the -w flag when generating the documents. Otherwise, the text search and css styling will not
-work.
 
 ==== Copy the text search script to the web server
 
 This only needs to be done once (or if a new version of giblish breaks the currently used API).
 
-IMPORTANT: The current version of giblish expects the script to be found at
-`.../cgi-bin/giblish-search.cgi`. This might be customizable in future versions but is currently
+IMPORTANT: The current version of giblish expects the script to be found at the URI path
+`/cgi-bin/giblish-search.cgi`. This might be customizable in future versions but is currently
 hard-coded. Thus, if your web-server serves pages at www.mywebsite.com, the search script must be
 accessible at www.mywebsite.com/cgi-bin/giblish-search.cgi
 
@@ -327,9 +335,10 @@ accessible at www.mywebsite.com/cgi-bin/giblish-search.cgi
 
 In my case this returns `/var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib/giblish.rb`. This means that I will find the script in the same directory, i.e. `/var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib`.
 
- . Copy the server side script to the /cgi-bin dir on the web server.
+ . Copy the server side script to the /cgi-bin dir on the web server. In this example the cgi-bin dir
+   is configured to be /var/www/cgi-bin
 +
- scp /var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib/giblish-search.rb /var/www/cgi-bin/giblish-search.cgi
+ scp /var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib/giblish-search.rb rillbert@my.web.server.org:/var/www/cgi-bin/giblish-search.cgi
 
 ////
 
