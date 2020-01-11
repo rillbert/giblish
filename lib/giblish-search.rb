@@ -439,7 +439,7 @@ if __FILE__ == $PROGRAM_NAME
     cgi = CGI.new
     print cgi.header
     begin
-      cgi_main(cgi, true)
+      cgi_main(cgi, false)
     rescue Exception => e
       print e.message
       print ""
