@@ -1,12 +1,23 @@
 #!/bin/bash
 #
+# this hook runs the publish_html.sh script which, in turn,
+# publishes html versions of adoc files to the desired
+# destination.
+#
+#
+# Adjust the WORKING_TREE_ROOT, DST_DIR and SRC_DIR below to
+# locations suitable for your setup
 
+### config section
 # set this to the repo root where the working tree exists
 WORKING_TREE_ROOT="/the/path/to/the/stage/repo"
+
 # set this to the publish root dir served by a web server
-DST_DIR="/var/www/rillbert_se/docs"
+DST_DIR="/the/path/to/webserver/directory/root"
+
 # set this to the top dir to look for docs under in the
-# staging repo.
+# staging repo. This shall be given as a relative path
+# from the top dir of the git repo.
 SRC_DIR="."
 
 # Make config available in subshell
@@ -32,5 +43,5 @@ echo "Post update hook running..."
   # Run the publish script
   PUBLISH_SCRIPT="scripts/publish_html.sh"
   echo "invoking publish script at ${WORKING_TREE_ROOT}/${PUBLISH_SCRIPT}"
-  "${PUBLISH_SCRIPT} ${DST_DIR} ${SRC_DIR}"
+  "${PUBLISH_SCRIPT}" "${DST_DIR}" "${SRC_DIR}"
 )

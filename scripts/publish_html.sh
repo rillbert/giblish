@@ -1,12 +1,14 @@
 #!/bin/bash
 #
-# pulls the master branch of the server repo and then runs giblish
-# on the working tree emitting the result to the DST_HTML folder
-#
-#
+# pulls the master branch from origin and then runs giblish
+# on the working tree emitting the result to the given destination
+# folder
 
 ### config section
+# set this to the 'resource' folder as expected by the giblish -r flag
 RESOURCE_DIR="${SCRIPT_DIR}/resources"
+
+# set this to the publish dir as expected by the giblish -w flag
 WEB_ROOT="/docs"
 
 # display usage message
@@ -42,7 +44,9 @@ fi
 
 # Make the paths absolute
 DST_HTML=$(realpath "$1")
+[ $? -ne 0 ] && die "Unknown path: $1"
 SRC_ROOT=$(realpath "${SRC_ROOT}")
+[ $? -ne 0 ] && die "Unknown path: ${SRC_ROOT}"
 
 # update working tree with latest master
 echo "Cleaning git repo at..."
