@@ -44,12 +44,26 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 [ $? -ne 0 ] && die "You must invoke this from within a git working tree."
 SRC_ROOT="${GIT_ROOT}"
 
-# handle user input
+# handle user flags
+force_remove=''
+declare -i nof_flags=0
+while getopts 'f' flag; do
+  case "${flag}" in
+    f) force_remove='true' ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+  nof_flags=$((nof_flags + 1))
+done
+shift $nof_args
+
+# handle user args
 if [[ $# < 1 || $# > 2 ]]; then
   usage
   die "Wrong number of input arguments."
 fi
-if [[ $# == 2 ]]; then
+DST_HTML=$1
+if [[ $nof_args == 2 ]]; then
   SRC_ROOT=$2
 fi
 
@@ -69,6 +83,10 @@ git pull
 
 # generate the html from adoc files in repo
 echo "Will generate html to: ${DST_HTML} from adoc files found under ${SRC_ROOT}"
+if [[ "${force_remove}" ]]; then
+  echo "would have run rm -rf ${DST_HTML}..."
+fi
+
 giblish -a icons=font -c -r "${RESOURCE_DIR}" -s giblish -w "${WEB_ROOT}" "${SRC_ROOT}" "${DST_HTML}"
 [ $? -ne 0 ] && die
 
