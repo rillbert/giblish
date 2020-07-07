@@ -49,13 +49,12 @@ force_remove=''
 declare -i nof_flags=0
 while getopts 'f' flag; do
   case "${flag}" in
-    f) force_remove='true' ;;
+    f) force_remove='true'
+       shift;;
     *) print_usage
        exit 1 ;;
   esac
-  nof_flags=$((nof_flags + 1))
 done
-shift $nof_args
 
 # handle user args
 if [[ $# < 1 || $# > 2 ]]; then
@@ -84,7 +83,8 @@ git pull
 # generate the html from adoc files in repo
 echo "Will generate html to: ${DST_HTML} from adoc files found under ${SRC_ROOT}"
 if [[ "${force_remove}" ]]; then
-  echo "would have run rm -rf ${DST_HTML}..."
+  echo "force flag enabled, remove everything under ${DST_HTML}/"
+  rm -rf ${DST_HTML}/*
 fi
 
 giblish -a icons=font -c -r "${RESOURCE_DIR}" -s giblish -w "${WEB_ROOT}" "${SRC_ROOT}" "${DST_HTML}"
