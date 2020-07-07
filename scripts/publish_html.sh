@@ -62,13 +62,13 @@ if [[ $# < 1 || $# > 2 ]]; then
   die "Wrong number of input arguments."
 fi
 DST_HTML=$1
-if [[ $nof_args == 2 ]]; then
+if [[ $# == 2 ]]; then
   SRC_ROOT=$2
 fi
 
 # Make the paths absolute
 DST_HTML=$(realpath "$1")
-[ $? -ne 0 ] && die "Unknown path: $1"
+[ $? -ne 0 ] && die "Unknown path: ${DST_HTML}"
 SRC_ROOT=$(realpath "${SRC_ROOT}")
 [ $? -ne 0 ] && die "Unknown path: ${SRC_ROOT}"
 
