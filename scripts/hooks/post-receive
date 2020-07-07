@@ -15,6 +15,10 @@ WORKING_TREE_ROOT="/the/path/to/the/stage/repo"
 # set this to the publish root dir served by a web server
 DST_DIR="/the/path/to/webserver/directory/root"
 
+# set this to "true" if you want to force an 'rm -rf'of
+# the destination dir before generating new htmls
+CLEAR_DST=""
+
 # set this to the top dir to look for docs under in the
 # staging repo. This shall be given as a relative path
 # from the top dir of the git repo.
@@ -24,6 +28,7 @@ SRC_DIR="."
 export WORKING_TREE_ROOT
 export DST_DIR
 export SRC_DIR
+export CLEAR_DST
 
 # read the input from git...not currently used.
 # it could for example be used to filter on git branches
@@ -43,5 +48,10 @@ echo "Post update hook running..."
   # Run the publish script
   PUBLISH_SCRIPT="scripts/publish_html.sh"
   echo "invoking publish script at ${WORKING_TREE_ROOT}/${PUBLISH_SCRIPT}"
-  "${PUBLISH_SCRIPT}" "${DST_DIR}" "${SRC_DIR}"
+  if [[ -z "${CLEAR_DST}" ]]; then
+    "${PUBLISH_SCRIPT}" "${DST_DIR}" "${SRC_DIR}"
+  else
+    "${PUBLISH_SCRIPT}" -f "${DST_DIR}" "${SRC_DIR}"
+  fi
+
 )

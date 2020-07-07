@@ -46,7 +46,6 @@ SRC_ROOT="${GIT_ROOT}"
 
 # handle user flags
 force_remove=''
-declare -i nof_flags=0
 while getopts 'f' flag; do
   case "${flag}" in
     f) force_remove='true'
