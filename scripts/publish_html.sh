@@ -3,6 +3,16 @@
 # pulls the master branch from origin and then runs giblish
 # on the working tree emitting the result to the given destination
 # folder
+#
+# NOTE: This script assumes that all assets referenced from adoc files
+# are located in corresponding .../<file>_assets directories
+# Ex:
+# adoc file .../repo_root/docs/myfile.adoc
+# is expected to have an imagesdir directive in its header pointing to:
+# .../repo_root/docs/myfile_assets
+#
+# all ..._assets directories found under SRC_TOP will be copied in full to
+# DST_DIR
 
 ### config section
 # set this to the 'resource' folder as expected by the giblish -r flag
@@ -58,7 +68,6 @@ git pull
 
 # generate the html from adoc files in repo
 echo "Will generate html to: ${DST_HTML} from adoc files found under ${SRC_ROOT}"
-exit 1
 giblish -a icons=font -c -r "${RESOURCE_DIR}" -w "${WEB_ROOT}" -s rillbert "${SRC_ROOT}" "${DST_HTML}"
 [ $? -ne 0 ] && die
 
