@@ -14,12 +14,14 @@
 # all ..._assets directories found under SRC_TOP will be copied in full to
 # DST_DIR
 
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
 ### config section
 # set this to the 'resource' folder as expected by the giblish -r flag
 RESOURCE_DIR="${SCRIPT_DIR}/resources"
 
 # set this to the publish dir as expected by the giblish -w flag
-WEB_ROOT="/docs"
+WEB_ROOT="/giblish"
 
 # display usage message
 function usage {
@@ -40,7 +42,6 @@ function die {
 ### useful variables
 GIT_ROOT=$(git rev-parse --show-toplevel)
 [ $? -ne 0 ] && die "You must invoke this from within a git working tree."
-SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 SRC_ROOT="${GIT_ROOT}"
 
 # handle user input
@@ -68,7 +69,7 @@ git pull
 
 # generate the html from adoc files in repo
 echo "Will generate html to: ${DST_HTML} from adoc files found under ${SRC_ROOT}"
-giblish -a icons=font -c -r "${RESOURCE_DIR}" -w "${WEB_ROOT}" -s rillbert "${SRC_ROOT}" "${DST_HTML}"
+giblish -a icons=font -c -r "${RESOURCE_DIR}" -s giblish -w "${WEB_ROOT}" "${SRC_ROOT}" "${DST_HTML}"
 [ $? -ne 0 ] && die
 
 # copy assets folders
