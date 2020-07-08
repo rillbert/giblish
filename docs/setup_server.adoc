@@ -134,12 +134,13 @@ TBD
 Below is an example of a `post-update` hook that triggers Jenkins jobs after a push to a git repo. This hook should be installed on the server side git repository to trigger Jenkins builds
 
 .Example of a git hook triggering Jenkins builds
-
-// [source,bash]
 [%collapsible]
+====
+[source,bash]
 ----
 include::../docgen/scripts/githook_examples/post-update.example[]
 ----
+====
 
 == Jenkins pipeline script
 
