@@ -96,6 +96,24 @@ NOTE: If you start with an empty, bare _Master Repo_ on the _Server_, it is a go
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
+.The giblish `publish_html.sh` template script
+[%collapsible]
+====
+[source,bash]
+----
+include::../scripts/publish_html.sh[]
+----
+====
+
+.The giblish `post-receive` template git hook
+[%collapsible]
+====
+[source,bash]
+----
+include::../scripts/hooks/post-receive[]
+----
+====
+
 script setup::
  . Find out where the template scripts for the `post-receive` and the `publish_html.sh` scripts are located by running `gem which giblish`. Strip of the `lib/giblish.rb` from the end of the returned path and `cd` to the resulting folder. There should be a subfolder named `scripts` under which you can find the template scripts somewhere.
 +
