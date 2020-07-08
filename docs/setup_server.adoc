@@ -21,13 +21,15 @@ git supports hooks in several parts of the sequence of getting changes committed
 
 == Two deployment scenarios
 
-This text covers two deployment scenarios; one using git hooks only, and one using a combination of git hooks and Jenkins. They have been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
+This text covers two deployment scenarios; one using a git hook together with a simple (well) shell script, and one using a git hook together with Jenkins.
 
-=== Using git hooks only
+They have both been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
+
+=== Git hook and shell script
 
 This requires the least number of installed components to work. An overview of the scenario is given below.
 
-.Deploy using git hooks only
+.Deploy using git hook and shell script
 image::deploy_with_hooks.svg[]
 
 The components needed on the server are:
@@ -48,11 +50,11 @@ Apache, Ngnix or other web server that provides clients with HTML pages located 
 
 Possible advantages::
  * it has few dependencies on external tools, only git, giblish and a web server are needed for this to work.
- * giblish provides templates for both the `post-receive` hook and the `publish_html` script that easily can be tailored to your specific setup.
+ * giblish provides templates for both the `post-receive` hook and the `publish_html` script that can be tailored to your specific setup quite easily.
 
 Possible drawbacks::
- * The hook and publish scripts provided with giblish runs *syncronously* at each push from a _Doc Writer_ to the _Master Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Master Repo_.
- * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool handle this.
+ * The hook and publish scripts provided with giblish runs syncronously at each push from a _Doc Writer_ to the _Master Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Master Repo_.
+ * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool implement a proper 'build' of your documents. You might for example end up with race conditions if two pushes to the _Master Repo_ are done close in time.
  * The `publish_html` script provided with giblish only uses the currently checked-out branch on the _Staging Repo_ (typically 'master') to generate the HTML docs. It is non-trivial to add multiple-branch generation to the provided script.
 
 === Using Jenkins / git hook combo
