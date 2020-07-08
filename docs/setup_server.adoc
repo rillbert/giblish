@@ -7,17 +7,11 @@
 
 To describe how to use giblish as a tool for creating a static web site with documents that are automatically generated each time a contributer push changes to a git repo.
 
+If you want to dive straight in and setup one of the scenarios below, jump to <<setup_instructions>>, otherwise read on for some examples and considerations.
+
 === Example usages
 
 TBD
-
-=== Some preliminary notes
-
-Permissions and security::
-These instructions does not give any advice on setting up permissions in a way suitable for your use case. You should however, give this an appropriate amount of consideration. You need to set the permissions so that the relevant tools and scripts can perform their expected tasks without being security holes of your server. You might want to consider setting up specific user accounts/groups to achieve this but this is outside the scope of this text.
-
-Server side git hooks::
-git supports hooks in several parts of the sequence of getting changes committed and pushed to a remote repo. This feature is used in both scenarios below to kick-start the HTML document generation when someone pushes a change to the git repository. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc].
 
 == Two deployment scenarios
 
@@ -44,9 +38,9 @@ A git repo that mirrors the _Master Repo_ and fulfills two functions:
  . provide a script that uses giblish to publish the adoc files in the working tree as HTML files that reside at a place in the file system where the web server can access them.
 
 Web Server::
-Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (typically under /var/www/... )
+Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (eg under /var/www/... )
 
-==== Considerations when choosing this scenario
+==== Considerations
 
 Possible advantages::
  * it has few dependencies on external tools, only git, giblish and a web server are needed for this to work.
@@ -64,16 +58,37 @@ This setup adds a Jenkins (or similar build orchestrator) installation so it is 
 .Deploy using Jenkins
 image::deploy_with_jenkins.svg[]
 
-==== Sequence for generating documents
+The components needed on the server are:
 
-The following image shows how the sequence from user commit to generated documents.
+Master Repo::
+The common (bare) git repo used by all content writers to push updates to. This repo needs to be setup with a server-side hook (_post-receive_) that are executed by git after each push to the repository.
 
-.Sequence diagram for generating docs from adoc
-image::Render Documents.png[]
+Jenkins instance::
+A running instance of Jenkins and one or more defined build jobs that use giblish to build the HTML documents.
 
+Web Server::
+Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (eg under /var/www/... )
+
+==== Considerations
+
+Possible advantages::
+ * Using Jenkins enables a lot of flexibility and scaleability. You can setup multiple jenkins agents to increase performance, you can define many build jobs where each job builds either a particular branch from a particular git repo or many branches from one or many repos.
+
+Possible drawbacks::
+ * You need to be familiar with, and maintain, the Jenkins instance.
+
+[[setup_instructions]]
 == Setup instructions
 
 Follow the instructions below to get this running on your server.
+
+=== Some preliminary notes
+
+Permissions and security::
+These instructions does not give any advice on setting up permissions in a way that is suitable for your use case. You should however, give this an appropriate amount of consideration. You need to set the permissions so that the relevant tools and scripts can perform their expected tasks without constituting security vulnerabilities on your server. You might want to consider setting up specific user accounts/groups to achieve this but this is outside the scope of this text.
+
+Server side git hooks::
+git supports several hooks that are executed at different points in the sequence of committing and pushing changes to a repository. This feature is used in both scenarios below to provide the trigger for generating the HTML document. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc].
 
 [[common_setup]]
 === Initial setup
@@ -90,7 +105,7 @@ git and gitrepo setup::
  .. Copy a bare repo you already use to the _Server_ file system.
  .. Init a new repo using `git init --bare <your_repo_name>` somewhere on the _Server_ file system.
 +
-NOTE: If you start with an empty, bare _Master Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Master Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
+NOTE: If you start with an empty, bare, _Master Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Master Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
 
 === Setup the git hook and shell script scenario
 
@@ -125,7 +140,16 @@ You can tweak the `publish_html.sh` script to use other features of giblish/asci
 
 === Setup the git hook and Jenkins scenario
 
+First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
+
 TBD
+
+==== Sequence for generating documents
+
+The following image shows how the sequence from user commit to generated documents.
+
+.Sequence diagram for generating docs from adoc
+image::Render Documents.png[]
 
 [appendix]
 == Scripts
