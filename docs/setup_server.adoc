@@ -96,24 +96,6 @@ NOTE: If you start with an empty, bare _Master Repo_ on the _Server_, it is a go
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
-.The giblish `publish_html.sh` template script
-[%collapsible]
-====
-[source,bash]
-----
-include::../scripts/publish_html.sh[]
-----
-====
-
-.The giblish `post-receive` template git hook
-[%collapsible]
-====
-[source,bash]
-----
-include::../scripts/hooks/post-receive[]
-----
-====
-
 script setup::
  . Find out where the template scripts for the `post-receive` and the `publish_html.sh` scripts are located by running `gem which giblish`. Strip of the `lib/giblish.rb` from the end of the returned path and `cd` to the resulting folder. There should be a subfolder named `scripts` under which you can find the template scripts somewhere.
 +
@@ -146,8 +128,27 @@ You can tweak the `publish_html.sh` script to use other features of giblish/asci
 TBD
 
 [appendix]
-[[post-update-hook]]
-== post-update hook
+== Scripts
+
+.The giblish `publish_html.sh` template script
+[%collapsible]
+====
+[source,bash]
+----
+include::../scripts/publish_html.sh[]
+----
+====
+
+.The giblish `post-receive` template git hook
+[%collapsible]
+====
+[source,bash]
+----
+include::../scripts/hooks/post-receive[]
+----
+====
+
+=== post-update hook
 
 Below is an example of a `post-update` hook that triggers Jenkins jobs after a push to a git repo. This hook should be installed on the server side git repository to trigger Jenkins builds
 
@@ -160,7 +161,7 @@ include::../docgen/scripts/githook_examples/post-update.example[]
 ----
 ====
 
-== Jenkins pipeline script
+=== Jenkins pipeline script
 
 Below is a very basic example of a Jenkins pipeline that triggers giblish to render html and pdf documents located in a specific directory in a git repository.
 
