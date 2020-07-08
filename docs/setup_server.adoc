@@ -1,4 +1,4 @@
-= Publish git repos using giblish
+= Publish asciidoc docs in git repos using giblish
 :imagesdir: setup_server_assets
 :numbered:
 :toc:
