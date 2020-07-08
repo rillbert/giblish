@@ -53,7 +53,9 @@ Possible drawbacks::
 
 === Using Jenkins / git hook combo
 
-This setup adds a Jenkins (or similar build orchestrator) installation so it is more tools to setup but offer more flexibility and is probably more 'production friendly'.
+This setup adds a Jenkins (or similar build orchestrator) installation so it is more tools to setup but offer more flexibility and performance. It is also more robust and thus more 'production friendly'.
+
+If you are already doing some kind of development, chances are that you already have this kind of setup as a CI pipeline.
 
 .Deploy using Jenkins
 image::deploy_with_jenkins.svg[]
