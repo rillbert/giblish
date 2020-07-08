@@ -4,17 +4,78 @@
 
 == Purpose
 
-To describe how to setup a web site with documents automatically generated from a git repo.
+To describe how to use giblish as a tool in creating a static web site with documents automatically generated from a git repo.
+
+This text covers two deployment scenarios; one using git hooks only, and one using a combination of git hooks and Jenkins. It has only been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
+
+== Deploy using git hooks only
+
+This requires the least number of installed components to work. An overview of the scenario is given below.
+
+.Deploy using git hooks only
+image::deploy_with_hooks.svg[]
+
+The components needed on the server are:
+
+Master Repo::
+The common (bare) git repo used by all content writers to push updates to. This repo needs to be setup with a server-side hook (_post-receive_) that are executed by git after each push to the repository.
+
+Staging Repo::
+A git repo that mirrors the _Master Repo_ and fulfills two functions:
+
+ . provide a checked-out working tree with the source files (adoc files).
+ . provide a script that uses giblish to publish the adoc files in the working tree as HTML files that reside at a place in the file system where the web server can access them.
+
+Web Server::
+Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (typically under /var/www/... )
+
+=== Considerations when choosing this scenario
+
+Possible advantages::
+ * it has few dependencies on external tools, only git, giblish and a web server are needed for this to work.
+ * giblish provides templates for both the `post-receive` hook and the `publish_html` script that easily can be tailored to your specific setup.
+
+Possible drawbacks::
+ * The hook and publish scripts provided with giblish runs *syncronously* at each push from a _Doc Writer_ to the _Master Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Master Repo_.
+ * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool handle this.
+ * The `publish_html` script provided with giblish only uses the currently checked-out branch on the _Staging Repo_ (typically 'master') to generate the HTML docs. It is non-trivial to add multiple-branch generation to the provided script.
+
+=== The setup process
+
+git and gitrepo setup::
+ . Install git on the _Server_.
+ . Setup the *bare* _Master Repo_ on the _Server_ by either.
+ .. Copy a bare repo you already use to the _Server_ file system.
+ .. Init a new repo using `git init --bare <your_repo_name>` somewhere on the _Server_ file system.
++
+NOTE: If you start with an empty, bare _Master Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Master Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicates things.
+
+ . Setup the _Staging Repo_ on the _Server_ by cloning the _Master Repo_ using `git clone \file://<file-system-location-of-master-repo` to a suitable place in the _Server's_ file system.
+
+Now you should have all the necessary git repositories in place on the server. They are however, not 'connected' via hooks yet.
+
+giblish setup::
+ . Install ruby on the _Server_
+ . Install giblish on the _Server_ using `gem install giblish`
+
+== Deploy using Jenkins
+
+This setup adds a Jenkins (or similar build orchestrator) installation so it is more to setup but is more 'production friendly'.
+
+.Deploy using Jenkins
+image::deploy_with_jenkins.svg[]
+
+
 
 == Toolchain
 
  * git
  * giblish
  * git server side hooks to kick-off the document rendering after a git push.
- * a tool that can execute scripts after a git push. *Jenkins* is used in this instruction. Some advantages over calling giblish directly from a git hook:
+ * a web server to publish the rendered html documents.
+ö* a tool that can execute scripts after a git push. *Jenkins* is used in this instruction. Some advantages over calling giblish directly from a git hook:
  ** the document rendering is asynchronous to the git push from the client.
  ** the script executed by Jenkins (the 'pipeline' in Jenkis lingo) can be stored and versioned in the same git repo as the documents to be rendered.
- * a web server to publish the rendered html documents.
 
 === Sequence for rendering documents
 
