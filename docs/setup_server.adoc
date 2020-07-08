@@ -1,11 +1,11 @@
-= Setup web site powered by giblish
+= Publish git repos using giblish
 :imagesdir: setup_server_assets
 :numbered:
 :toc:
 
 == Purpose
 
-To describe how to use giblish as a tool in creating a static web site with documents automatically generated from a git repo.
+To describe how to use giblish as a tool for creating a static web site with documents that are automatically generated each time a contributer push changes to a git repo.
 
 This text covers two deployment scenarios; one using git hooks only, and one using a combination of git hooks and Jenkins. It has only been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
 
