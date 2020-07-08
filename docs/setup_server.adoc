@@ -71,12 +71,14 @@ The following image shows how the sequence from user commit to generated documen
 .Sequence diagram for generating docs from adoc
 image::Render Documents.png[]
 
-== The setup process
+== Setup instructions
+
+Follow the instructions below to get this running on your server.
 
 [[common_setup]]
 === Initial setup
 
-These steps are common to both deployment scenarios below.
+These steps are common to both deployment scenarios.
 
 giblish setup::
  . Install ruby on the _Server_ (a version no more than 18 months old)
@@ -90,8 +92,7 @@ git and gitrepo setup::
 +
 NOTE: If you start with an empty, bare _Master Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Master Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
 
-
-=== Setup process for git hooks only
+=== Setup the git hook and shell script scenario
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
@@ -122,7 +123,7 @@ The template scripts assume that the the css used to style the generated HTML is
 other tweaking::
 You can tweak the `publish_html.sh` script to use other features of giblish/asciidoctor, such as docid's, docinfo support and others. To do this, change the flags and arguments used to invoke giblish from the `publish_html.sh` script accordingly.
 
-=== The setup process for Jenkins and git hook combo
+=== Setup the git hook and Jenkins scenario
 
 TBD
 
@@ -133,7 +134,9 @@ TBD
 Below is an example of a `post-update` hook that triggers Jenkins jobs after a push to a git repo. This hook should be installed on the server side git repository to trigger Jenkins builds
 
 .Example of a git hook triggering Jenkins builds
-[source,bash]
+
+// [source,bash]
+[%collapsible]
 ----
 include::../docgen/scripts/githook_examples/post-update.example[]
 ----
