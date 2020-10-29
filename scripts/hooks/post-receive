@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# this hook runs the publish_html.sh script which, in turn,
+# publishes html versions of adoc files to the desired
+# destination.
+#
+#
+# Adjust the WORKING_TREE_ROOT, DST_DIR and SRC_DIR below to
+# locations suitable for your setup
+
+### config section
+# set this to the repo root where the working tree exists
+WORKING_TREE_ROOT="/the/path/to/the/stage/repo"
+
+# set this to the publish root dir served by a web server
+DST_DIR="/the/path/to/webserver/directory/root"
+
+# set this to "true" if you want to force an 'rm -rf'of
+# the destination dir before generating new htmls
+CLEAR_DST=""
+
+# set this to the top dir to look for docs under in the
+# staging repo. This shall be given as a relative path
+# from the top dir of the git repo.
+SRC_DIR="."
+
+# Make config available in subshell
+export WORKING_TREE_ROOT
+export DST_DIR
+export SRC_DIR
+export CLEAR_DST
+
+# read the input from git...not currently used.
+# it could for example be used to filter on git branches
+#
+# while read line
+# do
+#   echo "git ref: $line"
+# done < /dev/stdin
+
+echo "Post update hook running..."
+(
+  cd "${WORKING_TREE_ROOT}"
+
+  # need to unset the GIT_DIR env set by the invoking hook...
+  unset GIT_DIR
+
+  # Run the publish script
+  PUBLISH_SCRIPT="scripts/publish_html.sh"
+  echo "invoking publish script at ${WORKING_TREE_ROOT}/${PUBLISH_SCRIPT}"
+  if [[ -z "${CLEAR_DST}" ]]; then
+    "${PUBLISH_SCRIPT}" "${DST_DIR}" "${SRC_DIR}"
+  else
+    "${PUBLISH_SCRIPT}" -f "${DST_DIR}" "${SRC_DIR}"
+  fi
+
+)

@@ -37,12 +37,13 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "rake", "~> 11.0"
   spec.add_development_dependency "oga", "~> 2.15"
+  spec.add_development_dependency 'thor', '~> 0.20.3'
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.10"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 1.5"]
-  spec.add_runtime_dependency "asciidoctor-pdf", [">= 1.5.0.rc.1"]
-  spec.add_runtime_dependency "git", "~> 1.3"
-  spec.add_runtime_dependency "rouge", "~> 3.3"
+  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.5", ">= 1.5.3"]
+  spec.add_runtime_dependency "git", "~> 1.7"
+  spec.add_runtime_dependency "rouge", "~> 3.24"
   spec.add_runtime_dependency "prawn-svg", "~> 0.30.0"
 end
