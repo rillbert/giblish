@@ -109,6 +109,14 @@ git and gitrepo setup::
 +
 NOTE: If you start with an empty, bare, _Master Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Master Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
 
+ . Setup the _Staging Repo_ on the _Server_ by cloning the _Master Repo_ to a suitable folder in the _Server_ file system, ex:
++
+.Setup a staging repo in your home folder on the _Server_
+====
+ cd ~
+ git clone file:///usr/local/master_repo.git
+====
+
 === Setup the git hook and shell script scenario
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
