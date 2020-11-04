@@ -5,7 +5,7 @@ require "json"
 require "asciidoctor"
 require "open3"
 require "cgi"
-require "uri/generic"
+require "uri"
 
 class GrepDocTree
   Line_info = Struct.new(:line, :line_no) {

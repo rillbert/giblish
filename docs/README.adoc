@@ -338,10 +338,9 @@ accessible at www.mywebsite.com/cgi-bin/giblish-search.cgi
 
 In my case this returns `/var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib/giblish.rb`. This means that I will find the script in the same directory, i.e. `/var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib`.
 
- . Copy the server side script to the /cgi-bin dir on the web server. In this example the cgi-bin dir
-   is configured to be /var/www/cgi-bin
+ . Copy the server side script to the /cgi-bin dir on the web server. In this example the cgi-bin dir is configured to be `/var/www/cgi-bin`
 +
- scp /var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib/giblish-search.rb rillbert@my.web.server.org:/var/www/cgi-bin/giblish-search.cgi
+ scp /var/lib/ruby/gems/2.4.0/gems/giblish-0.5.2/lib/giblish-search.cgi rillbert@my.web.server.org:/var/www/cgi-bin/giblish-search.cgi
 
 ////
 
