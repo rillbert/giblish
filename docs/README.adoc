@@ -12,7 +12,7 @@ a destination directory tree containing the corresponding html or pdf files
 and adds some handy tools for easier navigation of the resulting files.
 
 An example of how giblish can generate the master branch of the official asciidoc.org
-documentation git repo can be found at http://www.rillbert.se/adoc/examples/adocorg/master/myindex.html
+documentation git repo can be found at https://www.rillbert.se/asciidoctor_docs/master/myindex.html
 
 The added tools include:
 
