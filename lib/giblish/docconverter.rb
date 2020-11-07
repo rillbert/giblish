@@ -120,6 +120,7 @@ module Giblish
         # destination root
         doc.write output, index_filepath.to_s
       rescue Exception => e
+        puts e.backtrace
         Giblog.logger.error(e)
         conv_error = true
       end

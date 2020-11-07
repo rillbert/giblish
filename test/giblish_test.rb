@@ -1,7 +1,8 @@
-require "test_helper"
+# frozen_string_literal: true
 
-require_relative "../lib/giblish/utils.rb"
-require_relative "../lib/giblish/core.rb"
+require "test_helper"
+require_relative "../lib/giblish/utils"
+require_relative "../lib/giblish/core"
 
 class GiblishAdminTest < Minitest::Test
   def setup

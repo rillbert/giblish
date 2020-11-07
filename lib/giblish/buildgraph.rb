@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 module Giblish
   # Builds an asciidoc page with an svg image with a
@@ -6,16 +7,14 @@ module Giblish
   # Graphviz is used as the graph generator and must be available
   # as a valid engine via asciidoctor-diagram for this class to work.
   class GraphBuilderGraphviz
-
     # the dependency graph relies on graphwiz (dot), check if we can access that
     def self.supported
-      return !Giblish.which('dot').nil?
+      !Giblish.which("dot").nil?
     end
 
     # Supported options:
     # :extension - file extension for URL links (default is .html)
     def initialize(processed_docs, paths, deployment_info, options = {})
-
       # this class relies on graphwiz (dot), make sure we can access that
       raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported
 
@@ -28,20 +27,19 @@ module Giblish
       @paths = paths
       @deployment_info = deployment_info
       @converter_options = options.dup
-      # @options = options.dup
       @extension = @converter_options.key?(:extension) ? options[:extension] : "html"
       @docid_cache = DocidCollector.docid_cache
       @docid_deps =  DocidCollector.docid_deps
       @dep_graph = build_dep_graph
       @search_opts = {
-          web_assets_top: @deployment_info.web_path,
-          search_assets_top: @deployment_info.search_assets_path,
+        web_assets_top: @deployment_info.web_path,
+        search_assets_top: @deployment_info.search_assets_path
       }
     end
 
     # get the asciidoc source for the document.
-    def source(make_searchable = false)
-      <<~DOC_STR
+    def source(make_searchable: false)
+      s = <<~DOC_STR
         #{generate_header}
         #{add_search_box if make_searchable}
         #{generate_graph_header}
@@ -49,6 +47,10 @@ module Giblish
         #{generate_deps}
         #{generate_footer}
       DOC_STR
+      puts ""
+      puts s
+      puts ""
+      s
     end
 
     def cleanup
@@ -56,7 +58,7 @@ module Giblish
       # when creating the document dependency graph
       adoc_diag_cache = @paths.dst_root_abs.join(".asciidoctor")
       FileUtils.remove_dir(adoc_diag_cache) if adoc_diag_cache.directory?
-      Giblog.logger.info {"Removing cached files at: #{@paths.dst_root_abs.join("docdeps.svg").to_s}"}
+      Giblog.logger.info { "Removing cached files at: #{@paths.dst_root_abs.join('docdeps.svg')}" }
       @paths.dst_root_abs.join("docdeps.svg").delete
     end
 
@@ -70,13 +72,13 @@ module Giblish
           doc.src_file.to_s.eql? src_file
         end
         raise "Inconsistent docs when building graph!! found no match for #{src_file}" if d.nil?
+
         result[d] = id_array if d.converted
       end
       result
     end
 
     def generate_graph_header
-      t = Time.now
       <<~DOC_STR
         Below is a graph that visualizes what documents (by doc-id) a specific
         document references.
@@ -89,7 +91,7 @@ module Giblish
                 fillcolor="#ebf26680",
                 style="filled,solid"
               ]
-        
+
         rankdir="LR"
 
       DOC_STR
@@ -115,10 +117,10 @@ module Giblish
     end
 
     def add_search_box
-      Giblish::generate_search_box_html(
-          @converter_options[:attributes]["stylesheet"],
-          "/cgi-bin/giblish-search.cgi",
-          @search_opts
+      Giblish.generate_search_box_html(
+        @converter_options[:attributes]["stylesheet"],
+        "/cgi-bin/giblish-search.cgi",
+        @search_opts
       )
     end
 
@@ -126,18 +128,20 @@ module Giblish
       # split title into multiple rows if it is too long
       line_length = 15
       lines = [""]
-      info.title.split(" ").inject("") do |l,w|
-        line = l + " " + w
-        lines[-1] = line
-        if line.length > line_length
-          # create a new, empty, line
-          lines << ""
-          ""
-        else
-          line
+      unless info&.title.nil?
+        info.title.split(" ").inject("") do |l, w|
+          line = "#{l} #{w}"
+          lines[-1] = line
+          if line.length > line_length
+            # create a new, empty, line
+            lines << ""
+            ""
+          else
+            line
+          end
         end
-      end unless info.title.nil?
-      title = lines.select { |l| l.length > 0 }.map {|l| l}.join("\n")
+      end
+      title = lines.select { |l| l.length.positive? }.map { |l| l }.join("\n")
 
       # create the label used to display the node in the graph
       dot_entry = if info.doc_id.nil?
@@ -151,12 +155,12 @@ module Giblish
       # add clickable links in the case of html output (this is not supported
       # out-of-the-box for pdf).
       rp = info.rel_path.sub_ext(".#{@extension}")
-      case @extension
-        when "html"
-          dot_entry += ", URL=\"#{rp}\" ]"
-        else
-          dot_entry += " ]"
-      end
+      dot_entry += case @extension
+                   when "html"
+                     ", URL=\"#{rp}\" ]"
+                   else
+                     " ]"
+                   end
       doc_dict[doc_id] = dot_entry
     end
 
@@ -172,10 +176,9 @@ module Giblish
       node_dict = node_dict.sort.reverse.to_h
 
       # produce the string with all node entries
-      node_str = node_dict.map do |k,v|
+      node_dict.map do |_k, v|
         v
       end.join("\n")
-      node_str
     end
 
     def generate_deps
@@ -183,7 +186,7 @@ module Giblish
       @dep_graph.each do |info, targets|
         # set either the real or the generated id as source
         src_part = if info.doc_id.nil?
-                      "\"#{@noid_docs[info]}\""
+                     "\"#{@noid_docs[info]}\""
                    else
                      "\"#{info.doc_id}\""
                    end
@@ -208,11 +211,11 @@ module Giblish
     end
   end
 
+  # specializes generation of a document dependency graph for
+  # docs rendered from a git repo.
   class GitGraphBuilderGraphviz < GraphBuilderGraphviz
-    def initialize(processed_docs, paths, deployment_info, options = {}, git_repo)
+    def initialize(processed_docs, paths, deployment_info, options = {}, _git_repo)
       super(processed_docs, paths, deployment_info, options)
     end
   end
 end
-
-

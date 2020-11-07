@@ -61,7 +61,7 @@ class LinkCSSTest < Minitest::Test
       args = ["--log-level", "info",
               tmp_docs.dir,
               tmp_docs.dir]
-      Giblish.application.run_with_args args
+      Giblish.application.run args
 
       # assert that the css link is only the google font api
       # used by asciidoctor by default
@@ -87,7 +87,7 @@ class LinkCSSTest < Minitest::Test
               "-w", "/my/webserver/topdir",
               tmp_docs.dir,
               tmp_docs.dir]
-      Giblish.application.run_with_args args
+      Giblish.application.run args
 
       # assert that the css link is only the google font api
       # used by asciidoctor by default
@@ -125,7 +125,7 @@ class LinkCSSTest < Minitest::Test
               "-r", r_dir,
               tmp_docs.dir,
               tmp_docs.dir]
-      Giblish.application.run_with_args args
+      Giblish.application.run args
 
       # assert that the css link is relative to the specific
       # css file (../web_assets/css/giblish.css)
@@ -159,7 +159,7 @@ class LinkCSSTest < Minitest::Test
               "-s", "custom",
               tmp_docs.dir,
               tmp_docs.dir]
-      Giblish.application.run_with_args args
+      Giblish.application.run args
 
       # the link shall work when the doc is published on a web server
       # under the given web path

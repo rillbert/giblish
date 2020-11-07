@@ -54,7 +54,7 @@ class IndexHeadingTest < Minitest::Test
       args = ["-m",
               root_dir,
               out_dir_path.to_s]
-      status = Giblish.application.run_with_args args
+      status = Giblish.application.run args
 
 
       assert_equal 0, status

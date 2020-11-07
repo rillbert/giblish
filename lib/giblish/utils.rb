@@ -408,7 +408,7 @@ module Giblish
       ++++
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
         <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:790px">
-            Search all documents: 
+            Search all documents:
             <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
             <button id="search" type="submit"><i class="fa fa-search"></i></button>
             <br>
@@ -421,12 +421,11 @@ module Giblish
 
             <input type="hidden" name="searchassetstop" value="#{opts[:search_assets_top]}"</input>
             <input type="hidden" name="webassetstop" value="#{opts[:web_assets_top]}"</input>
-            #{'<input type="hidden" name="css" value="' + css +'"</input>' unless css.nil? }
+            #{%(<input type="hidden" name="css" value="#{css}"</input>) unless css.nil?}
         </form>
       ++++
 
     SEARCH_INFO
   end
   module_function :generate_search_box_html
-
 end

@@ -30,7 +30,7 @@ class RunGiblishTest < Minitest::Test
       args = ["--log-level", "warn",
               tmp_docs.src_data_top,
               dst_top]
-      status = Giblish.application.run_with_args args
+      status = Giblish.application.run args
       assert_equal 0,status
     end
 
@@ -46,7 +46,7 @@ class RunGiblishTest < Minitest::Test
               tmp_docs.src_data_top,
               dst_top]
 
-      status = Giblish.application.run_with_args args
+      status = Giblish.application.run args
       assert_equal 0,status
     end
   end

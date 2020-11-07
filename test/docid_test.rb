@@ -19,7 +19,7 @@ class DocidCollectorTest < Minitest::Test
               "-d",
               tmp_docs.src_data_top.join("wellformed/docidtest"),
               dst_top.to_s]
-      status = Giblish.application.run_with_args args
+      status = Giblish.application.run args
 
       # assert expected
       assert_equal 0,status
@@ -36,7 +36,7 @@ class DocidCollectorTest < Minitest::Test
               tmp_docs.src_data_top.join("wellformed/docidtest"),
               dst_top]
 
-      status = Giblish.application.run_with_args args
+      status = Giblish.application.run args
       assert_equal 0,status
     end
 
