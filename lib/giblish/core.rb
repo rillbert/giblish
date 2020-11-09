@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "find"
 require "fileutils"
 require "logger"
@@ -66,7 +68,7 @@ module Giblish
           p = Pathname.new(path)
           begin
             to_asciidoc(p) if adocfile? p
-          rescue Exception => e
+          rescue StandardError => e
             str = "Error when converting file #{path}: #{e.message}\nBacktrace:\n"
             e.backtrace.each { |l| str << "   #{l}\n" }
             Giblog.logger.error { str }
@@ -103,7 +105,7 @@ module Giblish
         )
         gb.cleanup
         !errors
-      rescue Exception => e
+      rescue StandardError => e
         Giblog.logger.warn { e.message }
         Giblog.logger.warn { "The dependency graph will not be generated !!" }
       end
@@ -184,16 +186,13 @@ module Giblish
 
     # convert a single adoc doc to whatever the user wants
     def to_asciidoc(filepath)
-      adoc = nil
-      begin
-        adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
-        adoc = @converter.convert(filepath, logger: adoc_logger)
+      adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
+      adoc = @converter.convert(filepath, logger: adoc_logger)
 
-        add_doc(adoc, adoc_logger.user_info_str.string)
-      rescue Exception => e
-        add_doc_fail(filepath, e)
-        raise
-      end
+      add_doc(adoc, adoc_logger.user_info_str.string)
+    rescue StandardError => e
+      add_doc_fail(filepath, e)
+      raise
     end
 
     # predicate that decides if a path is a asciidoc file or not
@@ -218,11 +217,12 @@ module Giblish
       IndexHeadings.clear_index
 
       # propagate user-given id attributes to the indexing class
+      # if there are any
       attr = opts[:attributes]
-      unless attr.nil?
-        IndexHeadings.id_elements[:id_prefix] = attr["idprefix"] if attr.has_key?("idprefix")
-        IndexHeadings.id_elements[:id_separator] = attr["idseparator"] if attr.has_key?("idseparator")
-      end
+      return if attr.nil?
+
+      IndexHeadings.id_elements[:id_prefix] = attr["idprefix"] if attr.key?("idprefix")
+      IndexHeadings.id_elements[:id_separator] = attr["idseparator"] if attr.key?("idseparator")
     end
 
     # top_dir
@@ -252,15 +252,15 @@ module Giblish
 
       # traverse the src file tree and copy all published adoc files
       # to the search_assets dir
-      if @paths.src_root_abs.directory?
-        Find.find(@paths.src_root_abs) do |path|
-          p = Pathname.new(path)
-          next unless adocfile? p
+      return unless @paths.src_root_abs.directory?
 
-          dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
-          FileUtils.mkdir_p(dst_dir)
-          FileUtils.cp(p.to_s, dst_dir)
-        end
+      Find.find(@paths.src_root_abs) do |path|
+        p = Pathname.new(path)
+        next unless adocfile? p
+
+        dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
+        FileUtils.mkdir_p(dst_dir)
+        FileUtils.cp(p.to_s, dst_dir)
       end
     end
 
@@ -288,6 +288,7 @@ module Giblish
     end
   end
 
+  # Converts all adoc files within a git repo
   class GitRepoConverter < FileTreeConverter
     def initialize(options)
       super(options)
@@ -366,7 +367,7 @@ module Giblish
       # Connect to the git repo
       begin
         git_repo = Git.open(git_repo_root)
-      rescue Exception => e
+      rescue StandardError => e
         raise "Could not find a git repo at #{git_repo_root} !"\
             "\n\n(#{e.message})"
       end
@@ -374,7 +375,7 @@ module Giblish
       # fetch all remote refs if ok with user
       begin
         git_repo.fetch unless local_only
-      rescue Exception => e
+      rescue StandardError => e
         raise "Could not fetch from origin"\
             "(do you need '--local-only'?)!\n\n(#{e.message})"
       end
@@ -406,21 +407,21 @@ module Giblish
     # convert all docs from one particular git commit
     # returns true if at least one doc failed to convert
     # and false if everything went ok.
-    def convert_one_checkout(co)
+    def convert_one_checkout(checkout)
       # determine if we are called with a tag or a branch
-      is_tag = (co.respond_to?(:tag?) && co.tag?)
+      is_tag = (checkout.respond_to?(:tag?) && checkout.tag?)
 
-      Giblog.logger.info { "Checking out #{co.name}" }
-      @git_repo.checkout co.name
+      Giblog.logger.info { "Checking out #{checkout.name}" }
+      @git_repo.checkout checkout.name
 
       unless is_tag
         # if this is a branch, make sure it is up-to-date
-        Giblog.logger.info { "Merging with origin/#{co.name}" }
-        @git_repo.merge "origin/#{co.name}"
+        Giblog.logger.info { "Merging with origin/#{checkout.name}" }
+        @git_repo.merge "origin/#{checkout.name}"
       end
 
       # assign a checkout-unique dst-dir
-      dir_name = co.name.tr("/", "_") << "/"
+      dir_name = checkout.name.tr("/", "_") << "/"
 
       # Update needed base class members before converting a new checkout
       @processed_docs = []

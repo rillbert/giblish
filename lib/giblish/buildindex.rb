@@ -156,11 +156,11 @@ module Giblish
 
     private
 
-    def generate_conversion_info(d)
-      return "" if d.stderr.empty?
+    def generate_conversion_info(doc_info)
+      return "" if doc_info.stderr.empty?
 
       # extract conversion warnings from asciddoctor std err
-      conv_warnings = d.stderr.gsub(/^/, " * ")
+      conv_warnings = doc_info.stderr.gsub(/^/, " * ")
 
       # assemble info to index page
       <<~CONV_INFO
@@ -226,51 +226,51 @@ module Giblish
     end
 
     # Derived classes can override this with useful info
-    def generate_history_info(_d)
+    def generate_history_info(_doc_info)
       ""
     end
 
-    def generate_detail_fail(d)
+    def generate_detail_fail(doc_info)
       <<~FAIL_INFO
-        === #{d.src_file}
+        === #{doc_info.src_file}
 
         #{display_source_file(d)}
 
         Error detail::
-        #{d.stderr}
+        #{doc_info.stderr}
 
         ''''
 
       FAIL_INFO
     end
 
-    def generate_detail(d)
+    def generate_detail(doc_info)
       # Generate detail info
-      purpose_str = if d.purpose_str.nil?
+      purpose_str = if doc_info.purpose_str.nil?
                       ""
                     else
-                      "Purpose::\n#{d.purpose_str}"
+                      "Purpose::\n#{doc_info.purpose_str}"
                     end
 
-      doc_id_str = if !d.doc_id.nil? && @manage_docid
-                     "Doc id::\n_#{d.doc_id}_"
+      doc_id_str = if !doc_info.doc_id.nil? && @manage_docid
+                     "Doc id::\n_#{doc_info.doc_id}_"
                    else
                      ""
                    end
 
       <<~DETAIL_SRC
         [[#{Giblish.to_valid_id(d.title.encode('utf-8'))}]]
-        === #{d.title.encode('utf-8')}
+        === #{doc_info.title.encode('utf-8')}
 
         #{doc_id_str}
 
         #{purpose_str}
 
-        #{generate_conversion_info d}
+        #{generate_conversion_info doc_info}
 
-        #{display_source_file(d)}
+        #{display_source_file(doc_info)}
 
-        #{generate_history_info d}
+        #{generate_history_info doc_info}
 
         ''''
 
@@ -346,17 +346,19 @@ module Giblish
       @git_repo.current_branch
     end
 
-    def generate_history_info(d)
-      str = <<~HISTORY_HEADER
-        File history::
+    def generate_history_info(doc_info)
+      str = String.new(
+        <<~HISTORY_HEADER
+          File history::
 
-        [cols=\"2,3,8\",options=\"header\"]
-        |===
-        |Date |Author |Message
-      HISTORY_HEADER
+          [cols=\"2,3,8\",options=\"header\"]
+          |===
+          |Date |Author |Message
+        HISTORY_HEADER
+      )
 
       # Generate table rows of history information
-      d.history.each do |h|
+      doc_info.history.each do |h|
         str << <<~HISTORY_ROW
           |#{h.date.strftime('%Y-%m-%d')}
           |#{h.author}

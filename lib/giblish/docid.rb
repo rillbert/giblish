@@ -1,8 +1,10 @@
+# frozen_string_literal: true
 
 require_relative "./utils"
 require "asciidoctor"
 require "asciidoctor/extensions"
 
+# put docid stuff in the giblish namespace
 module Giblish
   # Parse all adoc files for :docid: attributes
   class DocidCollector < Asciidoctor::Extensions::Preprocessor
@@ -15,13 +17,7 @@ module Giblish
     @docid_deps = {}
 
     class << self
-      def docid_cache
-        @docid_cache
-      end
-
-      def docid_deps
-        @docid_deps
-      end
+      attr_reader :docid_cache, :docid_deps
 
       def clear_cache
         @docid_cache = {}
@@ -64,6 +60,7 @@ module Giblish
     # add a new source document to the docid_deps
     def add_source_dep(src_path)
       return if docid_deps.key? src_path
+
       docid_deps[src_path] = []
     end
 
@@ -123,9 +120,7 @@ module Giblish
     # Get the relative path from the src doc to the
     # doc with the given doc id
     def get_rel_path(src_path, doc_id)
-      unless docid_cache.key? doc_id
-        raise ArgumentError("unknown doc id: #{doc_id}")
-      end
+      raise ArgumentError("unknown doc id: #{doc_id}") unless docid_cache.key? doc_id
 
       rel_path = docid_cache[doc_id]
                  .dirname
@@ -175,7 +170,6 @@ module Giblish
       docid_cache[id] = Pathname(path)
     end
   end
-
 
   # Helper method to register the docid preprocessor extension with
   # the asciidoctor engine.
