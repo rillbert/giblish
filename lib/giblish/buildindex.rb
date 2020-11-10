@@ -259,7 +259,7 @@ module Giblish
                    end
 
       <<~DETAIL_SRC
-        [[#{Giblish.to_valid_id(d.title.encode('utf-8'))}]]
+        [[#{Giblish.to_valid_id(doc_info.title.encode('utf-8'))}]]
         === #{doc_info.title.encode('utf-8')}
 
         #{doc_id_str}

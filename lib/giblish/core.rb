@@ -69,7 +69,8 @@ module Giblish
           begin
             to_asciidoc(p) if adocfile? p
           rescue StandardError => e
-            str = "Error when converting file #{path}: #{e.message}\nBacktrace:\n"
+            str = String.new("Error when converting file "\
+                             "#{path}: #{e.message}\nBacktrace:\n")
             e.backtrace.each { |l| str << "   #{l}\n" }
             Giblog.logger.error { str }
             conv_error = true
