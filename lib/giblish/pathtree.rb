@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+# frozen_string_literal: true
 
 # This class can convert the following paths:
 # basedir/file_1
@@ -19,8 +19,7 @@
 #     dir3
 #       file_5
 class PathTree
-  attr_reader :name
-  attr_reader :data
+  attr_reader :name, :data
 
   def initialize(tail = nil, data = nil)
     @children = []
@@ -37,7 +36,7 @@ class PathTree
     end
   end
 
-  def add_path(tail,data = nil)
+  def add_path(tail, data = nil)
     tail = tail.split("/") unless tail.is_a?(Array)
     return if tail.empty?
 
