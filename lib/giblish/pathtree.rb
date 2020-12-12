@@ -23,7 +23,6 @@ class PathTree
 
   def initialize(tail = nil, data = nil)
     @children = []
-    @it = nil
     @name = nil
     return unless tail
 
@@ -36,6 +35,8 @@ class PathTree
     end
   end
 
+  # adds a new path to the tree and associates the data 
+  # to the leaf of that path.
   def add_path(tail, data = nil)
     tail = tail.split("/") unless tail.is_a?(Array)
     return if tail.empty?
@@ -68,17 +69,11 @@ class PathTree
 
   # Public: Sort the nodes on each level in the tree in lexical order but put
   # leafs before non-leafs.
-  def sort_children
-    @children.sort! do |a, b|
-      if (a.leaf? && b.leaf?) || (!a.leaf? && !b.leaf?)
-        a.name <=> b.name
-      elsif a.leaf? && !b.leaf?
-        -1
-      else
-        1
-      end
-    end
-    @children.each(&:sort_children)
+  def sort_leaf_first
+    # sort on this level
+    @children.sort! { |a, b| leaf_first(a, b) }
+    # sort each subtree
+    @children.each(&:sort_leaf_first)
   end
 
   # Public: is this node a leaf
@@ -90,6 +85,16 @@ class PathTree
 
   private
 
+  def leaf_first(left, right)
+    if left.leaf? != right.leaf?
+      # always return leaf before non-leaf
+      return left.leaf? ? -1 : 1
+    end
+
+    # for two non-leafs, return lexical order
+    left.name <=> right.name
+  end
+
   def get_child(segment_name)
     ch = @children.select { |c| c.name == segment_name }
     ch.length.zero? ? nil : ch[0]
@@ -100,6 +105,7 @@ end
 if __FILE__ == $PROGRAM_NAME
   paths = %w[basedir/file_a
              basedir/file_a
+             basedir/dira
              basedir/dira/file_c
              basedir/dirb/file_e
              basedir/dira/file_d
@@ -110,12 +116,15 @@ if __FILE__ == $PROGRAM_NAME
              basedir2/dir2/dir3/file_m]
 
   root = PathTree.new
+  count = 0
   paths.each do |p|
     puts "adding path: #{p}"
-    root.add_path p
+    root.add_path p, count
+    count += 1
   end
-  root.sort_children
+  root.sort_leaf_first
   root.traverse_top_down do |level, node|
-    puts "#{' ' * level} - #{node.name}"
+    data = node.data.nil? ? "" : node.data.to_s
+    puts "#{' ' * level} - #{node.name} #{data}"
   end
 end
