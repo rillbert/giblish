@@ -117,6 +117,26 @@ module Giblish
     attr_writer :search_assets_path
   end
 
+  # creates and caches a set of file paths that match the given
+  # predicate.
+  # after instantiation, the path set is imutable
+  # 
+  # Usage: 
+  # paths = CachedPathSet(src_root_dir) {|p| your matching predicate here}
+  class CachedPathSet
+    attr_reader :paths
+
+    def initialize(src_root_dir)
+      @paths = []
+      src_root = Pathname.new(src_root_dir)
+      if src_root.directory?
+        Find.find(src_root.realpath.to_s) do |path|
+          @paths << Pathname.new(path) if yield(path)
+        end
+      end
+    end
+  end
+
   # Helper class to ease construction of different paths for input and output
   # files and directories
   class PathManager

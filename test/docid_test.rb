@@ -1,6 +1,6 @@
 require "test_helper"
-require_relative "../lib/giblish/utils.rb"
-require_relative "../lib/giblish/docid.rb"
+require_relative "../lib/giblish/utils"
+require_relative "../lib/giblish/docid"
 
 class DocidCollectorTest < Minitest::Test
   include Giblish::TestUtils
@@ -22,7 +22,7 @@ class DocidCollectorTest < Minitest::Test
       status = Giblish.application.run args
 
       # assert expected
-      assert_equal 0,status
+      assert_equal 0, status
     end
   end
 
@@ -37,8 +37,7 @@ class DocidCollectorTest < Minitest::Test
               dst_top]
 
       status = Giblish.application.run args
-      assert_equal 0,status
+      assert_equal 0, status
     end
-
   end
 end

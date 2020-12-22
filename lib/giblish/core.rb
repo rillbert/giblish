@@ -13,6 +13,7 @@ require_relative "docinfo"
 require_relative "buildgraph"
 
 module Giblish
+
   # Parse a directory tree and convert all asciidoc files matching the
   # supplied critera to the supplied format
   class FileTreeConverter
@@ -31,6 +32,8 @@ module Giblish
         @options[:resourceDir],
         @options[:makeSearchable]
       )
+
+      @adoc_files = CachedPathSet.new(@paths.src_root_abs,&method(:adocfile?)).paths
 
       # set the path to the search data that will be sent to the cgi search script
       deploy_search_path = if @options[:makeSearchable]
@@ -63,18 +66,15 @@ module Giblish
       # traverse the src file tree and convert all files deemed as
       # adoc files
       conv_error = false
-      if @paths.src_root_abs.directory?
-        Find.find(@paths.src_root_abs) do |path|
-          p = Pathname.new(path)
-          begin
-            to_asciidoc(p) if adocfile? p
-          rescue StandardError => e
-            str = String.new("Error when converting file "\
-                             "#{path}: #{e.message}\nBacktrace:\n")
-            e.backtrace.each { |l| str << "   #{l}\n" }
-            Giblog.logger.error { str }
-            conv_error = true
-          end
+      @adoc_files.each do |p|
+        begin
+          to_asciidoc(p)
+        rescue StandardError => e
+          str = String.new("Error when converting file "\
+                           "#{p}: #{e.message}\nBacktrace:\n")
+          e.backtrace.each { |l| str << "   #{l}\n" }
+          Giblog.logger.error { str }
+          conv_error = true
         end
       end
 
@@ -255,37 +255,21 @@ module Giblish
       # to the search_assets dir
       return unless @paths.src_root_abs.directory?
 
-      Find.find(@paths.src_root_abs) do |path|
-        p = Pathname.new(path)
-        next unless adocfile? p
-
+      @adoc_files.each do |p|
         dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
         FileUtils.mkdir_p(dst_dir)
         FileUtils.cp(p.to_s, dst_dir)
       end
     end
 
-    # Register the asciidoctor extension that handles doc ids and traverse
-    # the source tree to collect all :docid: attributes found in document
-    # headers.
+    # Run the first pass necessary to collect all :docid: attributes found in document
+    # headers and register the correct class as an asciidoctor extension that handles
+    # all :docid: references
     def manage_doc_ids
+      DocidCollector.run_pass1(adoc_files: @adoc_files)
+
       # Register the docid preprocessor hook
       Giblish.register_docid_extension
-
-      # Make sure that no prior docid's are hangning around
-      DocidCollector.clear_cache
-      DocidCollector.clear_deps
-      idc = DocidCollector.new
-
-      # traverse the src file tree and collect ids from all
-      # .adoc or .ADOC files
-      if @paths.src_root_abs.directory?
-        Find.find(@paths.src_root_abs) do |path|
-          p = Pathname.new(path)
-          idc.parse_file(p) if adocfile? p
-        end
-      end
-      idc
     end
   end
 
