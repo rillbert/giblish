@@ -6,23 +6,30 @@ require "asciidoctor/extensions"
 
 # put docid stuff in the giblish namespace
 module Giblish
-  class Pass1
+  # Collects all :docid: entries in the given file set and caches them
+  # in the given cache.
+  class DocidPass1
     # The minimum number of characters required for a valid doc id
     ID_MIN_LENGTH = 2
 
     # The maximum number of characters required for a valid doc id
     ID_MAX_LENGTH = 10
 
+    # @param docid_cache   an array where each found docid is cached
+    # @param file_set      the set of paths
     def initialize(docid_cache:, adoc_files:)
       @docid_cache = docid_cache
       @adoc_files = adoc_files
     end
 
+    # find all :docid: entries and cache a Pathname
     def run
-      @adoc_files.each { |p| parse_file(p)}
+      @adoc_files.each { |p| parse_file(p) }
     end
 
     private
+
+    DOCID_REGEX = /^:docid: +(.*)$/.freeze
 
     # Check if a :docid: <id> entry exists in the header.
     # According to http://www.methods.co.nz/asciidoc/userguide.html#X95
@@ -30,16 +37,24 @@ module Giblish
     # - must start with a titel (=+ <My Title>)
     # - ends with one or more blank lines
     # - does not contain any blank line
+    #
+    # rubocop:disable Metrics/MethodLength
     def parse_file(path)
       Giblog.logger.debug { "parsing file #{path} for docid..." }
       Giblish.process_header_lines_from_file(path) do |line|
-        m = /^:docid: +(.*)$/.match(line)
-        if m
-          # There is a docid defined, cache the path and doc id
-          validate_and_add m[1], path
+        next unless DOCID_REGEX.match(line)
+
+        # There is a docid defined, cache the path and doc id
+        id = Regexp.last_match(1).strip
+        Giblog.logger.debug { "found possible docid: #{id}" }
+        if doc_id_ok?(id)
+          add_docid(id, path)
+        else
+          Giblog.logger.error { "Invalid docid: #{id} in file #{path}, this will be ignored!" }
         end
       end
     end
+    # rubocop:enable Metrics/MethodLength
 
     # make sure the id is within the designated length and
     # does not contain a '#' symbol
@@ -57,22 +72,17 @@ module Giblish
       end
       @docid_cache[id] = Pathname(path)
     end
-
-    def validate_and_add(doc_id, path)
-      id = doc_id.strip
-      Giblog.logger.debug { "found possible docid: #{id}" }
-
-      unless doc_id_ok?(doc_id)
-        Giblog.logger.error { "Invalid docid: #{id} in file #{path}, this will be ignored!" }
-        return
-      end
-
-      add_docid(id, path)
-    end
   end
 
-  # Parse all adoc files for :docid: attributes
+  # An preprocessor extension to the Asciidoctor engine that transforms all
+  # <<:docid:>> references found in the adoc source into the matching
+  # file reference.
+  # It is dependent on that its 'docid_cache' has been filled before it is
+  # invoked via Asciidoctor.
   class DocidCollector < Asciidoctor::Extensions::Preprocessor
+    # The regex that matches docid references in files
+    DOCID_REF_REGEX = /<<\s*:docid:\s*(.*?)>>/.freeze
+
     # a hash of {doc_id => Pathname(src_path)}
     # (Use a class-global docid_cache since asciidoctor creates a new instance
     # for each preprocessor hook)
@@ -87,11 +97,11 @@ module Giblish
       # execute the first pass to collect all doc ids
       # @param src_root  the path to the source root directory
       def run_pass1(adoc_files:)
-        # make sure that we start with a clean id cache and 
+        # make sure that we start with a clean id cache and
         # dependency tree
         @docid_cache = {}
         @docid_deps = {}
-        p1 = Pass1.new(docid_cache: @docid_cache, adoc_files: adoc_files)
+        p1 = DocidPass1.new(docid_cache: @docid_cache, adoc_files: adoc_files)
         p1.run
       end
     end
@@ -122,16 +132,18 @@ module Giblish
       # done differently
       return if src_path.nil?
 
-      add_source_dep src_path
+      # add this file as a source for dependencies
+      docid_deps[src_path] ||= []
 
       # Convert all docid refs to valid relative refs
       reader.lines.each do |line|
-        line.gsub!(/<<\s*:docid:\s*(.*?)>>/) do |_m|
-          # parse the ref
-          target_id, section, display_str = parse_doc_id_ref Regexp.last_match(1)
-          transform_ref(target_id, section, display_str, src_path)
-        end
+        parse_line(line, src_path)
       end
+
+      # we only care for one ref to a specific target, remove duplicates
+      docid_deps[src_path] = docid_deps[src_path].uniq
+
+      # the asciidoctor engine wants the reader back
       reader
     end
 
@@ -141,11 +153,20 @@ module Giblish
       self.class.docid_deps
     end
 
-    # add a new source document to the docid_deps
-    def add_source_dep(src_path)
-      return if docid_deps.key? src_path
-
-      docid_deps[src_path] = []
+    # parse one line for valid docid references
+    def parse_line(line, src_path)
+      line.gsub!(DOCID_REF_REGEX) do |_m|
+        # parse the ref
+        target_id, section, display_str = parse_doc_id_ref(Regexp.last_match(1))
+        Giblog.logger.debug { "Found docid ref to #{target_id} in file: #{src_path}..." }
+        if docid_cache.key? target_id
+          # add the referenced doc id as a target dependency of this document
+          docid_deps[src_path] << target_id
+          transform_ref(target_id, section, display_str, src_path)
+        else
+          "<<UNKNOWN_DOC, Could not resolve doc id reference !!!>>"
+        end
+      end
     end
 
     # Get the relative path from the src doc to the
@@ -178,17 +199,10 @@ module Giblish
     end
 
     # Transform a :doc_id: reference to its resolved relative path
-    # 
+    #
     # The result is a valid ref in the form
     # <<target_doc.adoc#[section][,display_str]>>
     def transform_ref(target_id, section, display_str, src_path)
-      Giblog.logger.debug { "Replace docid ref in doc #{src_path}..." }
-      return "<<UNKNOWN_DOC, Could not resolve doc id reference !!!>>" unless docid_cache.key? target_id
-
-      # add the referenced doc id as a target dependency of this document
-      docid_deps[src_path] << target_id
-      docid_deps[src_path] = docid_deps[src_path].uniq
-
       # resolve the doc id ref to a valid relative path
       rel_path = get_rel_path(src_path, target_id)
       # return the transformed ref
@@ -198,10 +212,9 @@ module Giblish
 
   # Helper method to register the docid preprocessor extension with
   # the asciidoctor engine.
-  def register_docid_extension
+  def self.register_docid_extension
     Asciidoctor::Extensions.register do
       preprocessor DocidCollector
     end
   end
-  module_function :register_docid_extension
 end
