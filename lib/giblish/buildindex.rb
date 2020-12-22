@@ -139,7 +139,7 @@ module Giblish
       end
 
       # sort the tree
-      root.sort_children
+      root.sort_leaf_first
 
       # generate each tree entry string
       root.traverse_top_down do |level, node|
