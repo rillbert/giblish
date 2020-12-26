@@ -22,32 +22,19 @@ module Giblish
     def initialize(options)
       @options = options.dup
 
-      @paths = Giblish::PathManager.new(
-        @options[:srcDirRoot],
-        @options[:dstDirRoot],
-        @options[:resourceDir],
-        @options[:makeSearchable]
-      )
+      # setup relevant paths
+      @paths = Giblish::PathManager.new(@options[:srcDirRoot], @options[:dstDirRoot],
+                                        @options[:resourceDir], @options[:makeSearchable])
 
-      @adoc_files = CachedPathSet.new(@paths.src_root_abs,&method(:adocfile?)).paths
+      # assemble the set of files that we shall process
+      @adoc_files = CachedPathSet.new(@paths.src_root_abs, &method(:adocfile?)).paths
+      @processed_docs = []
 
-      # register add-on for handling searchability
+      # register add-ons for handling searchability if needed
       manage_searchability(@options) if @options[:makeSearchable]
 
-      # set the path to the search data that will be sent to the cgi search script
-      deploy_search_path = if @options[:makeSearchable]
-                             if @options[:searchAssetsDeploy].nil?
-                               @paths.search_assets_abs
-                             else
-                               Pathname.new(@options[:searchAssetsDeploy]).join("search_assets")
-                             end
-                           end
+      @deploy_info = setup_deployment_info
 
-      @deploy_info = Giblish::DeploymentPaths.new(
-        @options[:webPath],
-        deploy_search_path
-      )
-      @processed_docs = []
       @converter = converter_factory
     end
 
@@ -82,15 +69,13 @@ module Giblish
     def convert_all_files
       conv_error = false
       @adoc_files.each do |p|
-        begin
-          to_asciidoc(p)
-        rescue StandardError => e
-          str = String.new("Error when converting file "\
-                           "#{p}: #{e.message}\nBacktrace:\n")
-          e.backtrace.each { |l| str << "   #{l}\n" }
-          Giblog.logger.error { str }
-          conv_error = true
-        end
+        to_asciidoc(p)
+      rescue StandardError => e
+        str = String.new("Error when converting file "\
+                         "#{p}: #{e.message}\nBacktrace:\n")
+        e.backtrace.each { |l| str << "   #{l}\n" }
+        Giblog.logger.error { str }
+        conv_error = true
       end
       conv_error
     end
@@ -149,12 +134,9 @@ module Giblish
     # get the correct converter type
     def converter_factory
       case @options[:format]
-      when "html"
-        HtmlConverter.new @paths, @deploy_info, @options
-      when "pdf"
-        PdfConverter.new @paths, @deploy_info, @options
-      else
-        raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
+      when "html" then HtmlConverter.new @paths, @deploy_info, @options
+      when "pdf" then  PdfConverter.new  @paths, @deploy_info, @options
+      else raise ArgumentoError, "Unknown conversion format: #{@options[:format]}"
       end
     end
 
@@ -163,9 +145,9 @@ module Giblish
     # add more data
     def add_doc(adoc, adoc_stderr)
       Giblog.logger.debug do
-        "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}"
+        "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}\n"
+        "Doc attributes: #{adoc.attributes}"
       end
-      Giblog.logger.debug { "Doc attributes: #{adoc.attributes}" }
 
       info = DocInfo.new(adoc: adoc, dst_root_abs: @paths.dst_root_abs, adoc_stderr: adoc_stderr)
       @processed_docs << info
@@ -185,6 +167,20 @@ module Giblish
     end
 
     private
+
+    # setup the deployment paths
+    def setup_deployment_info
+      # set the path to the search data that will be sent to the cgi search script
+      deploy_search_path = if @options[:makeSearchable]
+                             if @options[:searchAssetsDeploy].nil?
+                               @paths.search_assets_abs
+                             else
+                               Pathname.new(@options[:searchAssetsDeploy]).join("search_assets")
+                             end
+                           end
+
+      Giblish::DeploymentPaths.new(@options[:webPath], deploy_search_path)
+    end
 
     # convert a single adoc doc to whatever the user wants
     def to_asciidoc(filepath)
@@ -212,13 +208,13 @@ module Giblish
     end
 
     def manage_searchability(opts)
-      # create a data cache that will be used by the 
+      # create a data cache that will be used by the
       # header indexer
       @search_data_provider = SearchDataCache.new(
         file_set: @adoc_files,
         paths: @paths,
         id_prefix: (opts[:attributes].nil? ? nil : opts[:attributes].fetch("idprefix")),
-        id_separator: (opts[:attributes].nil? ? nil : opts[:attributes].fetch("idseparator"))  
+        id_separator: (opts[:attributes].nil? ? nil : opts[:attributes].fetch("idseparator"))
       )
 
       # register the preprocessor hook that will index each heading
