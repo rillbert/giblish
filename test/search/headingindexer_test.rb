@@ -74,6 +74,30 @@ module Giblish
         end
       end
     end
+
+    def test_custom_attributes
+      setup_directories do |src_dir, dst_dir, doc_paths|
+        #  act on the input data
+        args = ["-m",
+                "-a","idprefix=argh",
+                "-a","idseparator=:",
+                src_dir,
+                dst_dir.to_s]
+        status = Giblish.application.run args
+
+        assert_equal 0, status
+
+        search_root = dst_dir.join("search_assets")
+        assert Dir.exist?(search_root.to_s)
+        # assert that the searchable index has been created
+        assert File.exist?(search_root.join("heading_index.json"))
+        # assert that the adoc src files have been copied to the 
+        # dst
+        doc_paths.each do |doc|
+          assert File.exist?(search_root.join(doc))
+        end
+      end
+    end
   end
   # rubocop:enable Metrics/MethodLength
   # rubocop:enable Metrics/AbcSize
