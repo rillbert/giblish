@@ -411,10 +411,7 @@ module Giblish
       return "" if @branches.empty?
 
       # get the branch-unique dst-dir
-      str = <<~BRANCH_INFO
-        == Branches
-
-      BRANCH_INFO
+      str = String.new("== Branches\n\n")
 
       @branches.each do |b|
         dirname = b.name.tr "/", "_"

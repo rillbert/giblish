@@ -60,7 +60,7 @@ module Giblish
         case key
         when "commit"
           hsh_array << hsh if hsh
-          hsh = { "sha" => value, "message" => "", "parent" => [] }
+          hsh = { "sha" => value, "message" => String.new(""), "parent" => [] }
         when "parent"
           hsh["parent"] << value
         when "author"
