@@ -8,12 +8,11 @@ require "pathname"
 require_relative "buildindex"
 require_relative "docconverter"
 require_relative "docid"
-require_relative "indexheadings"
+require_relative "search/headingindexer"
 require_relative "docinfo"
 require_relative "buildgraph"
 
 module Giblish
-
   # Parse a directory tree and convert all asciidoc files matching the
   # supplied critera to the supplied format
   class FileTreeConverter
@@ -34,6 +33,9 @@ module Giblish
       )
 
       @adoc_files = CachedPathSet.new(@paths.src_root_abs,&method(:adocfile?)).paths
+
+      # register add-on for handling searchability
+      manage_searchability(@options) if @options[:makeSearchable]
 
       # set the path to the search data that will be sent to the cgi search script
       deploy_search_path = if @options[:makeSearchable]
@@ -60,26 +62,12 @@ module Giblish
       # valid references to adoc files
       manage_doc_ids if @options[:resolveDocid]
 
-      # register add-on for handling searchability
-      manage_searchability(@options) if @options[:makeSearchable]
-
       # traverse the src file tree and convert all files deemed as
       # adoc files
-      conv_error = false
-      @adoc_files.each do |p|
-        begin
-          to_asciidoc(p)
-        rescue StandardError => e
-          str = String.new("Error when converting file "\
-                           "#{p}: #{e.message}\nBacktrace:\n")
-          e.backtrace.each { |l| str << "   #{l}\n" }
-          Giblog.logger.error { str }
-          conv_error = true
-        end
-      end
+      conv_error = convert_all_files
 
-      # create necessary search assets if needed
-      create_search_assets if @options[:makeSearchable]
+      # deploy data needed for search if used
+      @search_data_provider.deploy_search_assets if @search_data_provider
 
       # build index and other fancy stuff if not suppressed
       unless @options[:suppressBuildRef]
@@ -93,6 +81,22 @@ module Giblish
     end
 
     protected
+
+    def convert_all_files
+      conv_error = false
+      @adoc_files.each do |p|
+        begin
+          to_asciidoc(p)
+        rescue StandardError => e
+          str = String.new("Error when converting file "\
+                           "#{p}: #{e.message}\nBacktrace:\n")
+          e.backtrace.each { |l| str << "   #{l}\n" }
+          Giblog.logger.error { str }
+          conv_error = true
+        end
+      end
+      conv_error
+    end
 
     def build_graph_page
       begin
@@ -211,55 +215,18 @@ module Giblish
     end
 
     def manage_searchability(opts)
-      # register the extension
-      Giblish.register_index_heading_extension
+      # create a data cache that will be used by the 
+      # header indexer
+      @search_data_provider = SearchDataCache.new(
+        file_set: @adoc_files,
+        paths: @paths,
+        id_prefix: (opts[:attributes].nil? ? nil : opts[:attributes].fetch("idprefix")),
+        id_separator: (opts[:attributes].nil? ? nil : opts[:attributes].fetch("idseparator"))  
+      )
 
-      # make sure we start from a clean slate
-      IndexHeadings.clear_index
-
-      # propagate user-given id attributes to the indexing class
-      # if there are any
-      attr = opts[:attributes]
-      return if attr.nil?
-
-      IndexHeadings.id_elements[:id_prefix] = attr["idprefix"] if attr.key?("idprefix")
-      IndexHeadings.id_elements[:id_separator] = attr["idseparator"] if attr.key?("idseparator")
-    end
-
-    # top_dir
-    # |- web_assets
-    # |- branch_1_top_dir
-    # |     |- index.html
-    # |     |- file1.html
-    # |     |- dir_1
-    # |     |   |- file2.html
-    # |- search_assets
-    # |     |- branch_1
-    # |           |- heading_index.json
-    # |           |- file1.adoc
-    # |           |- dir_1
-    # |           |   |- file2.html
-    # |           |- ...
-    # |     |- branch_2
-    # |           | ...
-    # |- branch_2_top_dir
-    # | ...
-    def create_search_assets
-      # get the proper dir for the search assets
-      assets_dir = @paths.search_assets_abs
-
-      # store the JSON file
-      IndexHeadings.serialize assets_dir, @paths.src_root_abs
-
-      # traverse the src file tree and copy all published adoc files
-      # to the search_assets dir
-      return unless @paths.src_root_abs.directory?
-
-      @adoc_files.each do |p|
-        dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
-        FileUtils.mkdir_p(dst_dir)
-        FileUtils.cp(p.to_s, dst_dir)
-      end
+      # register the preprocessor hook that will index each heading
+      # in the files that giblish processes
+      HeadingIndexer.register
     end
 
     # Run the first pass necessary to collect all :docid: attributes found in document

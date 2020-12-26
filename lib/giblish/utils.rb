@@ -120,8 +120,8 @@ module Giblish
   # creates and caches a set of file paths that match the given
   # predicate.
   # after instantiation, the path set is imutable
-  # 
-  # Usage: 
+  #
+  # Usage:
   # paths = CachedPathSet(src_root_dir) {|p| your matching predicate here}
   class CachedPathSet
     attr_reader :paths
@@ -157,7 +157,8 @@ module Giblish
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
 
-      self.search_assets_abs = (@dst_root_abs.join("search_assets") if create_search_asset_dir)
+      # set the search assets path to its default value
+      self.search_assets_abs = @dst_root_abs.join("search_assets") if create_search_asset_dir
 
       # Make sure that the resource dir exists if user gives a path to it
       resource_dir && (@resource_dir_abs = Pathname.new(resource_dir).realpath)
@@ -168,8 +169,8 @@ module Giblish
         @search_assets_abs = nil
         return
       end
-      # Make sure that the destination root exists and expand it to an
-      # absolute path
+
+      # create the directory
       dir = Pathname.new(path)
       dir.mkpath
       @search_assets_abs = dir.realpath
