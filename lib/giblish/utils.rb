@@ -3,6 +3,7 @@
 require "logger"
 require "pathname"
 require "fileutils"
+require "find"
 
 # The logger used from within giblish
 class Giblog

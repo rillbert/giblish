@@ -1,15 +1,12 @@
 # frozen_string_literal: true
 
-require "find"
-require "fileutils"
-require "logger"
 require "pathname"
 
-require_relative "buildindex"
 require_relative "docconverter"
+require_relative "docinfo"
 require_relative "docid"
 require_relative "search/headingindexer"
-require_relative "docinfo"
+require_relative "buildindex"
 require_relative "buildgraph"
 
 module Giblish
