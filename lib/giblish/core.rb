@@ -105,7 +105,13 @@ module Giblish
     def build_index_page(dep_graph_exist)
       # build a reference index
       adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
-      ib = index_factory
+
+      # Create the docid info and search box separately
+      preamble = String.new
+      preamble << DocIdIndexInfo.new(@processed_docs).source if @options[:resolveDocid]
+      preamble << SearchBoxGenerator.new(@converter, @deployment_info).source if @options[:makeSearchable]
+
+      ib = index_factory(preamble)
       @converter.convert_str(
         ib.source(
           dep_graph_exists: dep_graph_exist
@@ -121,14 +127,9 @@ module Giblish
 
     # get the correct index builder type depending on supplied
     # user options
-    def index_factory
+    def index_factory(preamble)
       raise "Internal logic error!" if @options[:suppressBuildRef]
-
-      preamble = String.new
-      preamble << DocIdIndexInfo.new(@processed_docs).source if @options[:resolveDocid]
-      preamble << SearchBoxGenerator.new(@converter, @deployment_info).source if @options[:makeSearchable]
       
-      # @options[:resolveDocid]
       SimpleIndexBuilder.new(@processed_docs, @paths, preamble)
     end
 
@@ -282,9 +283,8 @@ module Giblish
 
     protected
 
-    def index_factory
-      GitRepoIndexBuilder.new(@processed_docs, @converter, @paths, @deployment_info,
-                              @options[:resolveDocid], @options[:gitRepoRoot])
+    def index_factory(preamble)
+      GitRepoIndexBuilder.new(@processed_docs, @paths, preamble, @options[:gitRepoRoot])
     end
 
     def graph_builder_factory
@@ -377,6 +377,8 @@ module Giblish
       # Update needed base class members before converting a new checkout
       @processed_docs = []
       @paths.dst_root_abs = @master_paths.dst_root_abs.realpath.join(dir_name)
+      # assemble the set of files that we shall process in this branch
+      @adoc_files = CachedPathSet.new(@paths.src_root_abs, &method(:adocfile?)).paths
 
       if @options[:makeSearchable] && !@master_deployment_info.search_assets_path.nil?
         @paths.search_assets_abs = @master_paths.search_assets_abs.join(dir_name)

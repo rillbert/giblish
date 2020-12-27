@@ -178,8 +178,8 @@ module Giblish
   # Builds an index of the generated documents and includes some git metadata
   # from the repository
   class GitRepoIndexBuilder < SimpleIndexBuilder
-    def initialize(processed_docs, path_manager, pre_amble, git_repo_root)
-      super processed_docs, path_manager, pre_amble
+    def initialize(processed_docs, path_manager, preamble, git_repo_root)
+      super processed_docs, path_manager, preamble
 
       # no repo root given...
       return unless git_repo_root
