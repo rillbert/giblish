@@ -111,7 +111,6 @@ module Giblish
       return unless base_dir
 
       heading_index[:fileinfos].each do |file_info|
-        puts file_info[:filepath], base_dir
         file_info[:filepath] = Pathname.new(file_info[:filepath])
                                        .relative_path_from(base_dir)
       end

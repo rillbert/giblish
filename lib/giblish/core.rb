@@ -6,7 +6,7 @@ require_relative "docconverter"
 require_relative "docinfo"
 require_relative "docid"
 require_relative "search/headingindexer"
-require_relative "buildindex"
+require_relative "indexbuilders/buildindex"
 require_relative "buildgraph"
 
 module Giblish
@@ -33,7 +33,7 @@ module Giblish
       # register add-ons for handling searchability if needed
       manage_searchability(@options) if @options[:makeSearchable]
 
-      @deploy_info = setup_deployment_info
+      @deployment_info = setup_deployment_info
 
       @converter = converter_factory
     end
@@ -64,6 +64,9 @@ module Giblish
       conv_error
     end
 
+    def build_all_indices
+
+    end
     protected
 
     def convert_all_files
@@ -105,8 +108,7 @@ module Giblish
       ib = index_factory
       @converter.convert_str(
         ib.source(
-          dep_graph_exists: dep_graph_exist,
-          make_searchable: @options[:makeSearchable]
+          dep_graph_exists: dep_graph_exist
         ),
         @paths.dst_root_abs,
         @options[:indexBaseName],
@@ -122,20 +124,24 @@ module Giblish
     def index_factory
       raise "Internal logic error!" if @options[:suppressBuildRef]
 
-      SimpleIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
-                             @options[:resolveDocid])
+      preamble = String.new
+      preamble << DocIdIndexInfo.new(@processed_docs).source if @options[:resolveDocid]
+      preamble << SearchBoxGenerator.new(@converter, @deployment_info).source if @options[:makeSearchable]
+      
+      # @options[:resolveDocid]
+      SimpleIndexBuilder.new(@processed_docs, @paths, preamble)
     end
 
     def graph_builder_factory
-      Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @deploy_info,
+      Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @deployment_info,
                                         @converter.converter_options
     end
 
     # get the correct converter type
     def converter_factory
       case @options[:format]
-      when "html" then HtmlConverter.new @paths, @deploy_info, @options
-      when "pdf" then  PdfConverter.new  @paths, @deploy_info, @options
+      when "html" then HtmlConverter.new @paths, @deployment_info, @options
+      when "pdf" then  PdfConverter.new  @paths, @deployment_info, @options
       else raise ArgumentoError, "Unknown conversion format: #{@options[:format]}"
       end
     end
@@ -240,7 +246,7 @@ module Giblish
       # cache the top of the tree since we need to redefine the
       # paths per branch/tag later on.
       @master_paths = @paths.dup
-      @master_deployment_info = @deploy_info.dup
+      @master_deployment_info = @deployment_info.dup
       @git_repo_root = options[:gitRepoRoot]
       @git_repo = init_git_repo @git_repo_root, options[:localRepoOnly]
       @user_branches = select_user_branches(options[:gitBranchRegexp])
@@ -277,12 +283,12 @@ module Giblish
     protected
 
     def index_factory
-      GitRepoIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
+      GitRepoIndexBuilder.new(@processed_docs, @converter, @paths, @deployment_info,
                               @options[:resolveDocid], @options[:gitRepoRoot])
     end
 
     def graph_builder_factory
-      Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @deploy_info,
+      Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @deployment_info,
                                            @converter.converter_options, @git_repo
     end
 
@@ -374,7 +380,7 @@ module Giblish
 
       if @options[:makeSearchable] && !@master_deployment_info.search_assets_path.nil?
         @paths.search_assets_abs = @master_paths.search_assets_abs.join(dir_name)
-        @deploy_info.search_assets_path = @master_deployment_info.search_assets_path.join(dir_name)
+        @deployment_info.search_assets_path = @master_deployment_info.search_assets_path.join(dir_name)
         Giblog.logger.info { "will store search data in #{@paths.search_assets_abs}" }
       end
 
