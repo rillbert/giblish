@@ -15,18 +15,6 @@ module Giblish
   class FileTreeConverter
     attr_reader :converter
 
-    # build up tree of paths, sorted with leaf first
-    def setup_tree(processed_docs)
-      tree = PathTree.new
-      processed_docs.each do |d|
-        tree.add_path(d.rel_path.to_s, d)
-      end
-
-      # sort the tree
-      tree.sort_leaf_first
-      tree
-    end
-
     # Required options:
     #  srcDirRoot
     #  dstDirRoot
@@ -53,6 +41,7 @@ module Giblish
     # convert all adoc files
     # return true if all conversions went ok, false if at least one
     # failed
+
     def convert
       # collect all doc ids and enable replacement of known doc ids with
       # valid references to adoc files
@@ -63,7 +52,7 @@ module Giblish
       conv_ok = convert_all_files
 
       # deploy data needed for search if used
-      @search_data_provider.deploy_search_assets if @search_data_provider
+      @search_data_provider&.deploy_search_assets
 
       # build index and other fancy stuff if not suppressed
       unless @options[:suppressBuildRef]
@@ -77,6 +66,19 @@ module Giblish
     end
 
     protected
+
+    # build up tree of paths, sorted with leaf first
+
+    def setup_tree(processed_docs)
+      tree = PathTree.new
+      processed_docs.each do |d|
+        tree.add_path(d.rel_path.to_s, d)
+      end
+
+      # sort the tree
+      tree.sort_leaf_first
+      tree
+    end
 
     def convert_all_files
       conv_ok = true
@@ -363,7 +365,7 @@ module Giblish
       @git_repo.checkout checkout.name
 
       # determine if we are called with a tag or a branch
-      unless (checkout.respond_to?(:tag?) && checkout.tag?)
+      unless checkout.respond_to?(:tag?) && checkout.tag?
         # this is a branch, make sure it is up-to-date
         Giblog.logger.info { "Merging with origin/#{checkout.name}" }
         @git_repo.merge "origin/#{checkout.name}"
