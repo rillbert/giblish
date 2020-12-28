@@ -10,36 +10,21 @@ require_relative "verbatimtree"
 
 module Giblish
   class TreeIndexBuilderItf
-    def initialize(processed_docs, path_manager, preamble, handle_docid = false)
-      @processed_docs = processed_docs
+    def initialize(tree, path_manager, preamble, handle_docid = false)
       @paths = path_manager
       @preamble = preamble
       @manage_docid = handle_docid
-      @tree = setup_tree(processed_docs)
+      @tree = tree
     end
 
     def source(dep_graph_exists: false); end
-
-    private
-
-    # build up tree of paths, sorted with leaf first
-    def setup_tree(processed_docs)
-      tree = PathTree.new
-      processed_docs.each do |d|
-        tree.add_path(d.rel_path.to_s, d)
-      end
-
-      # sort the tree
-      tree.sort_leaf_first
-      tree
-    end
   end
 
   # A simple index generator that shows a table with the generated documents
   class SimpleIndexBuilder < TreeIndexBuilderItf
     # set up the basic index building info
-    def initialize(processed_docs, path_manager, preamble = "")
-      super(processed_docs, path_manager, preamble)
+    def initialize(tree, path_manager, preamble = "")
+      super(tree, path_manager, preamble)
 
       @src_str = ""
     end
@@ -178,8 +163,8 @@ module Giblish
   # Builds an index of the generated documents and includes some git metadata
   # from the repository
   class GitRepoIndexBuilder < SimpleIndexBuilder
-    def initialize(processed_docs, path_manager, preamble, git_repo_root)
-      super processed_docs, path_manager, preamble
+    def initialize(tree, path_manager, preamble, git_repo_root)
+      super tree, path_manager, preamble
 
       # no repo root given...
       return unless git_repo_root

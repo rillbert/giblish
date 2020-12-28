@@ -15,6 +15,18 @@ module Giblish
   class FileTreeConverter
     attr_reader :converter
 
+    # build up tree of paths, sorted with leaf first
+    def setup_tree(processed_docs)
+      tree = PathTree.new
+      processed_docs.each do |d|
+        tree.add_path(d.rel_path.to_s, d)
+      end
+
+      # sort the tree
+      tree.sort_leaf_first
+      tree
+    end
+
     # Required options:
     #  srcDirRoot
     #  dstDirRoot
@@ -28,7 +40,7 @@ module Giblish
 
       # assemble the set of files that we shall process
       @adoc_files = CachedPathSet.new(@paths.src_root_abs, &method(:adocfile?)).paths
-      @processed_docs = []
+      @docinfo_store = DocInfoStore.new(@paths)
 
       # register add-ons for handling searchability if needed
       manage_searchability(@options) if @options[:makeSearchable]
@@ -48,7 +60,7 @@ module Giblish
 
       # traverse the src file tree and convert all files deemed as
       # adoc files
-      conv_error = convert_all_files
+      conv_ok = convert_all_files
 
       # deploy data needed for search if used
       @search_data_provider.deploy_search_assets if @search_data_provider
@@ -61,16 +73,13 @@ module Giblish
         # build a reference index
         build_index_page(dep_graph_exist)
       end
-      conv_error
+      conv_ok
     end
 
-    def build_all_indices
-
-    end
     protected
 
     def convert_all_files
-      conv_error = false
+      conv_ok = true
       @adoc_files.each do |p|
         to_asciidoc(p)
       rescue StandardError => e
@@ -78,9 +87,9 @@ module Giblish
                          "#{p}: #{e.message}\nBacktrace:\n")
         e.backtrace.each { |l| str << "   #{l}\n" }
         Giblog.logger.error { str }
-        conv_error = true
+        conv_ok = false
       end
-      conv_error
+      conv_ok
     end
 
     def build_graph_page
@@ -108,7 +117,7 @@ module Giblish
 
       # Create the docid info and search box separately
       preamble = String.new
-      preamble << DocIdIndexInfo.new(@processed_docs).source if @options[:resolveDocid]
+      preamble << DocIdIndexInfo.new(@docinfo_store.doc_infos).source if @options[:resolveDocid]
       preamble << SearchBoxGenerator.new(@converter, @deployment_info).source if @options[:makeSearchable]
 
       ib = index_factory(preamble)
@@ -129,12 +138,13 @@ module Giblish
     # user options
     def index_factory(preamble)
       raise "Internal logic error!" if @options[:suppressBuildRef]
-      
-      SimpleIndexBuilder.new(@processed_docs, @paths, preamble)
+
+      tree = setup_tree(@docinfo_store.doc_infos)
+      SimpleIndexBuilder.new(tree, @paths, preamble)
     end
 
     def graph_builder_factory
-      Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @deployment_info,
+      Giblish::GraphBuilderGraphviz.new @docinfo_store.doc_infos, @paths, @deployment_info,
                                         @converter.converter_options
     end
 
@@ -147,30 +157,12 @@ module Giblish
       end
     end
 
-    # creates a DocInfo instance, fills it with basic info and
-    # returns the filled in instance so that derived implementations can
-    # add more data
-    def add_doc(adoc, adoc_stderr)
-      Giblog.logger.debug do
-        "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}\n"
-        "Doc attributes: #{adoc.attributes}"
-      end
-
-      info = DocInfo.new(adoc: adoc, dst_root_abs: @paths.dst_root_abs, adoc_stderr: adoc_stderr)
-      @processed_docs << info
-      info
+    def add_success(adoc, adoc_stderr)
+      @docinfo_store.add_success(adoc, adoc_stderr)
     end
 
-    def add_doc_fail(filepath, exception)
-      info = DocInfo.new
-
-      # the only info we have is the source file name
-      info.converted = false
-      info.src_file = filepath.to_s
-      info.error_msg = exception.message
-
-      @processed_docs << info
-      info
+    def add_fail(filepath, e)
+      @docinfo_store.add_fail(filepath, e)
     end
 
     private
@@ -194,9 +186,9 @@ module Giblish
       adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
       adoc = @converter.convert(filepath, logger: adoc_logger)
 
-      add_doc(adoc, adoc_logger.user_info_str.string)
+      add_success(adoc, adoc_logger.user_info_str.string)
     rescue StandardError => e
-      add_doc_fail(filepath, e)
+      add_fail(filepath, e)
       raise
     end
 
@@ -259,40 +251,35 @@ module Giblish
     # return true if all conversions went ok, false if at least one
     # failed
     def convert
-      conv_error = false
-      (@user_branches + @user_tags).each do |co|
-        conv_error ||= convert_one_checkout(co)
+      conv_ok = (@user_branches + @user_tags).inject(true) do |memo, checkout|
+        convert_one_checkout(checkout) && memo
       end
 
       # Render the summary page
-      index_builder = GitSummaryIndexBuilder.new @git_repo,
-                                                 @user_branches,
-                                                 @user_tags
-
-      conv_error ||= @converter.convert_str(
-        index_builder.source,
-        @master_paths.dst_root_abs,
-        "index"
-      )
+      index_builder = GitSummaryIndexBuilder.new @git_repo, @user_branches, @user_tags
+      summary_ok = @converter.convert_str(index_builder.source,
+                                          @master_paths.dst_root_abs, "index")
 
       # clean up
       GC.start
 
-      conv_error
+      # return status
+      conv_ok && summary_ok
     end
 
     protected
 
     def index_factory(preamble)
-      GitRepoIndexBuilder.new(@processed_docs, @paths, preamble, @options[:gitRepoRoot])
+      tree = setup_tree(@docinfo_store.doc_infos)
+      GitRepoIndexBuilder.new(tree, @paths, preamble, @options[:gitRepoRoot])
     end
 
     def graph_builder_factory
-      Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @deployment_info,
+      Giblish::GitGraphBuilderGraphviz.new @docinfo_store.doc_infos, @paths, @deployment_info,
                                            @converter.converter_options, @git_repo
     end
 
-    def add_doc(adoc, adoc_stderr)
+    def add_success(adoc, adoc_stderr)
       info = super(adoc, adoc_stderr)
 
       # Redefine the srcFile to mean the relative path to the git repo root
@@ -375,8 +362,8 @@ module Giblish
       dir_name = checkout.name.tr("/", "_") << "/"
 
       # Update needed base class members before converting a new checkout
-      @processed_docs = []
       @paths.dst_root_abs = @master_paths.dst_root_abs.realpath.join(dir_name)
+      @docinfo_store = DocInfoStore.new(@paths)
       # assemble the set of files that we shall process in this branch
       @adoc_files = CachedPathSet.new(@paths.src_root_abs, &method(:adocfile?)).paths
 

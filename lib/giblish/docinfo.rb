@@ -7,9 +7,7 @@ module Giblish
   # each asciidoc file we come across
   class DocInfo
     # History info from git
-    class DocHistory
-      attr_accessor :date, :author, :message
-    end
+    DocHistory = Struct.new(:date, :author, :message)
 
     attr_accessor :converted, :doc_id, :purpose_str, :status, :history, :error_msg, :stderr
     attr_reader :title, :rel_path, :src_file
@@ -74,4 +72,40 @@ module Giblish
       purpose_str
     end
   end
+
+  # convenience class for initiating DocInos from conversions of
+  # adoc source to target format
+  class DocInfoStore
+    attr_reader :doc_infos
+
+    def initialize(paths)
+      @doc_infos = []
+      @paths = paths
+    end
+
+    # creates a DocInfo instance, fills it with basic info and
+    def add_success(adoc, adoc_stderr)
+      Giblog.logger.debug do
+        "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}\n"\
+        "Doc attributes: #{adoc.attributes}"
+      end
+
+      info = DocInfo.new(adoc: adoc, dst_root_abs: @paths.dst_root_abs, adoc_stderr: adoc_stderr)
+      @doc_infos << info
+      info
+    end
+
+    def add_fail(filepath, exception)
+      info = DocInfo.new
+
+      # the only info we have is the source file name
+      info.converted = false
+      info.src_file = filepath.to_s
+      info.error_msg = exception.message
+
+      @doc_infos << info
+      info
+    end
+  end
+
 end

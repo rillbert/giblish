@@ -35,14 +35,14 @@ module Giblish
     # Convert using given args
     # return exit code (0 for success)
     def execute_conversion(cmdline)
-      conv_error = false
+      conv_ok = true
       begin
-        conv_error = converter_factory(cmdline).convert
+        conv_ok = converter_factory(cmdline).convert
       rescue StandardError => e
         log_error e
-        conv_error = true
+        conv_ok = false
       end
-      conv_error ? 1 : 0
+      conv_ok ? 0 : 1
     end
 
     # return the converter corresponding to the given cmd line
