@@ -288,11 +288,7 @@ module Giblish
       # (use a homegrown git log to get 'follow' flag)
       gi = Giblish::GitItf.new(@git_repo_root)
       gi.file_log(src_file).each do |i|
-        h = DocInfo::DocHistory.new
-        h.date = i["date"]
-        h.message = i["message"]
-        h.author = i["author"]
-        info.history << h
+        info.history << DocInfo::DocHistory.new(i["date"], i["author"], i["message"])
       end
     end
 
@@ -302,20 +298,15 @@ module Giblish
       # Sanity check git repo root
       git_repo_root || raise(ArgumentError("No git repo root dir given"))
 
-      # Connect to the git repo
+      msg = "Could not find a git repo at #{git_repo_root} !"
       begin
+        # Connect to the git repo
         git_repo = Git.open(git_repo_root)
-      rescue StandardError => e
-        raise "Could not find a git repo at #{git_repo_root} !"\
-            "\n\n(#{e.message})"
-      end
-
-      # fetch all remote refs if ok with user
-      begin
+        # fetch all remote refs if ok with user
+        msg = "Could not fetch from origin (do you need '--local-only'?)!"
         git_repo.fetch unless local_only
       rescue StandardError => e
-        raise "Could not fetch from origin"\
-            "(do you need '--local-only'?)!\n\n(#{e.message})"
+        raise "#{msg}\n\n#{e.message}"
       end
       git_repo
     end
@@ -342,22 +333,10 @@ module Giblish
       end
     end
 
-    # convert all docs from one particular git commit
-    # returns true if at least one doc failed to convert
-    # and false if everything went ok.
-    def convert_one_checkout(checkout)
-      # determine if we are called with a tag or a branch
-      is_tag = (checkout.respond_to?(:tag?) && checkout.tag?)
-
-      Giblog.logger.info { "Checking out #{checkout.name}" }
-      @git_repo.checkout checkout.name
-
-      unless is_tag
-        # if this is a branch, make sure it is up-to-date
-        Giblog.logger.info { "Merging with origin/#{checkout.name}" }
-        @git_repo.merge "origin/#{checkout.name}"
-      end
-
+    # update necessary base class members to ensure correct conversion
+    # of a specific checkout (branch or tag)
+    # rubocop:disable Metrics/AbcSize
+    def update_base_class_members(checkout)
       # assign a checkout-unique dst-dir
       dir_name = checkout.name.tr("/", "_") << "/"
 
@@ -372,11 +351,31 @@ module Giblish
         @deployment_info.search_assets_path = @master_deployment_info.search_assets_path.join(dir_name)
         Giblog.logger.info { "will store search data in #{@paths.search_assets_abs}" }
       end
+    end
+    # rubocop:enable Metrics/AbcSize
+
+    # convert all docs from one particular git commit
+    # returns true if at least one doc failed to convert
+    # and false if everything went ok.
+    # rubocop:disable Metrics/AbcSize
+    def convert_one_checkout(checkout)
+      Giblog.logger.info { "Checking out #{checkout.name}" }
+      @git_repo.checkout checkout.name
+
+      # determine if we are called with a tag or a branch
+      unless (checkout.respond_to?(:tag?) && checkout.tag?)
+        # this is a branch, make sure it is up-to-date
+        Giblog.logger.info { "Merging with origin/#{checkout.name}" }
+        @git_repo.merge "origin/#{checkout.name}"
+      end
+
+      update_base_class_members(checkout)
 
       # Parse and convert docs using given args
+      # by calling base class :convert
       Giblog.logger.info { "Convert docs into dir #{@paths.dst_root_abs}" }
-      # parent_convert
       FileTreeConverter.instance_method(:convert).bind(self).call
     end
+    # rubocop:enable Metrics/AbcSize
   end
 end
