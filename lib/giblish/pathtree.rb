@@ -19,7 +19,7 @@
 #     dir3
 #       file_5
 class PathTree
-  attr_reader :name, :data
+  attr_reader :name, :data, :children
 
   def initialize(tail = nil, data = nil)
     @children = []
