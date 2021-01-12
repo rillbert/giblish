@@ -7,14 +7,13 @@ require_relative "../pathtree"
 require_relative "../gititf"
 require_relative "../docinfo"
 require_relative "verbatimtree"
+require_relative "../postprocessor"
 
 module Giblish
   class TreeIndexBuilderItf
-    def initialize(tree, path_manager, preamble, handle_docid = false)
-      @paths = path_manager
-      @preamble = preamble
-      @manage_docid = handle_docid
+    def initialize(tree, path_manager)
       @tree = tree
+      @paths = path_manager
     end
 
     def source(dep_graph_exists: false); end
@@ -22,14 +21,18 @@ module Giblish
 
   # A simple index generator that shows a table with the generated documents
   class SimpleIndexBuilder < TreeIndexBuilderItf
-    # set up the basic index building info
-    def initialize(tree, path_manager, preamble = "")
-      super(tree, path_manager, preamble)
+    # options:
+    # index_basename: String - the base filename that the generated index files
+    #                          will get (default 'index'). Note, do not include
+    #                          suffix
+    def initialize(tree, path_manager, options)
+      super(tree, path_manager)
 
+      @options = options
       @src_str = ""
     end
 
-    def source(dep_graph_exists: false)
+    def source
       <<~DOC_STR
         #{title}
         #{subtitle}
@@ -66,7 +69,7 @@ module Giblish
     end
 
     def tree
-      VerbatimTree.new(@tree).source
+      VerbatimTree.new(@tree, {dir_index_base_name: @options[:index_basename]}).source
     end
 
     def add_depgraph_id
@@ -103,7 +106,7 @@ module Giblish
 
     private
 
-    # return info about any conversion issues during the 
+    # return info about any conversion issues during the
     # asciidoctor conversion
     def conversion_issues(doc_info)
       return "" if doc_info.stderr.empty?
@@ -163,17 +166,25 @@ module Giblish
   # Builds an index of the generated documents and includes some git metadata
   # from the repository
   class GitRepoIndexBuilder < SimpleIndexBuilder
-    def initialize(tree, path_manager, preamble, git_repo_root)
-      super tree, path_manager, preamble
+    # The fixed heading of the table used to display file history
+    HISTORY_TABLE_HEADING = <<~HISTORY_HEADER
+      File history::
 
-      # no repo root given...
-      return unless git_repo_root
+      [cols=\"2,3,8\",options=\"header\"]
+      |===
+      |Date |Author |Message
+    HISTORY_HEADER
+
+    # required options:
+    # git_repo_root: Pathname - path to the root dir of the git repo
+    def initialize(tree, path_manager, options)
+      super(tree, path_manager, options)
 
       begin
         # Make sure that we can "talk" to git if user feeds us
         # a git repo root
+        @git_repo_root = @options[:git_repo_root]
         @git_repo = Git.open(git_repo_root)
-        @git_repo_root = git_repo_root
       rescue StandardError => e
         Giblog.logger.error { "No git repo! exception: #{e.message}" }
       end
@@ -197,15 +208,6 @@ module Giblish
       "from #{@git_repo.current_branch}"
     end
 
-    # Setup the table used to display file history
-    HISTORY_TABLE_HEADING = <<~HISTORY_HEADER
-      File history::
-
-      [cols=\"2,3,8\",options=\"header\"]
-      |===
-      |Date |Author |Message
-    HISTORY_HEADER
-
     def history_info(doc_info)
       str = String.new(HISTORY_TABLE_HEADING)
 
@@ -219,6 +221,43 @@ module Giblish
         HISTORY_ROW
       end
       str << "|===\n\n"
+    end
+  end
+
+  class IndexTreePostProcessor < Giblish::PostProcessor
+    # optional options:
+    # index_basename: String - the base filename that the generated index files
+    #                          will get (default 'index'). Note, do not include
+    #                          suffix
+    # git_repo_root: Pathname - the path to the root dir of a git repo if git 
+    #                           metadata shall be included in the generated indexes
+    #                           (default nil)
+    def initialize(options)
+      super()
+
+      @options = options.dup
+    end
+
+    # return a pathtree where each node is an 'index.adoc' file for a
+    # directory
+    def process(tree, paths)
+      basename = @options.fetch(:index_basename, "index")
+      result = PathTree.new
+      result.add_path("/#{basename}", index_builder(tree, paths).source)
+      tree.traverse_top_down do |_level, node|
+        next if node.leaf?
+
+        result.add_path("#{node.pathname}/#{basename}", index_builder(node, paths).source)
+      end
+      result
+    end
+
+    private
+
+    def index_builder(tree, paths)
+      return  GitRepoIndexBuilder.new(tree, paths, @options) if @options[:git_repo_root]
+
+      SimpleIndexBuilder.new(tree, paths, @options)
     end
   end
 

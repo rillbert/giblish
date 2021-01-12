@@ -36,12 +36,14 @@ module Giblish
       @deployment_info = setup_deployment_info
 
       @converter = converter_factory
+
+      @postprocessors = PostProcessors.new(@docinfo_store, @paths, @converter)
+      setup_postprocessors(@options)
     end
 
     # convert all adoc files
     # return true if all conversions went ok, false if at least one
     # failed
-
     def convert
       # collect all doc ids and enable replacement of known doc ids with
       # valid references to adoc files
@@ -54,31 +56,13 @@ module Giblish
       # deploy data needed for search if used
       @search_data_provider&.deploy_search_assets
 
-      # build index and other fancy stuff if not suppressed
-      unless @options[:suppressBuildRef]
-        # build a dependency graph (only if we resolve docids...)
-        dep_graph_exist = @options[:resolveDocid] && build_graph_page
+      # run all postprocessors
+      @postprocessors.run(Giblish::AsciidoctorLogger.new Logger::Severity::WARN)
 
-        # build a reference index
-        build_index_page(dep_graph_exist)
-      end
       conv_ok
     end
 
     protected
-
-    # build up tree of paths, sorted with leaf first
-
-    def setup_tree(processed_docs)
-      tree = PathTree.new
-      processed_docs.each do |d|
-        tree.add_path(d.rel_path.to_s, d)
-      end
-
-      # sort the tree
-      tree.sort_leaf_first
-      tree
-    end
 
     def convert_all_files
       conv_ok = true
@@ -113,38 +97,6 @@ module Giblish
       false
     end
 
-    def build_index_page(dep_graph_exist)
-      # build a reference index
-      adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
-
-      # Create the docid info and search box separately
-      preamble = String.new
-      preamble << DocIdIndexInfo.new(@docinfo_store.doc_infos).source if @options[:resolveDocid]
-      preamble << SearchBoxGenerator.new(@converter, @deployment_info).source if @options[:makeSearchable]
-
-      ib = index_factory(preamble)
-      @converter.convert_str(
-        ib.source(
-          dep_graph_exists: dep_graph_exist
-        ),
-        @paths.dst_root_abs,
-        @options[:indexBaseName],
-        logger: adoc_logger
-      )
-
-      # clean up cached files and adoc resources
-      GC.start
-    end
-
-    # get the correct index builder type depending on supplied
-    # user options
-    def index_factory(preamble)
-      raise "Internal logic error!" if @options[:suppressBuildRef]
-
-      tree = setup_tree(@docinfo_store.doc_infos)
-      SimpleIndexBuilder.new(tree, @paths, preamble)
-    end
-
     def graph_builder_factory
       Giblish::GraphBuilderGraphviz.new @docinfo_store.doc_infos, @paths, @deployment_info,
                                         @converter.converter_options
@@ -165,6 +117,14 @@ module Giblish
 
     def add_fail(filepath, e)
       @docinfo_store.add_fail(filepath, e)
+    end
+
+    def setup_postprocessors(options)
+      opts = {
+        index_basename: @options[:indexBaseName],
+        git_repo_root: @options[:gitRepoRoot]
+      }
+      @postprocessors.add_instance(IndexTreePostProcessor.new(opts)) unless options[:suppressBuildRef]
     end
 
     private
@@ -270,11 +230,6 @@ module Giblish
     end
 
     protected
-
-    def index_factory(preamble)
-      tree = setup_tree(@docinfo_store.doc_infos)
-      GitRepoIndexBuilder.new(tree, @paths, preamble, @options[:gitRepoRoot])
-    end
 
     def graph_builder_factory
       Giblish::GitGraphBuilderGraphviz.new @docinfo_store.doc_infos, @paths, @deployment_info,

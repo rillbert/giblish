@@ -83,6 +83,19 @@ module Giblish
       @paths = paths
     end
 
+    # @return  a Pathtree built by all current doc_infos and sorted 
+    # with leafs first for each level
+    def pathtree
+      tree = PathTree.new
+      @doc_infos.each do |d|
+        tree.add_path(d.rel_path.to_s, d)
+      end
+
+      # sort the tree
+      tree.sort_leaf_first
+      tree
+    end
+
     # creates a DocInfo instance, fills it with basic info and
     def add_success(adoc, adoc_stderr)
       Giblog.logger.debug do
@@ -107,5 +120,4 @@ module Giblish
       info
     end
   end
-
 end

@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
 module Giblish
+  # Generate asciidoc that represents a given pathtree as a 
+  # verbatim block with indented, clickable entries.
   class VerbatimTree
-    def initialize(tree)
+    # options:
+    # dir_index_base_name: String - the basename of the index file
+    # residing in each directory
+    def initialize(tree, options)
       @tree = tree
       @nof_missing_titles = 0
+      @options = options.dup
     end
 
     def source
@@ -59,12 +65,17 @@ module Giblish
       "#{prefix_str} #{doc_link}#{' ' * padding}#{warning_label} #{doc_details}"
     end
 
+    def directory_entry(prefix_str, node)
+      p = node.pathname.relative_path_from(@tree.pathname).join(@options[:dir_index_base_name])
+      "#{prefix_str} <<#{p}#,#{node.name}>>\n"
+    end
+
     def tree_entry_string(level, node)
       # indent 2 * level
       prefix_str = "  " * (level + 1)
 
       # return only name for directories
-      return "#{prefix_str} #{node.name}\n" unless node.leaf?
+      return directory_entry(prefix_str, node) unless node.leaf?
 
       # return links to content and details for files
       # node.data is a DocInfo instance

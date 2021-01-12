@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pathname"
+
 # This class can convert the following paths:
 # basedir/file_1
 # basedir/file_2
@@ -19,23 +21,32 @@
 #     dir3
 #       file_5
 class PathTree
-  attr_reader :name, :data, :children
+  attr_reader :name, :data, :children, :parent
 
-  def initialize(tail = nil, data = nil)
+  def initialize(tail = nil, data = nil, parent = nil)
     @children = []
+    @parent = parent
     @name = nil
-    return unless tail
+    return if tail.nil?
 
     tail = tail.split("/") unless tail.is_a?(Array)
     @name = tail.shift
     if tail.length.positive?
-      @children << PathTree.new(tail, data)
+      @children << PathTree.new(tail, data, self)
     else
       @data = data
+      
     end
   end
 
-  # adds a new path to the tree and associates the data 
+  # @return 
+  def pathname
+    return Pathname.new(name.to_s) if @parent.nil?
+
+    @parent.pathname / name
+  end
+
+  # adds a new path to the tree and associates the data
   # to the leaf of that path.
   def add_path(tail, data = nil)
     tail = tail.split("/") unless tail.is_a?(Array)
@@ -46,7 +57,7 @@ class PathTree
       tail.shift
       ch.add_path tail, data
     else
-      @children << PathTree.new(tail, data)
+      @children << PathTree.new(tail, data, self)
     end
   end
 
@@ -105,6 +116,9 @@ end
 if __FILE__ == $PROGRAM_NAME
   paths = %w[basedir/file_a
              basedir/file_a
+             basedir/subdir/dir11
+             basedir/subdir/dir12
+             basedir/subdir/dir13
              basedir/dira
              basedir/dira/file_c
              basedir/dirb/file_e
@@ -124,6 +138,7 @@ if __FILE__ == $PROGRAM_NAME
   end
   root.sort_leaf_first
   root.traverse_top_down do |level, node|
+    puts "path: #{node.pathname}"
     data = node.data.nil? ? "" : node.data.to_s
     puts "#{' ' * level} - #{node.name} #{data}"
   end
