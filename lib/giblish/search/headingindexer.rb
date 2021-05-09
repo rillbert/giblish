@@ -9,7 +9,6 @@ require_relative "searchdatacache"
 
 # put the indexing in the giblish namespace
 module Giblish
-
   # This hook is called by Asciidoctor once for each document _before_
   # Asciidoctor processes the adoc content.
   #

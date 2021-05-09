@@ -24,7 +24,7 @@ module Giblish
 
       # setup relevant paths
       @paths = Giblish::PathManager.new(@options[:srcDirRoot], @options[:dstDirRoot],
-                                        @options[:resourceDir], @options[:makeSearchable])
+        @options[:resourceDir], @options[:makeSearchable])
 
       # assemble the set of files that we shall process
       @adoc_files = CachedPathSet.new(@paths.src_root_abs, &method(:adocfile?)).paths
@@ -57,7 +57,7 @@ module Giblish
       @search_data_provider&.deploy_search_assets
 
       # run all postprocessors
-      @postprocessors.run(Giblish::AsciidoctorLogger.new Logger::Severity::WARN)
+      @postprocessors.run(Giblish::AsciidoctorLogger.new(Logger::Severity::WARN))
 
       conv_ok
     end
@@ -68,7 +68,7 @@ module Giblish
       conv_ok = true
       @adoc_files.each do |p|
         to_asciidoc(p)
-      rescue StandardError => e
+      rescue => e
         str = String.new("Error when converting file "\
                          "#{p}: #{e.message}\nBacktrace:\n")
         e.backtrace.each { |l| str << "   #{l}\n" }
@@ -90,7 +90,7 @@ module Giblish
         )
         gb.cleanup
         !errors
-      rescue StandardError => e
+      rescue => e
         Giblog.logger.warn { e.message }
         Giblog.logger.warn { "The dependency graph will not be generated !!" }
       end
@@ -99,14 +99,14 @@ module Giblish
 
     def graph_builder_factory
       Giblish::GraphBuilderGraphviz.new @docinfo_store.doc_infos, @paths, @deployment_info,
-                                        @converter.converter_options
+        @converter.converter_options
     end
 
     # get the correct converter type
     def converter_factory
       case @options[:format]
       when "html" then HtmlConverter.new @paths, @deployment_info, @options
-      when "pdf" then  PdfConverter.new  @paths, @deployment_info, @options
+      when "pdf" then PdfConverter.new @paths, @deployment_info, @options
       else raise ArgumentoError, "Unknown conversion format: #{@options[:format]}"
       end
     end
@@ -133,12 +133,12 @@ module Giblish
     def setup_deployment_info
       # set the path to the search data that will be sent to the cgi search script
       deploy_search_path = if @options[:makeSearchable]
-                             if @options[:searchAssetsDeploy].nil?
-                               @paths.search_assets_abs
-                             else
-                               Pathname.new(@options[:searchAssetsDeploy]).join("search_assets")
-                             end
-                           end
+        if @options[:searchAssetsDeploy].nil?
+          @paths.search_assets_abs
+        else
+          Pathname.new(@options[:searchAssetsDeploy]).join("search_assets")
+        end
+      end
 
       Giblish::DeploymentPaths.new(@options[:webPath], deploy_search_path)
     end
@@ -149,7 +149,7 @@ module Giblish
       adoc = @converter.convert(filepath, logger: adoc_logger)
 
       add_success(adoc, adoc_logger.user_info_str.string)
-    rescue StandardError => e
+    rescue => e
       add_fail(filepath, e)
       raise
     end
@@ -220,7 +220,7 @@ module Giblish
       # Render the summary page
       index_builder = GitSummaryIndexBuilder.new @git_repo, @user_branches, @user_tags
       summary_ok = @converter.convert_str(index_builder.source,
-                                          @master_paths.dst_root_abs, "index")
+        @master_paths.dst_root_abs, "index")
 
       # clean up
       GC.start
@@ -233,7 +233,7 @@ module Giblish
 
     def graph_builder_factory
       Giblish::GitGraphBuilderGraphviz.new @docinfo_store.doc_infos, @paths, @deployment_info,
-                                           @converter.converter_options, @git_repo
+        @converter.converter_options, @git_repo
     end
 
     def add_success(adoc, adoc_stderr)
@@ -262,7 +262,7 @@ module Giblish
         # fetch all remote refs if ok with user
         msg = "Could not fetch from origin (do you need '--local-only'?)!"
         git_repo.fetch unless local_only
-      rescue StandardError => e
+      rescue => e
         raise "#{msg}\n\n#{e.message}"
       end
       git_repo
@@ -275,7 +275,7 @@ module Giblish
       regexp = Regexp.new checkout_regexp
       user_checkouts = @git_repo.branches.remote.select do |b|
         # match branches but remove eventual HEAD -> ... entry
-        regexp.match b.name unless b.name =~ /^HEAD/
+        regexp.match b.name unless /^HEAD/.match?(b.name)
       end
       Giblog.logger.debug { "selected git branches: #{user_checkouts}" }
       user_checkouts

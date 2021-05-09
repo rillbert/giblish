@@ -175,9 +175,9 @@ module Giblish
       raise ArgumentError("unknown doc id: #{doc_id}") unless docid_cache.key? doc_id
 
       rel_path = docid_cache[doc_id]
-                 .dirname
-                 .relative_path_from(Pathname.new(src_path).dirname) +
-                 docid_cache[doc_id].basename
+        .dirname
+        .relative_path_from(Pathname.new(src_path).dirname) +
+        docid_cache[doc_id].basename
       rel_path.to_s
     end
 

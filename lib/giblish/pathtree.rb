@@ -35,11 +35,11 @@ class PathTree
       @children << PathTree.new(tail, data, self)
     else
       @data = data
-      
+
     end
   end
 
-  # @return 
+  # @return
   def pathname
     return Pathname.new(name.to_s) if @parent.nil?
 
@@ -76,6 +76,15 @@ class PathTree
       yield(level, c)
       c.traverse_top_down(level + 1, &block)
     end
+  end
+
+  # Visits each node by following any child links before accessing the
+  # nodes data (corresponding to left-right-node for a binary tree)
+  def traverse_post_order(level = 0, &block)
+    @children.each do |c|
+      c.traverse_post_order(level + 1, &block)
+    end
+    yield(level, self)
   end
 
   # Public: Sort the nodes on each level in the tree in lexical order but put
@@ -115,19 +124,19 @@ end
 # test the class...
 if __FILE__ == $PROGRAM_NAME
   paths = %w[basedir/file_a
-             basedir/file_a
-             basedir/subdir/dir11
-             basedir/subdir/dir12
-             basedir/subdir/dir13
-             basedir/dira
-             basedir/dira/file_c
-             basedir/dirb/file_e
-             basedir/dira/file_d
-             basedir2/dir2/dir3/file_k
-             basedir2/dir1/dir3/file_l
-             basedir2/dir1/dir3/file_l
-             basedir2/file_h
-             basedir2/dir2/dir3/file_m]
+    basedir/file_a
+    basedir/subdir/dir11
+    basedir/subdir/dir12
+    basedir/subdir/dir13
+    basedir/dira
+    basedir/dira/file_c
+    basedir/dirb/file_e
+    basedir/dira/file_d
+    basedir2/dir2/dir3/file_k
+    basedir2/dir1/dir3/file_l
+    basedir2/dir1/dir3/file_l
+    basedir2/file_h
+    basedir2/dir2/dir3/file_m]
 
   root = PathTree.new
   count = 0
@@ -136,10 +145,18 @@ if __FILE__ == $PROGRAM_NAME
     root.add_path p, count
     count += 1
   end
+
   root.sort_leaf_first
-  root.traverse_top_down do |level, node|
-    puts "path: #{node.pathname}"
+  layout_tree = PathTree.new
+  root.traverse_post_order do |_level, node|
+    sz = node.leaf? ? 1 : node.children.count
+    puts "pathname: #{node.pathname}"
+    puts "nof children for dir: #{node.children.count}" unless node.leaf?
+    layout_tree.add_path(node.pathname.to_s, sz)
+  end
+
+  layout_tree.traverse_top_down do |level, node|
     data = node.data.nil? ? "" : node.data.to_s
-    puts "#{' ' * level} - #{node.name} #{data}"
+    puts "#{" " * level} - #{node.pathname} #{data}"
   end
 end

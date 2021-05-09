@@ -1,6 +1,6 @@
 require "test_helper"
 require "fileutils"
-require_relative "../lib/giblish/utils.rb"
+require_relative "../lib/giblish/utils"
 
 class PathManagerTest < Minitest::Test
   include Giblish::TestUtils
@@ -79,7 +79,6 @@ class PathManagerTest < Minitest::Test
     end
   end
 
-
   def test_reldir_to_src_root
     TmpDocDir.open do |d|
       setup_file_tree d.dir
@@ -94,7 +93,6 @@ class PathManagerTest < Minitest::Test
     end
   end
 
-
   def test_reldir_from_dst_root
     TmpDocDir.open do |d|
       setup_file_tree d.dir
@@ -107,7 +105,6 @@ class PathManagerTest < Minitest::Test
       assert_equal Pathname.new("..").join(@src_root_rel).join(@src_subsub1), p.reldir_from_dst_root(@src_subsub1_abs.join("fakefile.txt"))
     end
   end
-
 
   def test_reldir_to_dst_root
     TmpDocDir.open do |d|
@@ -122,7 +119,6 @@ class PathManagerTest < Minitest::Test
     end
   end
 
-
   def test_dst_abs_from_src_abs
     TmpDocDir.open do |d|
       setup_file_tree d.dir
@@ -132,7 +128,6 @@ class PathManagerTest < Minitest::Test
       assert_equal Pathname.new(@dst_root).join(@src_subsub1), p.dst_abs_from_src_abs(@src_subsub_file_path)
     end
   end
-
 
   def test_relpath_to_dir_after_generate
     TmpDocDir.open do |d|

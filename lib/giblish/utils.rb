@@ -10,7 +10,7 @@ class Giblog
   # Defines the format for log messages from giblish.
   class GiblogFormatter
     def call(severity, datetime, _progname, msg)
-      "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
+      "#{datetime.strftime("%H:%M:%S")} #{severity} - #{msg}\n"
     end
   end
 
@@ -41,7 +41,7 @@ module Giblish
     # log formatter specialized for formatting messages from
     # asciidoctor's stdout
     class UserInfoFormatter
-      SEVERITY_LABELS = { "WARN" => "WARNING", "FATAL" => "FAILED" }.freeze
+      SEVERITY_LABELS = {"WARN" => "WARNING", "FATAL" => "FAILED"}.freeze
 
       # The hash that can be emitted as the msg from asciidoctor have the
       # following format:
@@ -67,8 +67,8 @@ module Giblish
                     str
                   else
                     msg.inspect
-                  end
-        %(#{datetime.strftime('%H:%M:%S')} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{message}\n)
+        end
+        %(#{datetime.strftime("%H:%M:%S")} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{message}\n)
       end
     end
 
@@ -96,15 +96,15 @@ module Giblish
 
     def initialize(web_path, search_asset_path)
       @search_assets_path = if search_asset_path.nil?
-                              nil
-                            else
-                              Pathname.new("/#{search_asset_path}").cleanpath
-                            end
+        nil
+      else
+        Pathname.new("/#{search_asset_path}").cleanpath
+      end
       @web_path = if web_path.nil?
-                    nil
-                  else
-                    Pathname.new("/#{web_path}/web_assets").cleanpath
-                  end
+        nil
+      else
+        Pathname.new("/#{web_path}/web_assets").cleanpath
+      end
     end
 
     def search_assets_path(branch_dir = nil)

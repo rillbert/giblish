@@ -16,9 +16,9 @@ class DocidCollectorTest < Minitest::Test
 
       # act on the input data
       args = ["--log-level", "warn",
-              "-d",
-              tmp_docs.src_data_top.join("wellformed/docidtest"),
-              dst_top.to_s]
+        "-d",
+        tmp_docs.src_data_top.join("wellformed/docidtest"),
+        dst_top.to_s]
       status = Giblish.application.run args
 
       # assert expected
@@ -31,10 +31,10 @@ class DocidCollectorTest < Minitest::Test
       dst_top = tmp_docs.dir + "/dst_top"
 
       args = ["--log-level", "warn",
-              "-d",
-              "-f", "pdf",
-              tmp_docs.src_data_top.join("wellformed/docidtest"),
-              dst_top]
+        "-d",
+        "-f", "pdf",
+        tmp_docs.src_data_top.join("wellformed/docidtest"),
+        dst_top]
 
       status = Giblish.application.run args
       assert_equal 0, status

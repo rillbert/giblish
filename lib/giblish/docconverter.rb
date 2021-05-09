@@ -117,7 +117,7 @@ module Giblish
         # write the converted document to an index file located at the
         # destination root
         doc.write output, index_filepath.to_s
-      rescue StandardError => e
+      rescue => e
         puts e.backtrace
         Giblog.logger.error(e)
         conv_error = true
@@ -147,7 +147,8 @@ module Giblish
 
     # Hook for specific converters to inject attributes on a per-doc
     # basis
-    def add_doc_specific_attributes(filepath, is_src, attributes); end
+    def add_doc_specific_attributes(filepath, is_src, attributes)
+    end
 
     private
 
@@ -159,7 +160,7 @@ module Giblish
         Giblish::PathManager.closest_dir(src_filepath).to_s
       @converter_options[:to_file] =
         Giblish::PathManager.get_new_basename(src_filepath,
-                                              @converter_options[:fileext])
+          @converter_options[:fileext])
       @converter_options[:logger] = logger unless logger.nil?
     end
   end
@@ -175,7 +176,7 @@ module Giblish
       validate_and_copy_resources @dst_asset_dir
 
       # identify ourselves as an html converter
-      add_backend_options({ backend: "html5", fileext: "html" })
+      add_backend_options({backend: "html5", fileext: "html"})
       # setup the attributes specific for this converter
       add_backend_attributes(common_attributes)
     end
@@ -199,18 +200,18 @@ module Giblish
           # generated doc to the css directory
           dst_css_dir = @dst_asset_dir.join("css")
           css_rel_dir = if is_src_file
-                          # the filepath is a src path
-                          @paths.relpath_to_dir_after_generate(
-                            filepath,
-                            dst_css_dir
-                          )
-                        else
-                          # the given file path is the destination path of
-                          # the generated file, find the relative path to the
-                          # css dir
-                          dst_dir = PathManager.closest_dir(filepath)
-                          dst_css_dir.relative_path_from(dst_dir)
-                        end
+            # the filepath is a src path
+            @paths.relpath_to_dir_after_generate(
+              filepath,
+              dst_css_dir
+            )
+          else
+            # the given file path is the destination path of
+            # the generated file, find the relative path to the
+            # css dir
+            dst_dir = PathManager.closest_dir(filepath)
+            dst_css_dir.relative_path_from(dst_dir)
+          end
           doc_attrib["stylesdir"] = css_rel_dir.to_s
         else
           # user has given a web deployment path, the css shall then
@@ -218,8 +219,8 @@ module Giblish
           doc_attrib["stylesdir"] = @deployment_info.web_path.join("css").cleanpath.to_s
         end
       end
-      Giblog.logger.debug { "Rendered docs expect a css at: #{doc_attrib['stylesdir']}" }
-      Giblog.logger.debug { "The expected css is named: #{doc_attrib['stylesheet']}" }
+      Giblog.logger.debug { "Rendered docs expect a css at: #{doc_attrib["stylesdir"]}" }
+      Giblog.logger.debug { "The expected css is named: #{doc_attrib["stylesheet"]}" }
 
       attributes.merge!(doc_attrib)
     end
@@ -259,11 +260,11 @@ module Giblish
       if @user_style
         # Make sure that a user supplied stylesheet ends with .css or .CSS
         @user_style && @user_style =
-                         /\.(css|CSS)$/ =~ @user_style ? @user_style : "#{@user_style}.css"
+                         /\.(css|CSS)$/.match?(@user_style) ? @user_style : "#{@user_style}.css"
 
         # bail out if we can not find the given css file
         src_css_path = @paths.resource_dir_abs
-                             .join("css").join(Pathname.new(@user_style))
+          .join("css").join(Pathname.new(@user_style))
         unless src_css_path.exist?
           raise "Could not find the specified "\
                 "css file at: #{src_css_path}"
@@ -280,7 +281,7 @@ module Giblish
       super paths, deployment_info, options
 
       # identify ourselves as a pdf converter
-      add_backend_options({ backend: "pdf", fileext: "pdf" })
+      add_backend_options({backend: "pdf", fileext: "pdf"})
       # setup the attributes specific for this converter
       add_backend_attributes(setup_pdf_attribs)
     end
@@ -301,7 +302,7 @@ module Giblish
       # Make sure that the stylesheet ends with .yml or YML
       @user_style &&
         pdf_attrib["pdf-style"] =
-          /\.(yml|YML)$/ =~ @user_style ? @user_style : "#{@user_style}.yml"
+          /\.(yml|YML)$/.match?(@user_style) ? @user_style : "#{@user_style}.yml"
 
       pdf_attrib
     end

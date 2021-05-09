@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Giblish
-  # Generate asciidoc that represents a given pathtree as a 
+  # Generate asciidoc that represents a given pathtree as a
   # verbatim block with indented, clickable entries.
   class VerbatimTree
     # options:
@@ -46,7 +46,7 @@ module Giblish
       title << doc_info.title
 
       [title, "<<#{doc_info.rel_path}#,#{title}>>",
-       "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"]
+        "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"]
     end
 
     # Generate an adoc string that will display as
@@ -62,7 +62,7 @@ module Giblish
       padding = 70
       [doc_title, prefix_str, warning_label].each { |p| padding -= p.length }
       padding = 0 unless padding.positive?
-      "#{prefix_str} #{doc_link}#{' ' * padding}#{warning_label} #{doc_details}"
+      "#{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
     end
 
     def directory_entry(prefix_str, node)
@@ -115,7 +115,7 @@ module Giblish
     def source
       duplicates = duplicate_docids
       dup_str = "WARNING: The following document ids are used for more than one document: "\
-                "_#{duplicates.map(&:to_s).join(',')}_"
+                "_#{duplicates.map(&:to_s).join(",")}_"
 
       <<~DOC_ID_INFO
         *Document id numbers:* The 'largest' document id found when resolving

@@ -45,7 +45,8 @@ module Giblish
     # @param paths  a PathManager instance with all relevant paths
     # @return       a pathtree where each non-nil node data is the string
     #               that shall be generated there
-    def process(tree, paths); end
+    def process(tree, paths)
+    end
   end
 end
 

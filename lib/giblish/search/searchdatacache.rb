@@ -28,7 +28,7 @@ module Giblish
   # | ...
   class SearchDataCache
     # the class-global cache of indexed section headings.
-    @heading_index = { fileinfos: [] }
+    @heading_index = {fileinfos: []}
     @id_prefix = nil
     @id_separator = nil
 
@@ -37,7 +37,7 @@ module Giblish
       attr_accessor :id_separator, :id_prefix
 
       def clear
-        @heading_index = { fileinfos: [] }
+        @heading_index = {fileinfos: []}
       end
 
       # add the indexed sections from the given file to the
@@ -100,7 +100,7 @@ module Giblish
 
       remove_base_dir(base_dir)
 
-      Giblog.logger.info { "writing json to #{dst_dir.join('heading_index.json')}" }
+      Giblog.logger.info { "writing json to #{dst_dir.join("heading_index.json")}" }
       File.open(dst_dir.join("heading_index.json").to_s, "w") do |f|
         f.write(heading_index.to_json)
       end
@@ -112,7 +112,7 @@ module Giblish
 
       heading_index[:fileinfos].each do |file_info|
         file_info[:filepath] = Pathname.new(file_info[:filepath])
-                                       .relative_path_from(base_dir)
+          .relative_path_from(base_dir)
       end
     end
   end

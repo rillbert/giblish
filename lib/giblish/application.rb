@@ -38,7 +38,7 @@ module Giblish
       conv_ok = true
       begin
         conv_ok = converter_factory(cmdline).convert
-      rescue StandardError => e
+      rescue => e
         log_error e
         conv_ok = false
       end

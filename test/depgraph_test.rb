@@ -18,9 +18,9 @@ class DepGraphTests < Minitest::Test
       dst_top = "#{tmp_docs.dir}/dst_top"
 
       args = ["--log-level", "info",
-              "--resolve-docid",
-              tmp_docs.src_data_top.join("wellformed/docidtest"),
-              dst_top]
+        "--resolve-docid",
+        tmp_docs.src_data_top.join("wellformed/docidtest"),
+        dst_top]
       status = Giblish.application.run args
       assert_equal 0, status
 
@@ -40,8 +40,8 @@ class DepGraphTests < Minitest::Test
       dst_top = "#{tmp_docs.dir}/dst_top"
 
       args = ["--log-level", "info",
-              tmp_docs.src_data_top.join("wellformed/docidtest"),
-              dst_top]
+        tmp_docs.src_data_top.join("wellformed/docidtest"),
+        dst_top]
       status = Giblish.application.run args
       assert_equal 0, status
 

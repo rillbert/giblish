@@ -44,7 +44,7 @@ module Giblish
 
       # Get the relative path beneath the root dir to the doc
       @rel_path = Pathname.new(
-        "#{d_attr['outdir']}/#{d_attr['docname']}#{d_attr['docfilesuffix']}".encode("utf-8")
+        "#{d_attr["outdir"]}/#{d_attr["docname"]}#{d_attr["docfilesuffix"]}".encode("utf-8")
       ).relative_path_from(dst_root_abs)
     end
 
@@ -59,8 +59,8 @@ module Giblish
       purpose_str = String.new("")
       adoc.blocks.each do |section|
         next unless section.is_a?(Asciidoctor::Section) &&
-                    (section.level == 1) &&
-                    (section.name =~ /^Purpose$/)
+          (section.level == 1) &&
+          (section.name =~ /^Purpose$/)
 
         # filter out 'odd' text, such as lists etc...
         section.blocks.each do |bb|
@@ -83,7 +83,7 @@ module Giblish
       @paths = paths
     end
 
-    # @return  a Pathtree built by all current doc_infos and sorted 
+    # @return  a Pathtree built by all current doc_infos and sorted
     # with leafs first for each level
     def pathtree
       tree = PathTree.new

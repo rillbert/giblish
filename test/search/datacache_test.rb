@@ -26,7 +26,7 @@ module Giblish
         assert(idx[:fileinfos].empty?)
 
         # add some bogus data and check that it is added
-        idx[:fileinfos] << { a: 1, b: 2 }
+        idx[:fileinfos] << {a: 1, b: 2}
         assert_equal(idx[:fileinfos].length, 1)
 
         # clear the index by instantiating a new SearchDataCache
@@ -45,8 +45,8 @@ module Giblish
 
         # ensure that the index is an empty fileinfos entry only
         s1 = SearchDataCache.new(file_set: {}, paths: paths)
-        SearchDataCache.add_file_index({ src_path: "mysrc", title: "My Title", sections: [] })
-        SearchDataCache.add_file_index({ src_path: "mysrc", title: "My Title", sections: [] })
+        SearchDataCache.add_file_index({src_path: "mysrc", title: "My Title", sections: []})
+        SearchDataCache.add_file_index({src_path: "mysrc", title: "My Title", sections: []})
 
         idx = s1.heading_index
         assert_equal(idx.keys, [:fileinfos])
@@ -60,12 +60,12 @@ module Giblish
         src_root = Pathname.new(root_dir) / "src"
         src_root.mkpath
         dst_root = Pathname.new(root_dir) / "dst"
-        paths = PathManager.new(src_root, dst_root,nil, true)
+        paths = PathManager.new(src_root, dst_root, nil, true)
 
         # ensure that the index is an empty fileinfos entry only
         s1 = SearchDataCache.new(file_set: {}, paths: paths)
-        SearchDataCache.add_file_index({ src_path: src_root / "mysrc", title: "My Title", sections: [] })
-        SearchDataCache.add_file_index({ src_path: src_root / "mysrc", title: "My Title", sections: [] })
+        SearchDataCache.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
+        SearchDataCache.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
 
         # serialize search data cache to json file
         s1.deploy_search_assets

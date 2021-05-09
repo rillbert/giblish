@@ -48,6 +48,5 @@ Rake::TestTask.new(:sandbox) do |t|
   t.test_files = FileList["test/**/sandbox_test.rb"]
 end
 
-
 # task :default => :spec
-task :default => :test
+task default: :test
