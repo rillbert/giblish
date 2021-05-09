@@ -42,6 +42,12 @@ Rake::TestTask.new(:search) do |t|
   t.test_files = FileList["test/**/headingindexer_test.rb"]
 end
 
+Rake::TestTask.new(:tree) do |t|
+  t.libs << "test"
+  t.libs << "lib"
+  t.test_files = FileList["test/**/pathtree_test.rb"]
+end
+
 Rake::TestTask.new(:sandbox) do |t|
   t.libs << "test"
   t.libs << "lib"

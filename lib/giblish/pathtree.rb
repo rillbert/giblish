@@ -20,7 +20,11 @@ require "pathname"
 #   dir2
 #     dir3
 #       file_5
-class PathTree
+#
+# == Tree info
+# see https://www.geeksforgeeks.org/tree-traversals-inorder-preorder-and-postorder/
+#
+  class PathTree
   attr_reader :name, :data, :children, :parent
 
   def initialize(tail = nil, data = nil, parent = nil)
@@ -35,7 +39,6 @@ class PathTree
       @children << PathTree.new(tail, data, self)
     else
       @data = data
-
     end
   end
 
@@ -52,39 +55,79 @@ class PathTree
     tail = tail.split("/") unless tail.is_a?(Array)
     return if tail.empty?
 
-    ch = get_child tail[0]
-    if ch
-      tail.shift
-      ch.add_path tail, data
-    else
-      @children << PathTree.new(tail, data, self)
+    name = tail.shift
+    raise ArgumentError, "Trying to add path with other root is not supported" if name != @name
+    raise ArgumentError, "Trying to add already existing path" if tail.empty?
+
+    new_name = tail[0]
+    ch = get_child(new_name)
+    unless ch
+      new_data = tail.length == 1 ? data : nil
+      ch = PathTree.new(new_name, new_data, self)
+      @children << ch
+      return self if tail.length == 1
     end
+
+    ch.add_path(tail, data)
+    self
   end
 
-  # Public: Visits each node by following each branch down from the
-  #         root, one at the time.
+  # Visits depth-first by root -> left -> right
   #
-  # level - the number of hops from the root node
-  # block - the user supplied block that is executed for every visited node
-  #         the level and node are given as block parameters
+  # level:: the number of hops from the root node
+  # block:: the user supplied block that is executed for every visited node
   #
-  # Examples
+  # the level and node are given as block parameters
+  #
+  # === Examples
   # Print the name of each node together with the level of the node
-  # traverse_top_down{ |level, n| puts "#{level} #{n.name}" }
-  def traverse_top_down(level = 0, &block)
+  #    traverse_preorder{ |level, n| puts "#{level} #{n.name}" }
+  #
+  def traverse_preorder(level = 0, &block)
+    yield(level, self)
     @children.each do |c|
-      yield(level, c)
-      c.traverse_top_down(level + 1, &block)
+      c.traverse_preorder(level + 1, &block)
     end
   end
 
-  # Visits each node by following any child links before accessing the
-  # nodes data (corresponding to left-right-node for a binary tree)
-  def traverse_post_order(level = 0, &block)
+  # Visits depth-first by left -> right -> root
+  #
+  # level:: the number of hops from the root node
+  # block:: the user supplied block that is executed for every visited node
+  #
+  # the level and node are given as block parameters
+  #
+  # === Examples
+  # Print the name of each node together with the level of the node
+  #    traverse_postorder{ |level, n| puts "#{level} #{n.name}" }
+  #
+  def traverse_postorder(level = 0, &block)
     @children.each do |c|
-      c.traverse_post_order(level + 1, &block)
+      c.traverse_postorder(level + 1, &block)
     end
     yield(level, self)
+  end
+
+  # Visits bredth-first left -> right for each level top-down
+  #
+  # level:: the number of hops from the root node
+  # block:: the user supplied block that is executed for every visited node
+  #
+  # the level and node are given as block parameters
+  #
+  # === Examples
+  # Print the name of each node together with the level of the node
+  #    traverse_levelorder { |level, n| puts "#{level} #{n.name}" }
+  #
+  def traverse_levelorder(level = 0, &block)
+    yield(level, self) if level == 0
+
+    @children.each do |c|
+      yield(level+1, c)
+    end
+    @children.each do |c|
+      c.traverse_levelorder(level+1, &block)
+    end
   end
 
   # Public: Sort the nodes on each level in the tree in lexical order but put
@@ -148,14 +191,14 @@ if __FILE__ == $PROGRAM_NAME
 
   root.sort_leaf_first
   layout_tree = PathTree.new
-  root.traverse_post_order do |_level, node|
+  root.traverse_postorder do |_level, node|
     sz = node.leaf? ? 1 : node.children.count
     puts "pathname: #{node.pathname}"
     puts "nof children for dir: #{node.children.count}" unless node.leaf?
     layout_tree.add_path(node.pathname.to_s, sz)
   end
 
-  layout_tree.traverse_top_down do |level, node|
+  layout_tree.traverse_preorder do |level, node|
     data = node.data.nil? ? "" : node.data.to_s
     puts "#{" " * level} - #{node.pathname} #{data}"
   end

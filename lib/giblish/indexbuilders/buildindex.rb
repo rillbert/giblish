@@ -84,7 +84,7 @@ module Giblish
     def document_details
       details_str = +"== Document details\n\n"
 
-      @tree.traverse_top_down do |_level, node|
+      @tree.traverse_preorder do |_level, node|
         next unless node.leaf?
 
         d = node.data
@@ -243,12 +243,16 @@ module Giblish
     # directory
     def process(tree, paths)
       basename = @options.fetch(:index_basename, "index")
-      result = PathTree.new
-      result.add_path("/#{basename}", index_builder(tree, paths).source)
-      tree.traverse_top_down do |_level, node|
+      result = nil
+      tree.traverse_preorder do |_level, node|
         next if node.leaf?
 
-        result.add_path("#{node.pathname}/#{basename}", index_builder(node, paths).source)
+        p = (node.pathname / basename).to_s
+        if result.nil?
+          result = PathTree.new(p, index_builder(node, paths).source)
+        else
+          result.add_path(p, index_builder(node, paths).source)
+        end
       end
       result
     end

@@ -31,7 +31,7 @@ module Giblish
       @docinfo_store = DocInfoStore.new(@paths)
 
       # register add-ons for handling searchability if needed
-      manage_searchability(@options) if @options[:makeSearchable]
+      add_searchability(@options) if @options[:makeSearchable]
 
       @deployment_info = setup_deployment_info
 
@@ -167,7 +167,7 @@ module Giblish
       !ir.match(fs).nil?
     end
 
-    def manage_searchability(opts)
+    def add_searchability(opts)
       # create a data cache that will be used by the
       # header indexer
       @search_data_provider = SearchDataCache.new(

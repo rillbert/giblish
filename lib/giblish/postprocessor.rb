@@ -28,7 +28,7 @@ module Giblish
     def run(adoc_logger)
       @processors.each do |instance|
         result_tree = instance.process(@docinfo_store.pathtree, @paths)
-        result_tree.traverse_top_down do |_level, node|
+        result_tree.traverse_preorder do |_level, node|
           next unless node.data
 
           output = "#{@paths.dst_root_abs / node.pathname.dirname}/"
@@ -82,7 +82,7 @@ end
 # class MySecondPostProcessor
 #   def process(tree, _paths)
 #     result = PathTree.new
-#     tree.traverse_top_down do |_level, node|
+#     tree.traverse_preorder do |_level, node|
 #       result.add_path(node.name, "== New Index for #{node.name}")
 #     end
 #     result

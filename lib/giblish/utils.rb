@@ -93,29 +93,16 @@ module Giblish
   # in the deployment machine's file system.
   class DeploymentPaths
     attr_reader :web_path
+    attr_writer :search_assets_path
 
     def initialize(web_path, search_asset_path)
-      @search_assets_path = if search_asset_path.nil?
-        nil
-      else
-        Pathname.new("/#{search_asset_path}").cleanpath
-      end
-      @web_path = if web_path.nil?
-        nil
-      else
-        Pathname.new("/#{web_path}/web_assets").cleanpath
-      end
+      @web_path = web_path || Pathname.new("/#{web_path}/web_assets").cleanpath
+      @search_asset_path = search_asset_path || Pathname.new("/#{search_asset_path}").cleanpath
     end
 
     def search_assets_path(branch_dir = nil)
-      if branch_dir.nil?
-        @search_assets_path
-      else
-        @search_assets_path.join(branch_dir)
-      end
+      branch_dir.nil? ? @search_assets_path : @search_assets_path.join(branch_dir)
     end
-
-    attr_writer :search_assets_path
   end
 
   # creates and caches a set of file paths that match the given

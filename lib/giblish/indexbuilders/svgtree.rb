@@ -36,7 +36,7 @@ module Giblish
     def source
       tree_string = +header
       # generate each tree entry string
-      @tree.traverse_post_order do |level, node|
+      @tree.traverse_postorder do |level, node|
         file_svg if node.leaf?
         tree_string << tree_entry_string(level, node)
       end
@@ -49,7 +49,7 @@ module Giblish
 
     def create_layout(path_tree)
       layout_tree = PathTree.new
-      path_tree.traverse_post_order do |_level, node|
+      path_tree.traverse_postorder do |_level, node|
         sz = node.leaf? ? 1 : node.children.count
         layout_tree.add_path(node.pathname, sz)
       end

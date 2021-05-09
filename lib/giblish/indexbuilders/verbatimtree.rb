@@ -21,7 +21,7 @@ module Giblish
       DOC_HEADER
 
       # generate each tree entry string
-      @tree.traverse_top_down do |level, node|
+      @tree.traverse_preorder do |level, node|
         tree_string << tree_entry_string(level, node)
       end
 

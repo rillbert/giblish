@@ -73,24 +73,33 @@ module Giblish
     end
   end
 
-  # convenience class for initiating DocInos from conversions of
+  # convenience class for initiating DocInfos from conversions of
   # adoc source to target format
   class DocInfoStore
     attr_reader :doc_infos
 
-    def initialize(paths)
+    # path_manager:: a PathManager instance containing relevant paths for 
+    # this run of giblish
+    def initialize(path_manager)
       @doc_infos = []
-      @paths = paths
+      @paths = path_manager
     end
 
     # @return  a Pathtree built by all current doc_infos and sorted
     # with leafs first for each level
     def pathtree
-      tree = PathTree.new
+      tree = nil
       @doc_infos.each do |d|
-        tree.add_path(d.rel_path.to_s, d)
-      end
+        p = (@paths.src_root_abs.basename / d.rel_path).to_s
+        if tree.nil?
+          tree = PathTree.new(p, d)
+          next
+        end
 
+        tree.add_path(p, d)
+      end
+      return nil if tree.nil?
+      
       # sort the tree
       tree.sort_leaf_first
       tree
@@ -98,6 +107,7 @@ module Giblish
 
     # creates a DocInfo instance, fills it with basic info and
     def add_success(adoc, adoc_stderr)
+      puts "adoc: #{adoc}"
       Giblog.logger.debug do
         "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}\n"\
         "Doc attributes: #{adoc.attributes}"
