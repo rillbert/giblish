@@ -56,7 +56,7 @@ module Giblish
 
     def get_purpose_info(adoc)
       # Get the 'Purpose' section if it exists
-      purpose_str = String.new("")
+      purpose_str = +""
       adoc.blocks.each do |section|
         next unless section.is_a?(Asciidoctor::Section) &&
           (section.level == 1) &&

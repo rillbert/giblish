@@ -59,9 +59,9 @@ module Giblish
                   when ::Hash
                     # asciidoctor seem to emit a hash with error text and source location info
                     # for warnings and errors
-                    str = String.new("")
                     src_loc = msg.fetch(:source_location, nil)
                     err_txt = msg.fetch(:text, nil)
+                    str = +""
                     str << "Line #{src_loc.lineno} - " if src_loc
                     str << err_txt.to_s if err_txt
                     str

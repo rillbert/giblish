@@ -68,7 +68,7 @@ class LinkCSSTest < Minitest::Test
       tmp_docs.check_html_dom adoc_filename do |html_tree|
         html_tree.xpath("html/head/link").each do |csslink|
           assert_equal "stylesheet", csslink.get("rel")
-          assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic," +
+          assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
             "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
             csslink.get("href")
         end
@@ -94,7 +94,7 @@ class LinkCSSTest < Minitest::Test
       tmp_docs.check_html_dom adoc_filename do |html_dom|
         html_dom.xpath("html/head/link").each do |csslink|
           assert_equal "stylesheet", csslink.get("rel")
-          assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic," +
+          assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
             "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
             csslink.get("href")
         end

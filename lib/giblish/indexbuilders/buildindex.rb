@@ -82,7 +82,7 @@ module Giblish
     end
 
     def document_details
-      details_str = String.new("== Document details\n\n")
+      details_str = +"== Document details\n\n"
 
       @tree.traverse_top_down do |_level, node|
         next unless node.leaf?
@@ -210,7 +210,7 @@ module Giblish
     end
 
     def history_info(doc_info)
-      str = String.new(HISTORY_TABLE_HEADING)
+      str = +HISTORY_TABLE_HEADING
 
       # Generate table rows of history information
       doc_info.history.each do |h|
@@ -303,7 +303,7 @@ module Giblish
       return "" if @branches.empty?
 
       # get the branch-unique dst-dir
-      str = String.new("== Branches\n\n")
+      str = +"== Branches\n\n"
 
       @branches.each do |b|
         dirname = b.name.tr "/", "_"

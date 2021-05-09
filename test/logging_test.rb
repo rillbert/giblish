@@ -28,7 +28,7 @@ class LoggingTest < Minitest::Test
   def test_logging_of_info_and_warn
     TmpDocDir.open do |tmp_docs|
       # act on the input data
-      adoc_filename = tmp_docs.add_doc_from_str @@doc_str
+      # adoc_filename = tmp_docs.add_doc_from_str @@doc_str
       args = [tmp_docs.dir,
         tmp_docs.dir]
       status = Giblish.application.run args

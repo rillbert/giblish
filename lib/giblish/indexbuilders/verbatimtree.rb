@@ -15,12 +15,10 @@ module Giblish
 
     def source
       # output tree intro
-      tree_string = String.new(
-        <<~DOC_HEADER
-          [subs=\"normal\"]
-          ----
-        DOC_HEADER
-      )
+      tree_string = +<<~DOC_HEADER
+        [subs=\"normal\"]
+        ----
+      DOC_HEADER
 
       # generate each tree entry string
       @tree.traverse_top_down do |level, node|
@@ -41,7 +39,7 @@ module Giblish
       doc_info.title = "NO TITLE FOUND (#{@nof_missing_titles += 1}) !" unless doc_info.title
 
       # Manipulate the doc title if we have a doc id
-      title = String.new
+      title = +""
       title << "#{doc_info.doc_id} - " unless doc_info.doc_id.nil?
       title << doc_info.title
 

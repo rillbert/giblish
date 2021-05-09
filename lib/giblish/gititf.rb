@@ -49,7 +49,7 @@ module Giblish
         end
 
         if in_message
-          hsh["message"] << "#{line[4..-1]}\n"
+          hsh["message"] << "#{line[4..]}\n"
           next
         end
 
@@ -60,7 +60,7 @@ module Giblish
         case key
         when "commit"
           hsh_array << hsh if hsh
-          hsh = {"sha" => value, "message" => String.new(""), "parent" => []}
+          hsh = {"sha" => value, "message" => +"", "parent" => []}
         when "parent"
           hsh["parent"] << value
         when "author"

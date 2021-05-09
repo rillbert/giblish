@@ -95,8 +95,12 @@ module Giblish
         when :text
           case line
           # detect a heading or an anchor preceeding a heading
-          when HEADING_REGEX then state = :heading; match_str = Regexp.last_match(1)
-          when ANCHOR_REGEX then state = :expecting_heading; match_str = Regexp.last_match(1)
+          when HEADING_REGEX
+            state = :heading
+            match_str = Regexp.last_match(1)
+          when ANCHOR_REGEX
+            state = :expecting_heading
+            match_str = Regexp.last_match(1)
           end
         when :expecting_heading
           case line

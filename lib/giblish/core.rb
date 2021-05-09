@@ -69,8 +69,7 @@ module Giblish
       @adoc_files.each do |p|
         to_asciidoc(p)
       rescue => e
-        str = String.new("Error when converting file "\
-                         "#{p}: #{e.message}\nBacktrace:\n")
+        str = +"Error when converting file #{p}: #{e.message}\nBacktrace:\n"
         e.backtrace.each { |l| str << "   #{l}\n" }
         Giblog.logger.error { str }
         conv_ok = false

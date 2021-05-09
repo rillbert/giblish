@@ -214,7 +214,7 @@ module Giblish
   # specializes generation of a document dependency graph for
   # docs rendered from a git repo.
   class GitGraphBuilderGraphviz < GraphBuilderGraphviz
-    def initialize(processed_docs, paths, deployment_info, options = {}, _git_repo)
+    def initialize(processed_docs, paths, deployment_info, options = {}, _git_repo = nil)
       super(processed_docs, paths, deployment_info, options)
     end
   end
