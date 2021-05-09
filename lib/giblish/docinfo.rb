@@ -90,6 +90,8 @@ module Giblish
     def pathtree
       tree = nil
       @doc_infos.each do |d|
+        next unless d.converted
+
         p = (@paths.src_root_abs.basename / d.rel_path).to_s
         if tree.nil?
           tree = PathTree.new(p, d)
@@ -107,7 +109,6 @@ module Giblish
 
     # creates a DocInfo instance, fills it with basic info and
     def add_success(adoc, adoc_stderr)
-      puts "adoc: #{adoc}"
       Giblog.logger.debug do
         "Adding adoc: #{adoc} Asciidoctor stderr: #{adoc_stderr}\n"\
         "Doc attributes: #{adoc.attributes}"

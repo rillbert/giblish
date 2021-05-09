@@ -31,7 +31,8 @@ module Giblish
         result_tree.traverse_preorder do |_level, node|
           next unless node.data
 
-          output = "#{@paths.dst_root_abs / node.pathname.dirname}/"
+          # TODO: Fix this hack to remove the root dir...
+          output = "#{@paths.dst_root_abs / node.pathname.dirname.relative_path_from(@paths.src_root_abs.basename)}/"
           @converter.convert_str(node.data, output, node.name, logger: adoc_logger)
         end
       end
