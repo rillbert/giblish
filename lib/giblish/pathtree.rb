@@ -2,21 +2,24 @@
 
 require "pathname"
 
-# This class can convert the following paths:
+# Provides a tree structure where each node is the basename of either
+# a directory or a file. A node can contain an associated 'data' object.
+#
+# The following paths:
 # basedir/file_1
 # basedir/file_2
 # basedir/dir1/file_3
 # basedir/dir1/file_4
-# basedir2/dir2/dir3/file_5
+# basedir/dir2/dir3/file_5
 #
-# into the following tree:
+# are thus represented by the following path tree:
+#
 # basedir
 #   file_1
 #   file_2
 #   dir1
 #     file_3
 #     file_4
-# basedir2
 #   dir2
 #     dir3
 #       file_5
@@ -24,7 +27,7 @@ require "pathname"
 # == Tree info
 # see https://www.geeksforgeeks.org/tree-traversals-inorder-preorder-and-postorder/
 #
-  class PathTree
+class PathTree
   attr_reader :name, :data, :children, :parent
 
   def initialize(tail = nil, data = nil, parent = nil)
@@ -42,7 +45,7 @@ require "pathname"
     end
   end
 
-  # @return
+  # return:: a Pathname with the full path of this node
   def pathname
     return Pathname.new(name.to_s) if @parent.nil?
 
@@ -123,28 +126,48 @@ require "pathname"
     yield(level, self) if level == 0
 
     @children.each do |c|
-      yield(level+1, c)
+      yield(level + 1, c)
     end
     @children.each do |c|
-      c.traverse_levelorder(level+1, &block)
+      c.traverse_levelorder(level + 1, &block)
     end
   end
 
-  # Public: Sort the nodes on each level in the tree in lexical order but put
+  # Sort the nodes on each level in the tree in lexical order but put
   # leafs before non-leafs.
   def sort_leaf_first
-    # sort on this level
     @children.sort! { |a, b| leaf_first(a, b) }
-    # sort each subtree
     @children.each(&:sort_leaf_first)
   end
 
-  # Public: is this node a leaf
-  #
-  # Returns: true if the node is a leaf, false otherwise
+  # return:: true if the node is a leaf, false otherwise
   def leaf?
     @children.length.zero?
   end
+
+  # path:: the full path to an existing node in this tree (string or Pathname)
+  #
+  # return:: the subtree with the matching node as root or nil if the given path
+  # does not exist within this pathtree
+  def subtree(path)
+    root = nil
+    p = Pathname.new(path)
+    traverse_preorder do |level, node|
+      if node.pathname == p
+        root = node
+        break
+      end
+    end
+    root
+  end
+
+  # adds the given Pathtree as a subtree to this node
+  def add_tree(path_tree)
+    ch = get_child(path_tree.name)
+    raise ArgumentError, "Can not add subtree with same name as existing nodes!" unless ch.nil?
+
+    @children << path_tree
+  end 
 
   private
 
