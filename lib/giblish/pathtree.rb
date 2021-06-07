@@ -49,7 +49,8 @@ class PathTree
     end
   end
 
-  # return:: a Pathname with the full path of this node
+  # return:: a Pathname with the full path of this node (starting from 
+  # the root)
   def pathname
     return Pathname.new(@name.to_s.empty? ? "/#{@name}" : @name.to_s) if @parent.nil?
 
@@ -58,25 +59,23 @@ class PathTree
 
   # adds a new path to the tree and associates the data
   # to the leaf of that path.
-  def add_path(tail, data = nil)
-    tail = tail.split("/") unless tail.is_a?(Array)
-    return if tail.empty?
+  def add_path(path, data = nil)
+    raise ArgumentError, "Trying to add already existing path" unless node(path).nil?
 
-    name = tail.shift
-    raise ArgumentError, "Trying to add path with other root is not supported" if name != @name
-    raise ArgumentError, "Trying to add already existing path" if tail.empty?
+    # prune any part of the given path that already exists in this
+    # tree
+    p = Pathname.new(path)
+    p.ascend do |q| 
+      n = node(q)
+      next if n.nil?
 
-    new_name = tail[0]
-    ch = get_child(new_name)
-    unless ch
-      new_data = tail.length == 1 ? data : nil
-      ch = PathTree.new(new_name, new_data, self)
-      @children << ch
-      return self if tail.length == 1
+      t = PathTree.new(p.relative_path_from(q).to_s, data)
+      n.append_tree(t)
+      return self
     end
 
-    ch.add_path(tail, data)
-    self
+    # no part of the given path existed within the tree
+    raise ArgumentError, "Trying to add path with other root is not supported"
   end
 
   # Visits depth-first by root -> left -> right
@@ -216,6 +215,7 @@ class PathTree
     # duplicate ourselves to compare paths
     t = self.dup
 
+    # check that no path in c would collide with existing paths
     common = Set.new(t.leave_pathnames) & Set.new(p)
     unless common.empty?
       str = common.collect {|p| p.to_s}.join(',')
