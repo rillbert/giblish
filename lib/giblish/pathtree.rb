@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 require "pathname"
+require "set"
 
 # Provides a tree structure where each node is the basename of either
 # a directory or a file. A node can contain an associated 'data' object.
+#
 #
 # The following paths:
 # basedir/file_1
@@ -29,6 +31,7 @@ require "pathname"
 #
 class PathTree
   attr_reader :name, :data, :children, :parent
+  attr_writer :parent
 
   def initialize(tail = nil, data = nil, parent = nil)
     @children = []
@@ -37,7 +40,8 @@ class PathTree
     return if tail.nil?
 
     tail = tail.split("/") unless tail.is_a?(Array)
-    @name = tail.shift
+
+    @name = tail.empty? ? "" : tail.shift
     if tail.length.positive?
       @children << PathTree.new(tail, data, self)
     else
@@ -47,7 +51,7 @@ class PathTree
 
   # return:: a Pathname with the full path of this node
   def pathname
-    return Pathname.new(name.to_s) if @parent.nil?
+    return Pathname.new(@name.to_s.empty? ? "/#{@name}" : @name.to_s) if @parent.nil?
 
     @parent.pathname / name
   end
@@ -140,18 +144,44 @@ class PathTree
     @children.each(&:sort_leaf_first)
   end
 
+  # returns:: the number of nodes in the subtree with this node as
+  # root
+  def count
+    result = 1
+    traverse_preorder do |level, node|
+      result += 1
+    end
+    result
+  end
+
   # return:: true if the node is a leaf, false otherwise
   def leaf?
     @children.length.zero?
   end
 
+  # return:: an array with Pathnames of each full
+  # path for the leaves in this tree
+  def leave_pathnames
+    paths = []
+    traverse_postorder do |l,n| 
+      paths << n.pathname if n.leaf?
+    end
+    paths
+  end
+
+  # return:: true if this node does not have a parent
+  def root?
+    @parent.nil?
+  end
+
   # path:: the full path to an existing node in this tree (string or Pathname)
   #
-  # return:: the subtree with the matching node as root or nil if the given path
+  # return:: the node with the given path or nil if the path
   # does not exist within this pathtree
-  def subtree(path)
+  def node(path)
     root = nil
     p = Pathname.new(path)
+
     traverse_preorder do |level, node|
       if node.pathname == p
         root = node
@@ -161,13 +191,101 @@ class PathTree
     root
   end
 
-  # adds the given Pathtree as a subtree to this node
-  def add_tree(path_tree)
-    ch = get_child(path_tree.name)
-    raise ArgumentError, "Can not add subtree with same name as existing nodes!" unless ch.nil?
 
-    @children << path_tree
-  end 
+  # adds a copy of the given Pathtree as a subtree to this node. the subtree can not
+  # contain nodes that will end up having the same pathname as any existing
+  # node in the target tree.
+  # 
+  # == Example
+  # 
+  # 1. Add my/new/tree to /1/2 -> /1/2/my/new/tree
+  # 2. Add /my/new/tree to /1/2 -> /1/2//my/new/tree (where a node with empty
+  # name is located between node '2' and 'my')
+  # 2. Trying to add 'new/tree' to '/my' node in a tree with '/my/new/tree' raises
+  # ArgumentError since the pathname that would result already exists within the 
+  # target tree.
+  def append_tree(root_node)
+
+    # make a copy to make sure it is a self-sustaining PathTree
+    c = root_node.dup
+
+    # get all leaf paths prepended with this node's name to check for
+    # previous existance in this tree.
+    p = c.leave_pathnames.collect { |p| Pathname.new(self.name) / p }
+
+    # duplicate ourselves to compare paths
+    t = self.dup
+
+    common = Set.new(t.leave_pathnames) & Set.new(p)
+    unless common.empty?
+      str = common.collect {|p| p.to_s}.join(',')
+      raise ArgumentError, "Can not append tree due to conflicting paths: #{str}"
+    end
+
+    # hook the subtree into this tree
+    @children << c
+    c.parent = self
+  end
+
+
+  # duplicate this node and all its children but keep the same data references
+  # as the originial nodes.
+  # 
+  # parent:: the parent node of the copy, default = nil (the copy
+  # is a root node)
+  # returns:: a copy of this node and all its descendents. The copy will
+  # share any 'data' references with the original.
+  def dup(parent: nil)
+    d = PathTree.new(@name.dup, @data, parent)
+
+    @children.each { |c| d.children << c.dup(parent: d) }
+    d
+  end
+
+  # Builds a PathTree with its root as the given file system dir or file
+  #
+  # fs_point:: an absolute or relative path to a file or directory that
+  # already exists in the file system.
+  # prune:: if true, add the entire, absolute, path to the fs_point to
+  # the PathTree. If false, use only the basename of the fs_point as the
+  # root of the PathTree
+  #
+  # You can submit a filter predicate that determine if a specific path
+  # shall be part of the PathTree or not ->(Pathname) { return true/false}
+  #
+  # return:: the resulting PathTree
+  #
+  # === Example
+  #
+  # Build a pathtree containing all files under the "mydir" directory that
+  # ends with '.jpg'. The resulting tree will contain the absolute path
+  # to 'mydir' as nodes (eg '/home/gunnar/mydir')
+  #
+  # t = PathTree.build_from_fs("./mydir",true ) { |p| p.extname == ".jpg" }
+  def self.build_from_fs(fs_point, prune: false)
+    p = Pathname.new(fs_point)
+    raise ArgumentError, "The path '#{fs_point}' does not exist in the file system!" unless p.exist?
+
+    p = p.realpath
+
+    t = nil
+    Find.find(p.to_s) do |path|
+      if t.nil?
+        puts "init with path: #{path}"
+        t = PathTree.new(path)
+      else
+        puts "add: #{path}"
+        t.add_path(path) if (block_given? && yield(dst)) || !block_given?
+      end
+    end
+
+    # newroot = t.node(p.to_s)
+    # puts newroot.pathname
+    # k = newroot.dup
+    # puts k.pathname
+
+    (prune ? t.node(p.to_s).dup : t)
+  end
 
   private
 
@@ -184,45 +302,5 @@ class PathTree
   def get_child(segment_name)
     ch = @children.select { |c| c.name == segment_name }
     ch.length.zero? ? nil : ch[0]
-  end
-end
-
-# test the class...
-if __FILE__ == $PROGRAM_NAME
-  paths = %w[basedir/file_a
-    basedir/file_a
-    basedir/subdir/dir11
-    basedir/subdir/dir12
-    basedir/subdir/dir13
-    basedir/dira
-    basedir/dira/file_c
-    basedir/dirb/file_e
-    basedir/dira/file_d
-    basedir2/dir2/dir3/file_k
-    basedir2/dir1/dir3/file_l
-    basedir2/dir1/dir3/file_l
-    basedir2/file_h
-    basedir2/dir2/dir3/file_m]
-
-  root = PathTree.new
-  count = 0
-  paths.each do |p|
-    puts "adding path: #{p}"
-    root.add_path p, count
-    count += 1
-  end
-
-  root.sort_leaf_first
-  layout_tree = PathTree.new
-  root.traverse_postorder do |_level, node|
-    sz = node.leaf? ? 1 : node.children.count
-    puts "pathname: #{node.pathname}"
-    puts "nof children for dir: #{node.children.count}" unless node.leaf?
-    layout_tree.add_path(node.pathname.to_s, sz)
-  end
-
-  layout_tree.traverse_preorder do |level, node|
-    data = node.data.nil? ? "" : node.data.to_s
-    puts "#{" " * level} - #{node.pathname} #{data}"
   end
 end
