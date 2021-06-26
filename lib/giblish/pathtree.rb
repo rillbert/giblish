@@ -6,7 +6,7 @@ require "set"
 #
 # Provides a tree structure where each node is the basename of either
 # a directory or a file. The pathname of a node is the concatenation of
-# all basenames from the root node to the node in question, given as a 
+# all basenames from the root node to the node in question, given as a
 # Pathname object.
 #
 # Each node must have a unique pathname within the tree it is part of.
@@ -37,7 +37,7 @@ require "set"
 #
 class PathTree
   attr_reader :data, :children, :parent, :abs_root
-  attr_writer :parent
+  attr_writer :parent, :data
 
   def initialize(path, data = nil, parent = nil)
     p = clean(path)
@@ -73,22 +73,28 @@ class PathTree
     d
   end
 
+  # return:: a String with the path segment for this node
   def segment
     @name.to_s
   end
 
+  # return:: a Pathname with the complete path from the root of the
+  # tree where this node is a member to this node (inclusive).
   def pathname
     return @name if @parent.nil?
 
     (@parent.pathname / @name).cleanpath
   end
 
+  # create a subtree from the given path and add it to this node
+  #
+  # return:: the leaf node for the added subtree
   def add_descendants(path, data = nil)
     p = clean(path)
     raise ArgumentError, "Can not add absolute path as descendant!!" if p.absolute?
 
     # invoked with 'current' name, ignore
-    return if p.to_s == "."
+    return self if p.to_s == "."
 
     head = p.descend.first
     tail = p.relative_path_from(head)
@@ -99,14 +105,15 @@ class PathTree
       @children << PathTree.new(head, last_segment ? data : nil, self)
       ch = @children.last
     end
-    ch.add_descendants(tail, data) unless last_segment
+
+    last_segment ? @children.last : ch.add_descendants(tail, data)
   end
 
-  # adds a new path to the tree and associates the data
-  # to the leaf of that path.
+  # adds a new path to the root of the tree where this node is a member
+  # and associates the given data to the leaf of that path.
   def add_path(path, data = nil)
     p = clean(path)
-    raise ArgumentError, "Trying to add already existing path" unless node(p).nil?
+    raise ArgumentError, "Trying to add already existing path" unless node(p, from_root: true).nil?
 
     # prune any part of the given path that already exists in this
     # tree
@@ -225,8 +232,12 @@ class PathTree
     @parent.root
   end
 
-  # path:: the path to node in this node's subtree (string or Pathname)
-  #
+  # Finds the node corresponding to the given path.
+  # 
+  # path:: a String or Pathname with the path to search for
+  # from_root:: if true start the search from the root of the tree where 
+  # this node is a member. If false, start the search from this node's 
+  # children.
   #
   # return:: the node with the given path or nil if the path
   # does not exist within this pathtree
@@ -281,8 +292,8 @@ class PathTree
     c.parent = self
   end
 
-  # Splits the node's path into 
-  # - a 'stem', the common path to all nodes in this tree that are on the 
+  # Splits the node's path into
+  # - a 'stem', the common path to all nodes in this tree that are on the
   # same level as this node or closer to the root.
   # - a 'crown', the remaining path when the stem has been removed from this
   # node's pathname
@@ -290,7 +301,7 @@ class PathTree
   # === Example
   # n.split_stem for the following tree:
   #
-  #   base 
+  #   base
   #     |- dir
   #         |- leaf_1
   #         |- branch
@@ -306,14 +317,14 @@ class PathTree
   def split_stem
     r = root
     s = pathname.descend do |stem|
-      n = r.node(stem,from_root: true)
+      n = r.node(stem, from_root: true)
       break n if n.children.count != 1 || n == self
     end
-    
+
     if s == self
-      [ root? ? nil : s.parent.pathname, @name]
+      [root? ? nil : s.parent.pathname, @name]
     else
-      [ s.pathname, pathname.relative_path_from(s.pathname)]
+      [s.pathname, pathname.relative_path_from(s.pathname)]
     end
   end
 
@@ -353,7 +364,15 @@ class PathTree
       end
     end
 
-    (prune ? t.node(top_node,from_root: true).dup : t)
+    (prune ? t.node(top_node, from_root: true).dup : t)
+  end
+
+  # delegate method calls not implemented by PathTree to the associated 'data'
+  # object
+  def method_missing(m, *args, &block)
+    return super if data.nil?
+
+    data.send(m, *args, &block)
   end
 
   private

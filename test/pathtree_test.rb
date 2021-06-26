@@ -301,10 +301,10 @@ class PathTreeTest < Minitest::Test
     root = PathTree.new("/1/2")
     root.node("1/2").append_tree(PathTree.new("my/new/tree"))
     n = root.node("1/2/my")
-    
+
     assert_equal(
       [Pathname.new("/1/2"), Pathname.new("my")],
-      root.node("/1/2/my",from_root: true).split_stem
+      root.node("/1/2/my", from_root: true).split_stem
     )
 
     assert_equal(
@@ -312,7 +312,8 @@ class PathTreeTest < Minitest::Test
       root.node("1/2/my/new/tree").split_stem
     )
 
-    n.add_descendants("new/branch")
+    d = n.add_descendants("new/branch")
+    assert_equal(root.node("1/2/my/new/branch"), d)
 
     assert_equal(
       [Pathname.new("/1/2/my/new"), Pathname.new("tree")],
@@ -321,7 +322,7 @@ class PathTreeTest < Minitest::Test
 
     assert_equal(
       [Pathname.new("/1/2/my/new"), Pathname.new("branch")],
-      n.node("/1/2/my/new/branch",from_root: true).split_stem
+      n.node("/1/2/my/new/branch", from_root: true).split_stem
     )
 
     root.node("1/2/my").add_descendants("another/branch")
@@ -342,7 +343,25 @@ class PathTreeTest < Minitest::Test
     )
   end
 
+  def test_copy_to_other_root
+    src = PathTree.new("src/my/tst/tree")
+    dst = PathTree.new("dst")
+    src.children.each { |c| dst.append_tree(c) }
+
+    assert_equal(4, dst.count)
+    assert(!dst.node("my/tst/tree").nil?)
+
+    src = PathTree.new("/src/leaf")
+    dst = PathTree.new("dst")
+    src.node("src").children.each { |c| dst.append_tree(c) }
+
+    assert_equal(2, dst.count)
+    assert(!dst.node("leaf").nil?)
+  end
+
   def test_build_from_fs
+    # a bit hack-ish but we expect a 'hooks' dir within a dir named '.git'
+    # since this file is part of a git repo
     p = PathTree.build_from_fs("#{__dir__}/../.git", prune: true) do |pt|
       pt.extname == ".sample"
     end
@@ -354,5 +373,18 @@ class PathTreeTest < Minitest::Test
       found_dirs << node.segment
     end
     assert_equal(expected_dirs, found_dirs)
+  end
+
+  def test_delegate_to_data
+    # create a leaf node with a 'String' as data
+    root = PathTree.new("/my/new/tree", "my data")
+    n = root.node("my/new/tree")
+    assert_equal("my data", n.data)
+
+    # call String::split via delegation
+    assert_equal(["my", "data"], n.split)
+    
+    # call String::upcase via delegation
+    assert_equal("MY DATA", n.upcase)
   end
 end
