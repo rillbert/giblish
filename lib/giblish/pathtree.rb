@@ -83,7 +83,7 @@ class PathTree
     (@parent.pathname / @name).cleanpath
   end
 
-  def add_descendants(path, data)
+  def add_descendants(path, data = nil)
     p = clean(path)
     raise ArgumentError, "Can not add absolute path as descendant!!" if p.absolute?
 
@@ -111,7 +111,7 @@ class PathTree
     # prune any part of the given path that already exists in this
     # tree
     p.ascend do |q|
-      n = node(q)
+      n = node(q, from_root: true)
       next if n.nil?
 
       t = PathTree.new(p.relative_path_from(q).to_s, data)
@@ -132,7 +132,7 @@ class PathTree
   #
   # === Examples
   # Print the name of each node together with the level of the node
-  #    traverse_preorder{ |level, n| puts "#{level} #{n.name}" }
+  #    traverse_preorder{ |level, n| puts "#{level} #{n.segment}" }
   #
   def traverse_preorder(level = 0, &block)
     yield(level, self)
@@ -150,7 +150,7 @@ class PathTree
   #
   # === Examples
   # Print the name of each node together with the level of the node
-  #    traverse_postorder{ |level, n| puts "#{level} #{n.name}" }
+  #    traverse_postorder{ |level, n| puts "#{level} #{n.segment}" }
   #
   def traverse_postorder(level = 0, &block)
     @children.each do |c|
@@ -168,7 +168,7 @@ class PathTree
   #
   # === Examples
   # Print the name of each node together with the level of the node
-  #    traverse_levelorder { |level, n| puts "#{level} #{n.name}" }
+  #    traverse_levelorder { |level, n| puts "#{level} #{n.segment}" }
   #
   def traverse_levelorder(level = 0, &block)
     yield(level, self) if level == 0
@@ -218,17 +218,25 @@ class PathTree
     @parent.nil?
   end
 
+  # return:: the root node of the tree where this node is a member
+  def root
+    return self if root?
+
+    @parent.root
+  end
+
   # path:: the path to node in this node's subtree (string or Pathname)
   #
   #
   # return:: the node with the given path or nil if the path
   # does not exist within this pathtree
-  def node(path)
+  def node(path, from_root: false)
     p = clean(path)
     root = nil
 
     traverse_preorder do |level, node|
-      if node.pathname == p
+      q = from_root ? node.pathname : node.pathname.relative_path_from(pathname)
+      if q == p
         root = node
         break
       end
@@ -273,12 +281,48 @@ class PathTree
     c.parent = self
   end
 
+  # Splits the node's path into 
+  # - a 'stem', the common path to all nodes in this tree that are on the 
+  # same level as this node or closer to the root.
+  # - a 'crown', the remaining path when the stem has been removed from this
+  # node's pathname
+  #
+  # === Example
+  # n.split_stem for the following tree:
+  #
+  #   base 
+  #     |- dir
+  #         |- leaf_1
+  #         |- branch
+  #               |- leaf_2
+  #
+  # yields
+  #        ["base/dir", "leaf_1"] when n == leaf_1
+  #        ["base/dir", "branch/leaf_2"] when n == leaf_2
+  #        ["base", "dir"] when n == "dir"
+  #        [nil, "base"] when n == "base"
+  #
+  # return:: [stem, crown]
+  def split_stem
+    r = root
+    s = pathname.descend do |stem|
+      n = r.node(stem,from_root: true)
+      break n if n.children.count != 1 || n == self
+    end
+    
+    if s == self
+      [ root? ? nil : s.parent.pathname, @name]
+    else
+      [ s.pathname, pathname.relative_path_from(s.pathname)]
+    end
+  end
+
   # Builds a PathTree with its root as the given file system dir or file
   #
   # fs_point:: an absolute or relative path to a file or directory that
   # already exists in the file system.
-  # prune:: if true, add the entire, absolute, path to the fs_point to
-  # the PathTree. If false, use only the basename of the fs_point as the
+  # prune:: if false, add the entire, absolute, path to the fs_point to
+  # the PathTree. If true, use only the basename of the fs_point as the
   # root of the PathTree
   #
   # You can submit a filter predicate that determine if a specific path
@@ -309,7 +353,7 @@ class PathTree
       end
     end
 
-    (prune ? t.node(top_node).dup : t)
+    (prune ? t.node(top_node,from_root: true).dup : t)
   end
 
   private
@@ -325,11 +369,11 @@ class PathTree
     end
 
     # for two non-leafs, return lexical order
-    left.name <=> right.name
+    left.segment <=> right.segment
   end
 
   def get_child(segment_name)
-    ch = @children.select { |c| c.name == segment_name }
+    ch = @children.select { |c| c.segment == segment_name.to_s }
     ch.length.zero? ? nil : ch[0]
   end
 end

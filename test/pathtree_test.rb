@@ -37,7 +37,7 @@ class PathTreeTest < Minitest::Test
   end
 
   def test_whitespace_root
-    t = PathTree.new(' ')
+    t = PathTree.new(" ")
     assert_equal(0, t.children.length)
     assert_nil(t.parent)
     assert_equal(" ", t.segment)
@@ -54,23 +54,23 @@ class PathTreeTest < Minitest::Test
   # end
   def test_root_node
     t = PathTree.new("/")
-    assert_equal(Pathname.new("/"),t.pathname)
-    assert_equal("/",t.segment)
+    assert_equal(Pathname.new("/"), t.pathname)
+    assert_equal("/", t.segment)
     assert_equal(1, t.count)
 
     s = PathTree.new("/1")
     assert_equal(2, s.count)
   end
-  
+
   def test_pathname
     t = PathTree.new("/1")
     {"/1/2/4" => 124, "/1/2/5" => 125, "/1/2/6" => 126, "/1/3" => 13}.each { |p, d|
       t.add_path(p, d)
     }
-    assert_equal(Pathname.new('/'), t.pathname)
-    assert_equal(Pathname.new('/1/3'), t.node('/1/3').pathname)
-    assert_equal(Pathname.new('/1/2'), t.node('/1/2').pathname)
-    assert_equal(Pathname.new('/1/2/4'), t.node('/1/2/4').pathname)
+    assert_equal(Pathname.new("/"), t.pathname)
+    assert_equal(Pathname.new("/1/3"), t.node("1/3").pathname)
+    assert_equal(Pathname.new("/1/2"), t.node("1/2").pathname)
+    assert_equal(Pathname.new("/1/2/4"), t.node("1/2/4").pathname)
   end
 
   def test_leaves
@@ -81,7 +81,7 @@ class PathTreeTest < Minitest::Test
       t.leave_pathnames
     )
 
-    k = t.node("/1/2")
+    k = t.node("1/2")
     assert_equal(
       [Pathname.new("/1/2/4"), Pathname.new("/1/2/5"),
         Pathname.new("/1/2/6")],
@@ -102,7 +102,7 @@ class PathTreeTest < Minitest::Test
     assert_equal(origin.count, copy.count)
 
     copy.traverse_preorder do |l, n|
-      origin_node = origin.node(n.pathname)
+      origin_node = origin.node(n.pathname, from_root: true)
 
       assert(origin_node.object_id != n.object_id)
       assert(origin_node.data.equal?(n.data)) unless origin_node.data.nil?
@@ -123,7 +123,7 @@ class PathTreeTest < Minitest::Test
     assert(copy.object_id != origin.object_id)
 
     copy.traverse_preorder do |l, n|
-      origin_node = origin.node(n.pathname)
+      origin_node = origin.node(n.pathname, from_root: true)
 
       assert(origin_node.object_id != n.object_id)
       assert(origin_node.data.equal?(n.data)) unless origin_node.data.nil?
@@ -210,7 +210,9 @@ class PathTreeTest < Minitest::Test
     order = ""
     data = []
     level = []
-    node = root.node("1/2")
+    node = root.node("1/2", from_root: true)
+    assert_equal(node, root.node("2"))
+
     node.traverse_preorder do |l, node|
       level << l
       order << node.segment
@@ -242,7 +244,7 @@ class PathTreeTest < Minitest::Test
     }
 
     # append newtree to a leaf of root
-    n = root.node("1/2/6")
+    n = root.node("2/6")
     n.append_tree(newtree)
 
     order = ""
@@ -260,14 +262,15 @@ class PathTreeTest < Minitest::Test
 
   def test_append_tree_2
     t = PathTree.new("/1/2")
-    t.node("/1/2").append_tree(PathTree.new("my/new/tree"))
+    t.node("1/2").append_tree(PathTree.new("my/new/tree"))
     assert_equal(6, t.count)
-    assert(!t.node("/1/2/my/new/tree").nil?)
+    assert(!t.node("1/2/my/new/tree").nil?)
 
-    t.node("/1/").append_tree(PathTree.new("my/new/tree"))
+    t.node("1/").append_tree(PathTree.new("my/new/tree"))
     assert_equal(9, t.count)
-    assert(!t.node("/1/my/new/tree").nil?)
+    assert(!t.node("1/my/new/tree").nil?)
   end
+
   def test_trying_append_existing_path
     root = PathTree.new("1")
     {"1/2/4" => 124,
@@ -284,15 +287,59 @@ class PathTreeTest < Minitest::Test
       newtree.add_path(p, d)
     }
 
-    # try to append newtree to a leaf of root (should fail)
-    n = root.node("1")
+    # try to append newtree to root (should fail, overlapping nodes)
     assert_raises(ArgumentError) {
-      n.append_tree(newtree)
+      root.append_tree(newtree)
     }
 
     # successfully append newtree to a leaf of root
-    n = root.node("1/2")
+    n = root.node("2")
     n.append_tree(newtree)
+  end
+
+  def test_split_stem
+    root = PathTree.new("/1/2")
+    root.node("1/2").append_tree(PathTree.new("my/new/tree"))
+    n = root.node("1/2/my")
+    
+    assert_equal(
+      [Pathname.new("/1/2"), Pathname.new("my")],
+      root.node("/1/2/my",from_root: true).split_stem
+    )
+
+    assert_equal(
+      [Pathname.new("/1/2/my/new"), Pathname.new("tree")],
+      root.node("1/2/my/new/tree").split_stem
+    )
+
+    n.add_descendants("new/branch")
+
+    assert_equal(
+      [Pathname.new("/1/2/my/new"), Pathname.new("tree")],
+      root.node("1/2/my/new/tree").split_stem
+    )
+
+    assert_equal(
+      [Pathname.new("/1/2/my/new"), Pathname.new("branch")],
+      n.node("/1/2/my/new/branch",from_root: true).split_stem
+    )
+
+    root.node("1/2/my").add_descendants("another/branch")
+
+    assert_equal(
+      [Pathname.new("/1/2/my"), Pathname.new("new/branch")],
+      n.node("new/branch").split_stem
+    )
+
+    assert_equal(
+      [Pathname.new("/1/2"), Pathname.new("my")],
+      root.node("1/2/my").split_stem
+    )
+
+    assert_equal(
+      [nil, Pathname.new("/")],
+      root.node("1/2/my").root.split_stem
+    )
   end
 
   def test_build_from_fs
