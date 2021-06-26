@@ -83,7 +83,7 @@ module Giblish
       end
     end
 
-    def test_generate_meta_docs
+    def test_generate_html_meta_docs
       TmpDocDir.open do |tmp_docs|
         p = Pathname.new(tmp_docs.dir)
         src_tree = PathTree.new(p / "src/metafile_1",
@@ -114,6 +114,44 @@ module Giblish
         dt = tc.dst_tree
         assert_equal(1, dt.leave_pathnames.count)
         assert_equal(p / "dst/metafile_1.html", dt.leave_pathnames[0])
+      end
+    end
+
+    def test_generate_pdf
+      TmpDocDir.open(preserve: true) do |tmp_docs|
+        file_1 = tmp_docs.add_doc_from_str(create_doc_str("File 1", "D-001"), "src")
+        file_2 = tmp_docs.add_doc_from_str(create_doc_str("File 2", "D-002"), "src")
+        file_3 = tmp_docs.add_doc_from_str(create_doc_str("File 3", "D-004"), "src/subdir")
+
+        p = Pathname.new(tmp_docs.dir)
+        src_tree = PathTree.build_from_fs(p / "src", prune: false) do |pt|
+          !pt.directory? && pt.extname == ".adoc"
+        end
+        src_tree.traverse_preorder do |level, n|
+          next unless n.leaf?
+
+          n.data = AdocFromFile.new(n)
+        end
+
+        assert_equal(3, src_tree.leave_pathnames.count)
+        tc = TreeConverter.new(
+          src_tree.node(p / "src", from_root: true),
+          p / "dst",
+          {
+            adoc_api_opts: {
+              standalone: true,
+              backend: 'pdf'
+            },
+            adoc_doc_attribs: {}
+          }
+        )
+        tc.run
+
+        # assert that there now are 3 pdf files
+        dt = tc.dst_tree
+        puts dt.leave_pathnames.inspect
+        assert_equal(3, dt.leave_pathnames.count)
+        dt.leave_pathnames.each { |p| assert_equal(".pdf", p.extname) }
       end
     end
   end

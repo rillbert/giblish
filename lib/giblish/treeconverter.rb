@@ -120,11 +120,19 @@ module Giblish
       # convert the src
       doc = Asciidoctor.load(node.adoc_source, @adoc_api_opts)
 
-      # write to dst
+      # get dst path
       q = node.pathname.relative_path_from(@src_top.pathname).sub_ext(doc.attributes['outfilesuffix'])
-      @dst_top.add_descendants(q)
-      q.dirname.mkpath
-      q.write(doc.convert)
+      d = @dst_top.add_descendants(q).pathname
+
+      # make sure the dir exists
+      d.dirname.mkpath
+
+      # write the converted doc to the file
+      output = doc.convert(@adoc_api_opts)
+      doc.write(output, d.to_s)
+
+      # doc.write(doc.converter, d.to_s)
+      # q.write()
       true
     end
   end
