@@ -98,5 +98,77 @@ module Giblish
         adoc_file.path
       end
     end
+
+    # helper class that gets the adoc source from the given file
+    class AdocSrcFromFile
+      def initialize(tree_node)
+        @node = tree_node
+      end
+
+      def adoc_source
+        File.read(@node.pathname)
+      end
+    end
+
+    # helper class that gets the adoc source from the string given
+    # at instantiation.
+    class AdocFromString
+      attr_reader :adoc_source
+
+      def initialize(adoc_source)
+        @adoc_source = adoc_source.to_s
+      end
+    end
+
+    # Creates a string with adoc source, either a default string
+    # or according to the user's wishes.
+    class CreateAdocDocSrc
+      attr_accessor :title, :toc_str, :first_sec_lines, :tail_source_lines
+      attr_writer :source
+      @@count = 1
+
+      def initialize(opts = {})
+        @source = nil
+        @title = opts.fetch(:title, "File #{@@count}")
+        @toc_str = opts.fetch(:toc_str, ":toc:")
+        @docid = opts.fetch(:docid, "")
+        @first_sec_lines = opts.fetch(:first_sec_lines, ["Some dummy text..."])
+        @tail_source_lines = opts.fetch(:tail_source_lines, ["Some more dummy text..."])
+        @@count += 1
+      end
+
+      def add_ref(ref)
+        Array(ref).each { |r| @first_sec_lines << "<<:docid:#{r}>>" }.join("\n")
+        self
+      end
+
+      def to_s
+        source
+      end
+
+      def source
+        return default_source if @source.nil?
+
+        @source
+      end
+
+      private
+
+      def default_source
+        <<~EOF
+          = #{@title}
+          :numbered:
+          #{@toc_str}
+          #{":docid: #{@docid}" unless @docid.empty?}
+          
+          == My First Section
+  
+          #{@first_sec_lines.collect { |l| l }.join("\n")}
+          
+          #{@tail_source_lines.collect { |l| l }.join("\n")}
+          
+        EOF
+      end
+    end
   end
 end
