@@ -117,7 +117,8 @@ module Giblish
     def convert(node, dst_tree)
       Giblog.logger.info { "Converting #{node.pathname}..."}
 
-      # convert the src
+      # load the source and parse it to enable access to doc 
+      # properties
       doc = Asciidoctor.load(node.adoc_source, @adoc_api_opts)
 
       # get dst path
@@ -131,8 +132,6 @@ module Giblish
       output = doc.convert(@adoc_api_opts)
       doc.write(output, d.to_s)
 
-      # doc.write(doc.converter, d.to_s)
-      # q.write()
       true
     end
   end

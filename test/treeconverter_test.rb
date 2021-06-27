@@ -11,147 +11,148 @@ module Giblish
       Giblog.setup
     end
 
-    def create_doc_str(title, doc_id, refs = nil)
-      <<~TST_FILE
-        = #{title}
-        :toc: left
-        :docid: #{doc_id}
-        
-        == Paragraph
-        
-        bla bla
-
-        #{refs&.collect { |r| " * Reference to #{r}" }&.join("\n")}
-
-      TST_FILE
-    end
-
-    # helper class that gets the adoc source from the given file
-    class AdocFromFile
-      def initialize(tree_node)
-        @node = tree_node
+    def tree_from_src_dir(top_dir)
+      src_tree = PathTree.build_from_fs(top_dir, prune: false) do |pt|
+        !pt.directory? && pt.extname == ".adoc"
       end
+      src_tree.traverse_preorder do |level, n|
+        next unless n.leaf?
 
-      def adoc_source
-        File.read(@node.pathname)
+        n.data = AdocSrcFromFile.new(n)
       end
+      src_tree
     end
 
     def test_generate_html
       TmpDocDir.open do |tmp_docs|
-        file_1 = tmp_docs.add_doc_from_str(create_doc_str("File 1", "D-001"), "src")
-        file_2 = tmp_docs.add_doc_from_str(create_doc_str("File 2", "D-002"), "src")
-        file_3 = tmp_docs.add_doc_from_str(create_doc_str("File 3", "D-004"), "src/subdir")
+        # create three adoc files under .../src and .../src/subdir
+        ["src", "src", "src/subdir"].each { |d| tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
 
+        # setup the corresponding PathTree
         p = Pathname.new(tmp_docs.dir)
-        src_tree = PathTree.build_from_fs(p / "src", prune: false) do |pt|
-          !pt.directory? && pt.extname == ".adoc"
-        end
-        src_tree.traverse_preorder do |level, n|
-          next unless n.leaf?
+        fs_root = tree_from_src_dir(p / "src")
 
-          n.data = AdocFromFile.new(n)
-        end
+        # find the PathTree node pointing to the "src" dir
+        st = fs_root.node(p / "src", from_root: true)
 
-        assert_equal(3, src_tree.leave_pathnames.count)
-        tc = TreeConverter.new(
-          src_tree.node(p / "src", from_root: true),
-          p / "dst",
-          {
-            adoc_api_opts: {
-              standalone: false
-            },
-            adoc_doc_attribs: {}
-          }
-        )
+        assert_equal(3, st.leave_pathnames.count)
+
+        # init a converter that use ".../src" as the top dir,
+        # and generates html to ".../dst"
+        tc = TreeConverter.new(st, p / "dst")
         tc.run
 
-        # assert that there now are 3 html files
-        dt = tc.dst_tree
+        # get the node in the dst tree that points to .../dst
+        dt = tc.dst_tree.node(p / "dst", from_root: true)
+
+        # assert that there now are 3 html files under "dst"
         assert_equal(3, dt.leave_pathnames.count)
-        dt.leave_pathnames.each { |p| assert_equal(".html", p.extname) }
+        assert_equal(
+          st.leave_pathnames.collect { |p| p.sub_ext(".html").relative_path_from(st.pathname) },
+          dt.leave_pathnames.collect { |p| p.relative_path_from(dt.pathname) }
+        )
       end
     end
 
-    # helper class that gets the adoc source from the string given
-    # at instantiation.
-    class AdocFromString
-      attr_reader :adoc_source
-
-      def initialize(adoc_source)
-        @adoc_source = adoc_source
-      end
-    end
-
-    def test_generate_html_meta_docs
+    def test_generate_html_docs_from_str
       TmpDocDir.open do |tmp_docs|
         p = Pathname.new(tmp_docs.dir)
-        src_tree = PathTree.new(p / "src/metafile_1",
-          AdocFromString.new(<<~A_SRC
-            = Source 1
-            :toc: left
 
-            == Paragraph 1
+        # setup a 'virtual' PathTree using strings as content for the nodes
+        root = PathTree.new(p / "src/metafile_1", AdocFromString.new(CreateAdocDocSrc.new))
+        root.add_path(p / "src/metafile_2", AdocFromString.new(CreateAdocDocSrc.new))
+        root.add_path(p / "src/subdir/metafile_3", AdocFromString.new(CreateAdocDocSrc.new))
 
-            bla bla
-          A_SRC
-                            ))
+        st = root.node(p / "src", from_root: true)
 
-        assert_equal(1, src_tree.leave_pathnames.count)
-        tc = TreeConverter.new(
-          src_tree.node(p / "src", from_root: true),
-          p / "dst",
-          {
-            adoc_api_opts: {
-              standalone: false
-            },
-            adoc_doc_attribs: {}
-          }
-        )
+        assert_equal(3, st.leave_pathnames.count)
+
+        tc = TreeConverter.new(st, p / "dst")
         tc.run
 
-        # assert that there is 1 html file
-        dt = tc.dst_tree
-        assert_equal(1, dt.leave_pathnames.count)
-        assert_equal(p / "dst/metafile_1.html", dt.leave_pathnames[0])
+        # get the node in the dst tree that points to .../dst
+        dt = tc.dst_tree.node(p / "dst", from_root: true)
+
+        # assert that there now are 3 html files under "dst"
+        assert_equal(3, dt.leave_pathnames.count)
+        assert_equal(
+          st.leave_pathnames.collect { |p| p.sub_ext(".html").relative_path_from(st.pathname) },
+          dt.leave_pathnames.collect { |p| p.relative_path_from(dt.pathname) }
+        )
       end
     end
 
     def test_generate_pdf
-      TmpDocDir.open(preserve: true) do |tmp_docs|
-        file_1 = tmp_docs.add_doc_from_str(create_doc_str("File 1", "D-001"), "src")
-        file_2 = tmp_docs.add_doc_from_str(create_doc_str("File 2", "D-002"), "src")
-        file_3 = tmp_docs.add_doc_from_str(create_doc_str("File 3", "D-004"), "src/subdir")
+      TmpDocDir.open do |tmp_docs|
+        # create three adoc files under .../src and .../src/subdir
+        ["src", "src", "src/subdir"].each { |d| tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
 
+        # setup the corresponding PathTree
         p = Pathname.new(tmp_docs.dir)
-        src_tree = PathTree.build_from_fs(p / "src", prune: false) do |pt|
-          !pt.directory? && pt.extname == ".adoc"
-        end
-        src_tree.traverse_preorder do |level, n|
-          next unless n.leaf?
+        fs_root = tree_from_src_dir(p / "src")
 
-          n.data = AdocFromFile.new(n)
-        end
+        # find the PathTree node pointing to the "src" dir
+        st = fs_root.node(p / "src", from_root: true)
 
-        assert_equal(3, src_tree.leave_pathnames.count)
-        tc = TreeConverter.new(
-          src_tree.node(p / "src", from_root: true),
-          p / "dst",
+        assert_equal(3, st.leave_pathnames.count)
+
+        # init a converter that use ".../src" as the top dir,
+        # and generates html to ".../dst"
+        tc = TreeConverter.new(st, p / "dst",
           {
             adoc_api_opts: {
-              standalone: true,
-              backend: 'pdf'
-            },
-            adoc_doc_attribs: {}
+              backend: "pdf"
+            }
           }
         )
         tc.run
 
-        # assert that there now are 3 pdf files
-        dt = tc.dst_tree
-        puts dt.leave_pathnames.inspect
+        # get the node in the dst tree that points to .../dst
+        dt = tc.dst_tree.node(p / "dst", from_root: true)
+
+        # assert that there now are 3 html files under "dst"
         assert_equal(3, dt.leave_pathnames.count)
-        dt.leave_pathnames.each { |p| assert_equal(".pdf", p.extname) }
+        assert_equal(
+          st.leave_pathnames.collect { |p| p.sub_ext(".pdf").relative_path_from(st.pathname) },
+          dt.leave_pathnames.collect { |p| p.relative_path_from(dt.pathname) }
+        )
+      end
+    end
+
+    def test_generate_epub
+      TmpDocDir.open do |tmp_docs|
+        # create three adoc files under .../src and .../src/subdir
+        ["src", "src", "src/subdir"].each { |d| tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
+
+        # setup the corresponding PathTree
+        p = Pathname.new(tmp_docs.dir)
+        fs_root = tree_from_src_dir(p / "src")
+
+        # find the PathTree node pointing to the "src" dir
+        st = fs_root.node(p / "src", from_root: true)
+
+        assert_equal(3, st.leave_pathnames.count)
+
+        # init a converter that use ".../src" as the top dir,
+        # and generates html to ".../dst"
+        tc = TreeConverter.new(st, p / "dst",
+          {
+            adoc_api_opts: {
+              backend: "docbook5"
+            }
+          }
+        )
+        tc.run
+
+        # get the node in the dst tree that points to .../dst
+        dt = tc.dst_tree.node(p / "dst", from_root: true)
+
+        # assert that there now are 3 html files under "dst"
+        assert_equal(3, dt.leave_pathnames.count)
+        assert_equal(
+          st.leave_pathnames.collect { |p| p.sub_ext(".xml").relative_path_from(st.pathname) },
+          dt.leave_pathnames.collect { |p| p.relative_path_from(dt.pathname) }
+        )
       end
     end
   end
