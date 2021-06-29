@@ -2,11 +2,6 @@ require_relative "../pathtree"
 
 module Giblish
   module DocIdExtension
-    @docid_refs = {}
-    class << self
-      attr_accessor :docid_cache, :docid_refs
-    end
-
     # Build a hash of {docid => src_node} that can be used to resolve
     # doc id references to valid dst paths
     class DocIdCacheBuilder
@@ -74,14 +69,10 @@ module Giblish
     # It is dependent on that its 'docid_cache' has been filled before it is
     # invoked via Asciidoctor.
     class DocidResolver < Asciidoctor::Extensions::Preprocessor
-      @docid_refs = {}
-      class << self
-        attr_accessor :docid_refs
-      end
-
       def initialize(opts)
         super(opts)
         @docid_cache = opts[:docid_cache].cache
+        @docid_refs = {}
       end
 
       # The regex that matches docid references in files
@@ -97,25 +88,21 @@ module Giblish
         src_node = document.attributes["giblish-src-tree-node"]
 
         # add this file as a source for dependencies
-        docid_refs[src_node] ||= []
+        @docid_refs[src_node] ||= []
 
         # Convert all docid refs to valid relative refs
         reader.lines.each do |line|
-          docid_refs[src_node] += parse_line(line, src_node)
+          @docid_refs[src_node] += parse_line(line, src_node)
         end
 
         # we only care for one ref to a specific target, remove duplicates
-        docid_refs[src_node] = docid_refs[src_node].uniq
+        @docid_refs[src_node] = @docid_refs[src_node].uniq
 
         # the asciidoctor engine wants the reader back
         reader
       end
 
       private
-
-      def docid_refs
-        self.class.docid_refs
-      end
 
       # parse one line for valid docid references
       def parse_line(line, src_node)
@@ -140,22 +127,9 @@ module Giblish
 
           # return the resolved reference
           "<<#{rel_path}##{section}#{display_str}>>"
-          # transform_ref(target_id, section, display_str, src_path)
         end
         refs
       end
-
-      # Get the relative path from the src doc to the
-      # doc with the given doc id
-      # def get_rel_path(src_path, doc_id)
-      #   raise ArgumentError("unknown doc id: #{doc_id}") unless docid_cache.key? doc_id
-
-      #   rel_path = docid_cache[doc_id]
-      #     .dirname
-      #     .relative_path_from(Pathname.new(src_path).dirname) +
-      #     docid_cache[doc_id].basename
-      #   rel_path.to_s
-      # end
 
       # input_str shall be the expression between
       # <<:docid:<input_str>>> where the <input_str> is in the form
@@ -173,17 +147,6 @@ module Giblish
 
         [id, section, display_str]
       end
-
-      # Transform a :doc_id: reference to its resolved relative path
-      #
-      # The result is a valid ref in the form
-      # <<target_doc.adoc#[section][,display_str]>>
-      # def transform_ref(target_id, section, display_str, rel_path)
-      #   # resolve the doc id ref to a valid relative path
-      #   # rel_path = get_rel_path(src_path, target_id)
-      #   # return the transformed ref
-      #   "<<#{rel_path}##{section}#{display_str}>>"
-      # end
     end
   end
 end
