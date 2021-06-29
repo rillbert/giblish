@@ -97,6 +97,17 @@ module Giblish
         @src_files << adoc_file
         adoc_file.path
       end
+
+      def get_html_dom(path_tree)
+        path_tree.traverse_preorder do |l, n|
+          next unless n.leaf?
+
+          # parse the generated html and return the result to the user
+          handle = File.open(n.pathname.to_s)
+          document = Oga.parse_html(handle)
+          yield n,document
+        end
+      end
     end
 
     # helper class that gets the adoc source from the given file
