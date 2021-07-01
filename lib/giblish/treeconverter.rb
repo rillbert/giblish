@@ -109,27 +109,32 @@ module Giblish
         block_macro inline_macro include_processor].each do |e|
         next unless adoc_ext.key?(e)
 
-        Array(adoc_ext[e])&.each do |c| 
-          Asciidoctor::Extensions.register { send(e,c) }
+        Array(adoc_ext[e])&.each do |c|
+          Asciidoctor::Extensions.register { send(e, c) }
         end
       end
     end
 
-    
     # require the following methods to be available from the node:
     # adoc_source
+    #
+    # the following methods will be called if supported:
     # document_attributes
     # api_options
     def convert(node, dst_tree)
       Giblog.logger.info { "Converting #{node.pathname}..." }
 
       # merge the common api opts with node specific
-      api_opts = @adoc_api_opts.dup.merge(node.api_options)
-      api_opts[:attributes].merge!(node.document_attributes)
+      api_opts = @adoc_api_opts.dup
+      api_opts.merge!(node.api_options) if node.respond_to?(:api_options)
+      api_opts[:attributes].merge!(node.document_attributes) if node.respond_to?(:document_attributes)
 
       # load the source and parse it to enable access to doc
       # properties
-      doc = Asciidoctor.load(node.adoc_source, @adoc_api_opts)
+      # NOTE: the 'parse' is needed to prevent preprocessor extensions to be run as part
+      # of loading the document. We want them to run during the 'convert' call later when
+      # doc attribs have been amended.
+      doc = Asciidoctor.load(node.adoc_source, @adoc_api_opts.merge({parse: false}))
 
       # get dst path
       q = node.pathname.relative_path_from(@src_top.pathname).sub_ext(doc.attributes["outfilesuffix"])
@@ -146,6 +151,4 @@ module Giblish
       true
     end
   end
-
-
 end
