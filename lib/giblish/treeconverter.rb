@@ -43,10 +43,14 @@ module Giblish
     }
 
     # opts:
+    #  logger: the logger used internally by this instance (default nil)
+    #  adoc_log_level - the log level when logging messages emitted by asciidoctor
+    #  (default Logger::Severity::WARN)
     #  pre_builders
     #  post_builders
     #  adoc_api_opts
     #  adoc_doc_attribs
+    #  conversion_cb {success: Proc(src,dst,adoc) fail: Proc(src,dst,exc)
     def initialize(src_top, dst_top, opts = {})
       @pre_builders = []
       @src_top = src_top
@@ -54,16 +58,17 @@ module Giblish
       @post_builders = Array(opts.fetch(:post_builders, []))
       @dst_tree = PathTree.new(dst_top, {})
       @dst_top = @dst_tree.node(dst_top, from_root: true)
+      @logger = opts.fetch(:logger, nil)
+      @adoc_log_level = opts.fetch(:adoc_log_level, Logger::Severity::WARN)
+      @conv_cb = opts.fetch(:conversion_cb, {})
 
       # merge user's options with the default, giving preference
       # to the user
-      attrs = DEFAULT_ADOC_DOC_ATTRIBS.dup.merge!(
-        opts.fetch(:adoc_doc_attribs, {})
-      )
-      @adoc_api_opts = DEFAULT_ADOC_OPTS.dup.merge!(
-        opts.fetch(:adoc_api_opts, {})
-      )
-      @adoc_api_opts[:attributes] = attrs
+      # .merge!({logger: adoc_logger})
+      @adoc_api_opts = DEFAULT_ADOC_OPTS.dup
+        .merge!(opts.fetch(:adoc_api_opts, {}))
+      @adoc_api_opts[:attributes] = DEFAULT_ADOC_DOC_ATTRIBS.dup
+        .merge!(opts.fetch(:adoc_doc_attribs, {}))
 
       # setup adoc extensions
       register_adoc_extensions(opts[:adoc_extensions]) if opts[:adoc_extensions]
@@ -122,33 +127,58 @@ module Giblish
     # document_attributes
     # api_options
     def convert(node, dst_tree)
-      Giblog.logger.info { "Converting #{node.pathname}..." }
+      @logger&.info { "Converting #{node.pathname}..." }
 
       # merge the common api opts with node specific
       api_opts = @adoc_api_opts.dup
       api_opts.merge!(node.api_options) if node.respond_to?(:api_options)
       api_opts[:attributes].merge!(node.document_attributes) if node.respond_to?(:document_attributes)
 
-      # load the source and parse it to enable access to doc
-      # properties
-      # NOTE: the 'parse' is needed to prevent preprocessor extensions to be run as part
-      # of loading the document. We want them to run during the 'convert' call later when
-      # doc attribs have been amended.
-      doc = Asciidoctor.load(node.adoc_source, @adoc_api_opts.merge({parse: false}))
+      # use a new logger instance for each conversion
+      adoc_logger = Giblish::AsciidoctorLogger.new(@adoc_log_level)
+      dst_node = nil
 
-      # get dst path
-      q = node.pathname.relative_path_from(@src_top.pathname).sub_ext(doc.attributes["outfilesuffix"])
-      d = @dst_top.add_descendants(q).pathname
+      begin
+        # load the source and parse it to enable access to doc
+        # properties
+        # NOTE: the 'parse: false' is needed to prevent preprocessor extensions to be run as part
+        # of loading the document. We want them to run during the 'convert' call later when
+        # doc attribs have been amended.
+        doc = Asciidoctor.load(
+          node.adoc_source,
+          @adoc_api_opts.merge({
+            parse: false,
+            logger: adoc_logger
+          })
+        )
 
-      # make sure the dir exists
-      d.dirname.mkpath
+        # get dst path
+        q = node.pathname.relative_path_from(@src_top.pathname).sub_ext(doc.attributes["outfilesuffix"])
 
-      # write the converted doc to the file
-      doc.attributes["giblish-src-tree-node"] = node
-      output = doc.convert(@adoc_api_opts)
-      doc.write(output, d.to_s)
+        # create the destination
+        dst_node = @dst_top.add_descendants(q)
+        d = dst_node.pathname
 
-      true
+        # piggy-back our own info on the doc attributes hash so that
+        # asciidoctor extensions can use this info
+        doc.attributes["giblish-src-tree-node"] = node
+
+        # make sure the dst dir exists
+        d.dirname.mkpath
+
+        # write the converted doc to the file
+        output = doc.convert(@adoc_api_opts.merge({logger: adoc_logger}))
+        doc.write(output, d.to_s)
+
+        # give user the opportunity to eg store the result of the conversion
+        # as data in the destination node
+        @conv_cb[:success]&.call(node, dst_node, doc, adoc_logger.in_mem_storage.string)
+        true
+      rescue => e
+        @logger&.error { e.message }
+        @conv_cb[:failure]&.call(node, dst_node, e, adoc_logger.in_mem_storage.string)
+        false
+      end
     end
   end
 end

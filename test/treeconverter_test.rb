@@ -82,6 +82,50 @@ module Giblish
       end
     end
 
+    def test_adoc_logging
+      TmpDocDir.open do |tmp_docs|
+        # create three adoc files under .../src and .../src/subdir
+        ["src", "src", "src/subdir"].each { |d| tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
+        p = Pathname.new(tmp_docs.dir)
+
+        # write a non-conformant file to src
+        File.write((p / "src/bad.adoc").to_s, <<~BAD_ADOC
+          Badly formed doc
+
+          === Out of level
+
+          some text
+
+        BAD_ADOC
+        )
+        # setup the corresponding PathTree
+        fs_root = tree_from_src_dir(p / "src")
+
+        # find the PathTree node pointing to the "src" dir
+        st = fs_root.node(p / "src", from_root: true)
+
+        # init a converter that use the standard Giblog logger for its
+        # internal use but sets the asciidoc log level to only emit warnings
+        # and above.
+        # Supply callbacks that are called after each conversion
+        tc = TreeConverter.new(st, p / "dst",
+        {
+          logger: Giblog.logger,
+          adoc_log_level: Logger::WARN,
+          conversion_cb: {
+            success: ->(src,dst,doc,logstr) { 
+              return unless dst.segment == "bad.html"
+
+              # we know how the warning 'bad.adoc' should render.
+              assert_equal("WARNING: Line 3 - section title out of sequence: expected level 1, got level 2",
+              logstr.split(':').chomp)
+            }
+          }
+        })
+        tc.run
+      end
+    end
+
     def test_generate_pdf
       TmpDocDir.open do |tmp_docs|
         # create three adoc files under .../src and .../src/subdir
@@ -103,8 +147,7 @@ module Giblish
             adoc_api_opts: {
               backend: "pdf"
             }
-          }
-        )
+          })
         tc.run
 
         # get the node in the dst tree that points to .../dst
@@ -140,8 +183,7 @@ module Giblish
             adoc_api_opts: {
               backend: "docbook5"
             }
-          }
-        )
+          })
         tc.run
 
         # get the node in the dst tree that points to .../dst
