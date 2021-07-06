@@ -1,6 +1,7 @@
 require "asciidoctor"
 require "asciidoctor-pdf"
 require_relative "pathtree"
+require_relative "conversion_info"
 
 module Giblish
   # Converts all nodes in the supplied src PathTree from adoc to the format
@@ -58,9 +59,12 @@ module Giblish
       @post_builders = Array(opts.fetch(:post_builders, []))
       @dst_tree = PathTree.new(dst_top, {})
       @dst_top = @dst_tree.node(dst_top, from_root: true)
-      @logger = opts.fetch(:logger, nil)
+      @logger = opts.fetch(:logger, Giblog.logger)
       @adoc_log_level = opts.fetch(:adoc_log_level, Logger::Severity::WARN)
-      @conv_cb = opts.fetch(:conversion_cb, {})
+      @conv_cb = opts.fetch(:conversion_cb, {
+        success: ->(src, dst, dst_rel_path, doc, logstr) { on_success(src, dst, dst_rel_path, doc, logstr) },
+        failure: ->(src, dst, dst_rel_path, ex, logstr) { on_failure(src, dst, dst_rel_path, ex, logstr) }
+      })
 
       # merge user's options with the default, giving preference
       # to the user
@@ -129,6 +133,9 @@ module Giblish
     def convert(node, dst_tree)
       @logger&.info { "Converting #{node.pathname}..." }
 
+      puts node.api_options.inspect if node.respond_to?(:api_options)
+      puts node.document_attributes.inspect if node.respond_to?(:document_attributes)
+      
       # merge the common api opts with node specific
       api_opts = @adoc_api_opts.dup
       api_opts.merge!(node.api_options) if node.respond_to?(:api_options)
@@ -146,17 +153,15 @@ module Giblish
         # doc attribs have been amended.
         doc = Asciidoctor.load(
           node.adoc_source,
-          @adoc_api_opts.merge({
+          api_opts.merge({
             parse: false,
             logger: adoc_logger
           })
         )
 
-        # get dst path
-        q = node.pathname.relative_path_from(@src_top.pathname).sub_ext(doc.attributes["outfilesuffix"])
-
-        # create the destination
-        dst_node = @dst_top.add_descendants(q)
+        # create the destination node, using the correct suffix depending on conversion backend
+        rel_path = node.relative_path_from(@src_top)
+        dst_node = @dst_top.add_descendants(rel_path.sub_ext(doc.attributes["outfilesuffix"]))
         d = dst_node.pathname
 
         # piggy-back our own info on the doc attributes hash so that
@@ -167,18 +172,36 @@ module Giblish
         d.dirname.mkpath
 
         # write the converted doc to the file
-        output = doc.convert(@adoc_api_opts.merge({logger: adoc_logger}))
+        output = doc.convert(api_opts.merge({logger: adoc_logger}))
         doc.write(output, d.to_s)
 
         # give user the opportunity to eg store the result of the conversion
         # as data in the destination node
-        @conv_cb[:success]&.call(node, dst_node, doc, adoc_logger.in_mem_storage.string)
+        @conv_cb[:success]&.call(node, dst_node, @dst_top, doc, adoc_logger.in_mem_storage.string)
         true
-      rescue => e
-        @logger&.error { e.message }
-        @conv_cb[:failure]&.call(node, dst_node, e, adoc_logger.in_mem_storage.string)
+      rescue => ex
+        @logger&.error { ex.message }
+        @logger&.error { ex.backtrace }
+        @conv_cb[:failure]&.call(node, dst_node, @dst_top, ex, adoc_logger.in_mem_storage.string)
         false
       end
+    end
+
+    def on_success(src_node, dst_node, dst_top, doc, adoc_log_str)
+      dst_node.data = ConversionInfo.new(
+        adoc: doc, src_node: src_node, dst_node: dst_node, dst_top: dst_top, adoc_stderr: adoc_log_str
+      )
+    end
+
+    def on_failure(src_node, dst_node, dst_top, ex, adoc_log_str)
+      @logger&.error { ex.message }
+      # the only info we have is the source file name
+      info = ConversionInfo.new
+      info.converted = false
+      info.src_file = src_node.pathname.to_s
+      info.error_msg = ex.message
+
+      dst_node.data = info unless dst_node.nil?
     end
   end
 end

@@ -7,7 +7,7 @@ module Giblish
     # options:
     # dir_index_base_name: String - the basename of the index file
     # residing in each directory
-    def initialize(tree, options)
+    def initialize(tree, options = {dir_index_base_name: "index"})
       @tree = tree
       @nof_missing_titles = 0
       @options = options.dup
@@ -16,12 +16,15 @@ module Giblish
     def source
       # output tree intro
       tree_string = +<<~DOC_HEADER
+        .Files and dirs under _#{@tree.segment}_
         [subs=\"normal\"]
         ----
       DOC_HEADER
 
       # generate each tree entry string
       @tree.traverse_preorder do |level, node|
+        next if level == 0
+
         tree_string << tree_entry_string(level, node)
       end
 
@@ -43,7 +46,7 @@ module Giblish
       title << "#{doc_info.doc_id} - " unless doc_info.doc_id.nil?
       title << doc_info.title
 
-      [title, "<<#{doc_info.rel_path}#,#{title}>>",
+      [title, "<<#{doc_info.rel_path }#,#{title}>>",
         "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"]
     end
 
@@ -65,7 +68,7 @@ module Giblish
 
     def directory_entry(prefix_str, node)
       p = node.pathname.relative_path_from(@tree.pathname).join(@options[:dir_index_base_name])
-      "#{prefix_str} <<#{p}#,#{node.name}>>\n"
+      "#{prefix_str} <<#{p}#,#{node.segment}>>\n"
     end
 
     def tree_entry_string(level, node)

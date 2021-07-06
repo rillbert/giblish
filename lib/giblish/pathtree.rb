@@ -328,6 +328,12 @@ class PathTree
     end
   end
 
+  # return:: a Pathname containing the relative path to this node as seen from the
+  # given node
+  def relative_path_from(node)
+    pathname.relative_path_from(node.pathname)
+  end
+
   # Builds a PathTree with its root as the given file system dir or file
   #
   # fs_point:: an absolute or relative path to a file or directory that
@@ -373,6 +379,12 @@ class PathTree
     return super if data.nil?
 
     data.send(m, *args, &block)
+  end
+
+  def respond_to_missing?(method_name, include_private = false)
+    return super(method_name,include_private) if data.nil?
+    
+    data.respond_to?(method_name)
   end
 
   private
