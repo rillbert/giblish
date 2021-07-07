@@ -310,7 +310,11 @@ module Giblish
     def convert
       conv_error = false
       (@user_branches + @user_tags).each do |co|
-        conv_error ||= convert_one_checkout(co)
+        begin
+          conv_error ||= convert_one_checkout(co)
+        rescue => e
+          next
+        end
       end
 
       # Render the summary page
