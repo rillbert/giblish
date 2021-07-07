@@ -77,14 +77,12 @@ module Giblish
         # find the PathTree node pointing to the "src" dir
         st = fs_root.node(p / "src", from_root: true)
 
-        # Create a docid preprocessor and register it with a TreeConverter
+        # Create a docid preprocessor and register it with all future TreeConverters
         d_pp = DocIdExtension::DocIdCacheBuilder.new
+        TreeConverter.register_adoc_extensions({preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})})
         tc = TreeConverter.new(st, p / "dst",
           {
-            pre_builders: d_pp,
-            adoc_extensions: {
-              preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})
-            }
+            pre_builders: d_pp
           })
 
         # run the tree converter prebuild step that will populate

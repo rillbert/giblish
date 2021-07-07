@@ -12,6 +12,25 @@ module Giblish
   class TreeConverter
     attr_reader :dst_tree
 
+    class << self
+      # register all asciidoctor extensions given at instantiation
+      #
+      # adoc_ext::
+      # { preprocessor: [], ... }
+      #
+      # see https://docs.asciidoctor.org/asciidoctor/latest/extensions/register/
+      def register_adoc_extensions(adoc_ext)
+        %i[preprocessor tree_processor postprocessor docinfo_processor block
+          block_macro inline_macro include_processor].each do |e|
+          next unless adoc_ext.key?(e)
+
+          Array(adoc_ext[e])&.each do |c|
+            Asciidoctor::Extensions.register { send(e, c) }
+          end
+        end
+      end
+    end
+
     # see https://docs.asciidoctor.org/asciidoc/latest/attributes/document-attributes-reference/
     DEFAULT_ADOC_DOC_ATTRIBS = {
       "data-uri" => true,
@@ -19,7 +38,6 @@ module Giblish
       "xrefstyle" => "short",
       "source-highlighter" => "rouge",
       "source-linenums-option" => true
-      # linkcss et al TBD
     }
 
     # see https://docs.asciidoctor.org/asciidoctor/latest/api/options/
@@ -52,13 +70,13 @@ module Giblish
     #  adoc_api_opts
     #  adoc_doc_attribs
     #  conversion_cb {success: Proc(src,dst,adoc) fail: Proc(src,dst,exc)
+
     def initialize(src_top, dst_top, opts = {})
+      init_src_dst(src_top, dst_top)
+
       @pre_builders = []
-      @src_top = src_top
       @pre_builders = Array(opts.fetch(:pre_builders, []))
       @post_builders = Array(opts.fetch(:post_builders, []))
-      @dst_tree = PathTree.new(dst_top, {})
-      @dst_top = @dst_tree.node(dst_top, from_root: true)
       @logger = opts.fetch(:logger, Giblog.logger)
       @adoc_log_level = opts.fetch(:adoc_log_level, Logger::Severity::WARN)
       @conv_cb = opts.fetch(:conversion_cb, {
@@ -75,7 +93,14 @@ module Giblish
         .merge!(opts.fetch(:adoc_doc_attribs, {}))
 
       # setup adoc extensions
-      register_adoc_extensions(opts[:adoc_extensions]) if opts[:adoc_extensions]
+      # register_adoc_extensions(opts[:adoc_extensions]) if opts[:adoc_extensions]
+    end
+
+    def init_src_dst(src_top, dst_top)
+      @src_top = src_top
+      @dst_tree = PathTree.new(dst_top, {})
+      @dst_top = @dst_tree.node(dst_top, from_root: true)
+      self
     end
 
     def run
@@ -106,23 +131,24 @@ module Giblish
       end
     end
 
-    private
-
-    # register all asciidoctor extensions given at instantiation
-    #
-    # adoc_ext::
-    # { preprocessor: [], ... }
-    # see https://docs.asciidoctor.org/asciidoctor/latest/extensions/register/
-    def register_adoc_extensions(adoc_ext)
-      %i[preprocessor tree_processor postprocessor docinfo_processor block
-        block_macro inline_macro include_processor].each do |e|
-        next unless adoc_ext.key?(e)
-
-        Array(adoc_ext[e])&.each do |c|
-          Asciidoctor::Extensions.register { send(e, c) }
-        end
-      end
+    def on_success(src_node, dst_node, dst_top, doc, adoc_log_str)
+      dst_node.data = ConversionInfo.new(
+        adoc: doc, src_node: src_node, dst_node: dst_node, dst_top: dst_top, adoc_stderr: adoc_log_str
+      )
     end
+
+    def on_failure(src_node, dst_node, dst_top, ex, adoc_log_str)
+      @logger&.error { ex.message }
+      # the only info we have is the source file name
+      info = ConversionInfo.new
+      info.converted = false
+      info.src_file = src_node.pathname.to_s
+      info.error_msg = ex.message
+
+      dst_node.data = info unless dst_node.nil?
+    end
+
+    private
 
     # require the following methods to be available from the node:
     # adoc_source
@@ -135,7 +161,7 @@ module Giblish
 
       puts node.api_options.inspect if node.respond_to?(:api_options)
       puts node.document_attributes.inspect if node.respond_to?(:document_attributes)
-      
+
       # merge the common api opts with node specific
       api_opts = @adoc_api_opts.dup
       api_opts.merge!(node.api_options) if node.respond_to?(:api_options)
@@ -185,23 +211,6 @@ module Giblish
         @conv_cb[:failure]&.call(node, dst_node, @dst_top, ex, adoc_logger.in_mem_storage.string)
         false
       end
-    end
-
-    def on_success(src_node, dst_node, dst_top, doc, adoc_log_str)
-      dst_node.data = ConversionInfo.new(
-        adoc: doc, src_node: src_node, dst_node: dst_node, dst_top: dst_top, adoc_stderr: adoc_log_str
-      )
-    end
-
-    def on_failure(src_node, dst_node, dst_top, ex, adoc_log_str)
-      @logger&.error { ex.message }
-      # the only info we have is the source file name
-      info = ConversionInfo.new
-      info.converted = false
-      info.src_file = src_node.pathname.to_s
-      info.error_msg = ex.message
-
-      dst_node.data = info unless dst_node.nil?
     end
   end
 end

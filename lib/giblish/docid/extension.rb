@@ -53,7 +53,7 @@ module Giblish
           docid_deps[src_path] << target_id
           transform_ref(target_id, section, display_str, src_path)
         else
-          Giblog.logger.warn { "Could no resolve ref to #{target_id} from file: #{src_path}..." }
+          Giblog.logger.warn { "Could not resolve ref to #{target_id} from file: #{src_path}..." }
           "<<UNKNOWN_DOC, Could not resolve doc id reference !!!>>"
         end
       end

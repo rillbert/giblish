@@ -114,7 +114,7 @@ module Giblish
 
           # make sure it exists in the cache
           unless @docid_cache.key?(target_id)
-            Giblog.logger.warn { "Could no resolve ref to #{target_id} from file: #{src_node.pathname}..." }
+            Giblog.logger.warn { "Could not resolve ref to #{target_id} from file: #{src_node.pathname}..." }
             break "<<UNKNOWN_DOC, Could not resolve doc id reference !!!>>"
           end
 
