@@ -49,7 +49,7 @@ module Giblish
         end
 
         if in_message
-          hsh["message"] << "#{line[4..-1]}\n"
+          hsh["message"] << "#{line[4..]}\n"
           next
         end
 
