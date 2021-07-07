@@ -68,16 +68,13 @@ module Giblish
       Giblog.logger.debug { "converter_options: #{@converter_options}" }
 
       # do the actual conversion
-      begin
-        doc = Asciidoctor.convert_file filepath, @converter_options
+      doc = Asciidoctor.convert_file filepath, @converter_options
 
-        # bail out if asciidoctor failed to convert the doc
-        if logger&.max_severity && logger.max_severity > Logger::Severity::WARN
-          raise "Failed to convert the file #{filepath}"
-        end
-      rescue StandardError => e
-        raise     
+      # bail out if asciidoctor failed to convert the doc
+      if logger&.max_severity && logger.max_severity > Logger::Severity::WARN
+        raise "Failed to convert the file #{filepath}"
       end
+
       doc
     end
 
