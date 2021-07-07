@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require_relative "utils"
 require_relative "version"
 
@@ -10,11 +8,11 @@ require_relative "version"
 class CmdLineParser
   attr_accessor :args
 
-  USAGE = <<~ENDUSAGE
+  USAGE = <<~ENDUSAGE.freeze
     Usage:
       giblish [options] source_dir_top dest_dir_top
   ENDUSAGE
-  HELP = <<ENDHELP
+  HELP = <<ENDHELP.freeze
  Options:
   -h --help                  show this help text
   -v --version               show version nr and exit
@@ -22,7 +20,7 @@ class CmdLineParser
                              *html* is used if -f is not supplied
   -n --no-build-ref          suppress generation of a reference document at the destination
                              tree root.
-  --index-basename           set the name of the generated index file (default 'index').
+  --index-basename           set the name of the generated index file (default 'index').  
   -r --resource-dir <dir>    specify a directory where fonts, themes, css and other
                              central stuff needed for document generation are located.
                              The resources are expected to be located in a subfolder
@@ -32,7 +30,7 @@ class CmdLineParser
   -s --style <name>          The style information used when converting the documents
                              using the -r option for specifying resource directories.
                              For html this is a name of a css file, for pdf, this is
-                             the name of an yml file. You can specify only the
+                             the name of an yml file. You can specify only the 
                              basename of the file and giblish will use the suffix
                              associated with the output format (i.e specify 'mystyle'
                              and the mystyle.css and mystyle.yml will be used for html
@@ -40,20 +38,20 @@ class CmdLineParser
   -i --include <regexp>      include only files with a path that matches the supplied
                              regexp (defaults to '.*\.(?i)adoc$' meaning it matches all
                              files ending in .adoc case-insensitive). The matching is made
-                             on the full path (i.e. the regex '^.*my.*' matches the path
+                             on the full path (i.e. the regex '^.*my.*' matches the path 
                              /my/file.adoc).
   -j --exclude <regexp>      exclude files with a path that matches the supplied
                              regexp (no files are excluded by default). The matching is made
-                             on the full path (i.e. the regex '^.*my.*' matches the path
+                             on the full path (i.e. the regex '^.*my.*' matches the path 
                              /my/file.adoc).
   -w --web-path <path>       Specifies the URL path to where the generated html documents
                              will be deployed (only needed when serving the html docs via
                              a web server).
                              E.g.
-                             If the docs are deployed to 'www.example.com/site_1/blah',
+                             If the docs are deployed to 'www.example.com/site_1/blah', 
                              this flag shall be set to '/site_1/blah'. This switch is only
                              used when generating html. giblish use this to link the deployed
-                             html docs with the correct stylesheet.
+                             html docs with the correct stylesheet. 
   -g --git-branches <regExp> if the source_dir_top is located within a git repo,
                              generate docs for all _remote branches on origin_ that matches
                              the given regular expression. Each git branch will
@@ -71,10 +69,10 @@ class CmdLineParser
                              a separate subdir under the destination root dir.
   -c --local-only            do not try to fetch git info from any remotes of
                              the repo before generating documents.
-  -a --attribute <key>=<value> set a document or asciidoctor attribute.
-                             The contents of this flag is passed directly to the
-                             underlying asciidoctor tool, for details above the
-                             syntax and available attributes, see the documentation for
+  -a --attribute <key>=<value> set a document or asciidoctor attribute. 
+                             The contents of this flag is passed directly to the 
+                             underlying asciidoctor tool, for details above the 
+                             syntax and available attributes, see the documentation for 
                              asciidoctor. This option can be specified more than once.
   -d --resolve-docid         use two passes, the first to collect :docid:
                              attributes in the doc headers, the second to
@@ -109,9 +107,9 @@ class CmdLineParser
                              Set this to the file system path where the generated html
                              docs will be deployed (if different from dst_dir_top):
                              E.g.
-                             If the generated html docs will be deployed to the folder
+                             If the generated html docs will be deployed to the folder 
                              '/var/www/mysite/blah/mydocs,'
-                             this is what you shall set the path to.
+                             this is what you shall set the path to. 
   --log-level                set the log level explicitly. Must be one of
                              debug, info (default), warn, error or fatal.
 ENDHELP
@@ -146,15 +144,15 @@ ENDHELP
   def set_log_level
     log_level = @args[:logLevel] || "info"
     case log_level
-    when "debug" then Giblog.logger.sev_threshold = Logger::DEBUG
-    when "info"  then Giblog.logger.sev_threshold = Logger::INFO
-    when "warn"  then Giblog.logger.sev_threshold = Logger::WARN
-    when "error" then Giblog.logger.sev_threshold = Logger::ERROR
-    when "fatal" then Giblog.logger.sev_threshold = Logger::FATAL
-    else
-      puts "Invalid log level specified. Run with -h to see supported levels"
-      puts USAGE
-      exit 1
+      when "debug" then Giblog.logger.sev_threshold = Logger::DEBUG
+      when "info"  then Giblog.logger.sev_threshold = Logger::INFO
+      when "warn"  then Giblog.logger.sev_threshold = Logger::WARN
+      when "error" then Giblog.logger.sev_threshold = Logger::ERROR
+      when "fatal" then Giblog.logger.sev_threshold = Logger::FATAL
+      else
+        puts "Invalid log level specified. Run with -h to see supported levels"
+        puts USAGE
+        exit 1
     end
   end
 
@@ -166,21 +164,21 @@ ENDHELP
   def parse_cmdline(cmdline_args)
     # default values for cmd line switches
     @args = {
-      help: false,
-      version: false,
-      force: true,
-      format: "html",
-      # note that the single quotes are important for the regexp
-      includeRegexp: '.*\.(?i)adoc$',
-      excludeRegexp: nil,
-      flatten: false,
-      suppressBuildRef: false,
-      indexBaseName: "index",
-      localRepoOnly: false,
-      resolveDocid: false,
-      makeSearchable: false,
-      searchAssetsDeploy: nil,
-      webPath: nil
+        help: false,
+        version: false,
+        force: true,
+        format: "html",
+        # note that the single quotes are important for the regexp
+        includeRegexp: '.*\.(?i)adoc$',
+        excludeRegexp: nil,
+        flatten: false,
+        suppressBuildRef: false,
+        indexBaseName: "index",
+        localRepoOnly: false,
+        resolveDocid: false,
+        makeSearchable: false,
+        searchAssetsDeploy: nil,
+        webPath: nil
     }
 
     # set default log level
@@ -193,35 +191,35 @@ ENDHELP
     next_arg = unflagged_args.first
     cmdline_args.each do |arg|
       case arg
-      when "-h", "--help"         then @args[:help]      = true
-      when "-v", "--version"      then @args[:version]   = true
-      when "-f", "--format   "    then next_arg = :format
-      when "-r", "--resource-dir" then next_arg = :resourceDir
-      when "-n", "--no-build-ref" then @args[:suppressBuildRef] = true
-      when "--index-basename"     then next_arg = :indexBaseName
-      when "-i", "--include"      then next_arg = :includeRegexp
-      when "-j", "--exclude"      then next_arg = :excludeRegexp
-      when "-g", "--git-branches" then next_arg = :gitBranchRegexp
-      when "-t", "--git-tags"     then next_arg = :gitTagRegexp
-      when "-c", "--local-only"   then @args[:localRepoOnly] = true
-      when "-a", "--attribute"    then next_arg = :attributes
-      when "-d", "--resolve-docid" then @args[:resolveDocid] = true
-      when "-m", "--make-searchable" then @args[:makeSearchable] = true
-      when "-mp", "--search-assets-deploy" then next_arg = :searchAssetsDeploy
-      when "-s", "--style"        then next_arg = :userStyle
-      when "-w", "--web-path"     then next_arg = :webPath
-      when "--log-level"          then next_arg = :logLevel
-      else
-        if next_arg
-          if next_arg == :attributes
-            # support multiple invocations of -a
-            add_attribute arg
-          else
-            @args[next_arg] = arg
+        when "-h", "--help"         then @args[:help]      = true
+        when "-v", "--version"      then @args[:version]   = true
+        when "-f", "--format   "    then next_arg = :format
+        when "-r", "--resource-dir" then next_arg = :resourceDir
+        when "-n", "--no-build-ref" then @args[:suppressBuildRef] = true
+        when "--index-basename"     then next_arg = :indexBaseName
+        when "-i", "--include"      then next_arg = :includeRegexp
+        when "-j", "--exclude"      then next_arg = :excludeRegexp
+        when "-g", "--git-branches" then next_arg = :gitBranchRegexp
+        when "-t", "--git-tags"     then next_arg = :gitTagRegexp
+        when "-c", "--local-only"   then @args[:localRepoOnly] = true
+        when "-a", "--attribute"    then next_arg = :attributes
+        when "-d", "--resolve-docid" then @args[:resolveDocid] = true
+        when "-m", "--make-searchable" then @args[:makeSearchable] = true
+        when "-mp", "--search-assets-deploy" then next_arg = :searchAssetsDeploy
+        when "-s", "--style"        then next_arg = :userStyle
+        when "-w", "--web-path"     then next_arg = :webPath
+        when "--log-level"          then next_arg = :logLevel
+        else
+          if next_arg
+            if next_arg == :attributes
+              # support multiple invocations of -a
+              add_attribute arg
+            else
+              @args[next_arg] = arg
+            end
+            unflagged_args.delete(next_arg)
           end
-          unflagged_args.delete(next_arg)
-        end
-        next_arg = unflagged_args.first
+          next_arg = unflagged_args.first
       end
     end
   end
@@ -229,7 +227,7 @@ ENDHELP
   # adds the str (must be in key=value format) to the
   # user defined attributes
   def add_attribute(attrib_str)
-    kv = attrib_str.split("=")
+    kv = attrib_str.split('=')
     if kv.length != 2
       puts "Invalid attribute format: #{attrib_str} Must be <key>=<value>"
       exit 1
@@ -274,7 +272,7 @@ ENDHELP
     # The user wants to parse a git repo, check that the srcDirRoot is within a
     # git repo if the user wants to generate git-branch specific docs
     @args[:gitRepoRoot] = Giblish::PathManager.find_gitrepo_root(
-      @args[:srcDirRoot]
+        @args[:srcDirRoot]
     )
     return unless @args[:gitRepoRoot].nil?
 

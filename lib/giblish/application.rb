@@ -1,15 +1,19 @@
-# frozen_string_literal: true
 
 require_relative "cmdline"
 require_relative "core"
 require_relative "utils"
 
 module Giblish
-  # The 'main' class of giblish
   class Application
+
+    # return exit status (0 for success)
+    def run_with_args(args)
+      run args
+    end
+
     # does not return, exits with status code
     def run_from_cmd_line
-      status = run(ARGV)
+      status = run ARGV
       exit(status)
     end
 
@@ -23,45 +27,36 @@ module Giblish
 
       # Parse cmd line
       cmdline = CmdLineParser.new args
+
       Giblog.logger.debug { "cmd line args: #{cmdline.args}" }
 
-      exit_code = execute_conversion(cmdline)
-      Giblog.logger.info { "Giblish is done!" } if exit_code.zero?
-      exit_code
-    end
-
-    private
-
-    # Convert using given args
-    # return exit code (0 for success)
-    def execute_conversion(cmdline)
+      # Convert using given args
       conv_error = false
       begin
-        conv_error = converter_factory(cmdline).convert
-      rescue StandardError => e
+        if cmdline.args[:gitRepoRoot]
+          Giblog.logger.info { "User asked to parse a git repo" }
+          gc = GitRepoConverter.new cmdline.args
+          conv_error = gc.convert
+        else
+          tc = FileTreeConverter.new cmdline.args
+          conv_error = tc.convert
+        end
+        Giblog.logger.info { "Giblish is done!" }
+      rescue Exception => e
         log_error e
         conv_error = true
       end
       conv_error ? 1 : 0
     end
 
-    # return the converter corresponding to the given cmd line
-    # options
-    def converter_factory(cmdline)
-      if cmdline.args[:gitRepoRoot]
-        Giblog.logger.info { "User asked to parse a git repo" }
-        GitRepoConverter.new(cmdline.args)
-      else
-        FileTreeConverter.new(cmdline.args)
-      end
-    end
+    private
 
-    def log_error(exc)
+    def log_error(ex)
       Giblog.logger.error do
         <<~ERR_MSG
-          Error: #{exc.message}
+          Error: #{ex.message}
           Backtrace:
-          \t#{exc.backtrace.join("\n\t")}
+          \t#{ex.backtrace.join("\n\t")}
 
           cmdline.usage
         ERR_MSG

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "open3"
 require_relative "utils"
 
@@ -7,13 +5,15 @@ module Giblish
   # A home-grown interface class to git. Used for situations when the
   # 'official' ruby git gem does not support an operation that is needed.
   class GitItf
-    attr_reader :repo_root, :git_dir
+    attr_reader :repo_root
+    attr_reader :git_dir
 
     def initialize(path)
       @repo_root = Giblish::PathManager.find_gitrepo_root(path)
-      raise ArgumentError("The path: @{path} is not within a git repo!") if @repo_root.nil?
-
-      @git_dir = @repo_root / ".git"
+      if @repo_root.nil?
+        raise ArgumentError("The path: @{path} is not within a git repo!")
+      end
+      @git_dir = @repo_root + ".git"
     end
 
     # Get the log history of the supplied file as an array of
@@ -49,7 +49,7 @@ module Giblish
         end
 
         if in_message
-          hsh["message"] << "#{line[4..]}\n"
+          hsh["message"] << "#{line[4..-1]}\n"
           next
         end
 
