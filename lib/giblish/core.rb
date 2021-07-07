@@ -312,7 +312,7 @@ module Giblish
       (@user_branches + @user_tags).each do |co|
         begin
           conv_error ||= convert_one_checkout(co)
-        rescue => e
+        rescue
           next
         end
       end
