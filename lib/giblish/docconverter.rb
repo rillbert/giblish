@@ -1,6 +1,7 @@
 require "pathname"
 require "asciidoctor"
 require "asciidoctor-pdf"
+require "asciidoctor-mathematical"
 
 require_relative "utils"
 
