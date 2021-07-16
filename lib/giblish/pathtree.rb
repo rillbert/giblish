@@ -37,7 +37,7 @@ class PathTree
     end
   end
 
-  def add_path(tail,data = nil)
+  def add_path(tail, data = nil)
     tail = tail.split("/") unless tail.is_a?(Array)
     return if tail.empty?
 
@@ -100,15 +100,15 @@ end
 # test the class...
 if __FILE__ == $PROGRAM_NAME
   paths = %w[basedir/file_a
-             basedir/file_a
-             basedir/dira/file_c
-             basedir/dirb/file_e
-             basedir/dira/file_d
-             basedir2/dir2/dir3/file_k
-             basedir2/dir1/dir3/file_l
-             basedir2/dir1/dir3/file_l
-             basedir2/file_h
-             basedir2/dir2/dir3/file_m]
+    basedir/file_a
+    basedir/dira/file_c
+    basedir/dirb/file_e
+    basedir/dira/file_d
+    basedir2/dir2/dir3/file_k
+    basedir2/dir1/dir3/file_l
+    basedir2/dir1/dir3/file_l
+    basedir2/file_h
+    basedir2/dir2/dir3/file_m]
 
   root = PathTree.new
   paths.each do |p|
@@ -117,6 +117,6 @@ if __FILE__ == $PROGRAM_NAME
   end
   root.sort_children
   root.traverse_top_down do |level, node|
-    puts "#{' ' * level} - #{node.name}"
+    puts "#{" " * level} - #{node.name}"
   end
 end

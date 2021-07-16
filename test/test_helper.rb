@@ -1,8 +1,8 @@
-$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
-require 'giblish'
-require 'oga'
+$LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
+require "giblish"
+require "oga"
 
-require 'minitest/autorun'
+require "minitest/autorun"
 
 module Giblish
   module TestUtils
@@ -58,11 +58,11 @@ module Giblish
       def copy_test_data(dst_top)
         # assume that the test docs reside at "../data/testdocs" relative to
         # this file
-        testdir_root ||= File.expand_path(File.dirname(__FILE__))
+        testdir_root ||= __dir__
         src_root ||= "#{testdir_root}/../data/testdocs"
 
         # copy everything to the destination
-        FileUtils.copy_entry(src_root,dst_top.to_s)
+        FileUtils.copy_entry(src_root, dst_top.to_s)
       end
 
       # usage:
@@ -70,7 +70,7 @@ module Giblish
       #   <process the html tree>
       # end
       def check_html_dom filename
-        html_file = Pathname.new(filename.gsub(/\.adoc$/,'.html'))
+        html_file = Pathname.new(filename.gsub(/\.adoc$/, ".html"))
 
         # parse the generated html and return the result to the user
         handle = File.open(html_file)
@@ -81,7 +81,7 @@ module Giblish
       # create an asciidoc file from the given string. If user supplies
       # a subdir, the subdir will be created if not already existing and
       # the file will be created under that subdir
-      def add_doc_from_str(doc_str,subdir=nil)
+      def add_doc_from_str(doc_str, subdir = nil)
         dst_dir = Pathname.new(@dir.to_s).realpath
         if subdir
           dst_dir = dst_dir.join(subdir)
@@ -89,7 +89,7 @@ module Giblish
         end
 
         # create a temp file name
-        adoc_file = Tempfile.new(['gib_tst_','.adoc'],dst_dir.to_s)
+        adoc_file = Tempfile.new(["gib_tst_", ".adoc"], dst_dir.to_s)
 
         # write doc to file and close
         adoc_file.puts doc_str
@@ -98,6 +98,5 @@ module Giblish
         adoc_file.path
       end
     end
-
   end
 end

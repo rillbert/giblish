@@ -145,8 +145,8 @@ ENDHELP
     log_level = @args[:logLevel] || "info"
     case log_level
       when "debug" then Giblog.logger.sev_threshold = Logger::DEBUG
-      when "info"  then Giblog.logger.sev_threshold = Logger::INFO
-      when "warn"  then Giblog.logger.sev_threshold = Logger::WARN
+      when "info" then Giblog.logger.sev_threshold = Logger::INFO
+      when "warn" then Giblog.logger.sev_threshold = Logger::WARN
       when "error" then Giblog.logger.sev_threshold = Logger::ERROR
       when "fatal" then Giblog.logger.sev_threshold = Logger::FATAL
       else
@@ -164,21 +164,21 @@ ENDHELP
   def parse_cmdline(cmdline_args)
     # default values for cmd line switches
     @args = {
-        help: false,
-        version: false,
-        force: true,
-        format: "html",
-        # note that the single quotes are important for the regexp
-        includeRegexp: '.*\.(?i)adoc$',
-        excludeRegexp: nil,
-        flatten: false,
-        suppressBuildRef: false,
-        indexBaseName: "index",
-        localRepoOnly: false,
-        resolveDocid: false,
-        makeSearchable: false,
-        searchAssetsDeploy: nil,
-        webPath: nil
+      help: false,
+      version: false,
+      force: true,
+      format: "html",
+      # note that the single quotes are important for the regexp
+      includeRegexp: '.*\.(?i)adoc$',
+      excludeRegexp: nil,
+      flatten: false,
+      suppressBuildRef: false,
+      indexBaseName: "index",
+      localRepoOnly: false,
+      resolveDocid: false,
+      makeSearchable: false,
+      searchAssetsDeploy: nil,
+      webPath: nil
     }
 
     # set default log level
@@ -191,24 +191,24 @@ ENDHELP
     next_arg = unflagged_args.first
     cmdline_args.each do |arg|
       case arg
-        when "-h", "--help"         then @args[:help]      = true
-        when "-v", "--version"      then @args[:version]   = true
-        when "-f", "--format   "    then next_arg = :format
+        when "-h", "--help" then @args[:help] = true
+        when "-v", "--version" then @args[:version] = true
+        when "-f", "--format   " then next_arg = :format
         when "-r", "--resource-dir" then next_arg = :resourceDir
         when "-n", "--no-build-ref" then @args[:suppressBuildRef] = true
-        when "--index-basename"     then next_arg = :indexBaseName
-        when "-i", "--include"      then next_arg = :includeRegexp
-        when "-j", "--exclude"      then next_arg = :excludeRegexp
+        when "--index-basename" then next_arg = :indexBaseName
+        when "-i", "--include" then next_arg = :includeRegexp
+        when "-j", "--exclude" then next_arg = :excludeRegexp
         when "-g", "--git-branches" then next_arg = :gitBranchRegexp
-        when "-t", "--git-tags"     then next_arg = :gitTagRegexp
-        when "-c", "--local-only"   then @args[:localRepoOnly] = true
-        when "-a", "--attribute"    then next_arg = :attributes
+        when "-t", "--git-tags" then next_arg = :gitTagRegexp
+        when "-c", "--local-only" then @args[:localRepoOnly] = true
+        when "-a", "--attribute" then next_arg = :attributes
         when "-d", "--resolve-docid" then @args[:resolveDocid] = true
         when "-m", "--make-searchable" then @args[:makeSearchable] = true
         when "-mp", "--search-assets-deploy" then next_arg = :searchAssetsDeploy
-        when "-s", "--style"        then next_arg = :userStyle
-        when "-w", "--web-path"     then next_arg = :webPath
-        when "--log-level"          then next_arg = :logLevel
+        when "-s", "--style" then next_arg = :userStyle
+        when "-w", "--web-path" then next_arg = :webPath
+        when "--log-level" then next_arg = :logLevel
         else
           if next_arg
             if next_arg == :attributes
@@ -227,7 +227,7 @@ ENDHELP
   # adds the str (must be in key=value format) to the
   # user defined attributes
   def add_attribute(attrib_str)
-    kv = attrib_str.split('=')
+    kv = attrib_str.split("=")
     if kv.length != 2
       puts "Invalid attribute format: #{attrib_str} Must be <key>=<value>"
       exit 1
@@ -272,7 +272,7 @@ ENDHELP
     # The user wants to parse a git repo, check that the srcDirRoot is within a
     # git repo if the user wants to generate git-branch specific docs
     @args[:gitRepoRoot] = Giblish::PathManager.find_gitrepo_root(
-        @args[:srcDirRoot]
+      @args[:srcDirRoot]
     )
     return unless @args[:gitRepoRoot].nil?
 

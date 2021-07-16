@@ -1,11 +1,10 @@
-require 'oga'
+require "oga"
 require "test_helper"
-require_relative "../lib/giblish/utils.rb"
-require_relative "../lib/giblish/docid.rb"
+require_relative "../lib/giblish/utils"
+require_relative "../lib/giblish/docid"
 
 # tests logging of giblish and asciidoc messages
 class LoggingTest < Minitest::Test
-
   include Giblish::TestUtils
 
   @@doc_str = <<~EOF
@@ -27,12 +26,11 @@ class LoggingTest < Minitest::Test
   end
 
   def test_logging_of_info_and_warn
-
     TmpDocDir.open do |tmp_docs|
       # act on the input data
-      adoc_filename = tmp_docs.add_doc_from_str @@doc_str
+      tmp_docs.add_doc_from_str @@doc_str
       args = [tmp_docs.dir,
-              tmp_docs.dir]
+        tmp_docs.dir]
       status = Giblish.application.run args
 
       # assert

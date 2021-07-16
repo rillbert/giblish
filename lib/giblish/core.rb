@@ -11,11 +11,9 @@ require_relative "docinfo"
 require_relative "buildgraph"
 
 module Giblish
-
   # Parse a directory tree and convert all asciidoc files matching the
   # supplied critera to the supplied format
   class FileTreeConverter
-
     attr_reader :converter
 
     # Required options:
@@ -26,28 +24,25 @@ module Giblish
       @options = options.dup
 
       @paths = Giblish::PathManager.new(
-          @options[:srcDirRoot],
-          @options[:dstDirRoot],
-          @options[:resourceDir],
-          @options[:makeSearchable]
+        @options[:srcDirRoot],
+        @options[:dstDirRoot],
+        @options[:resourceDir],
+        @options[:makeSearchable]
       )
 
       # set the path to the search data that will be sent to the cgi search script
       deploy_search_path = if @options[:makeSearchable]
-                            @options[:searchAssetsDeploy].nil? ?
-                                @paths.search_assets_abs : Pathname.new(@options[:searchAssetsDeploy]).join("search_assets")
-                          else
-                            nil
-                          end
+        @options[:searchAssetsDeploy].nil? ?
+            @paths.search_assets_abs : Pathname.new(@options[:searchAssetsDeploy]).join("search_assets")
+      end
 
       @deploy_info = Giblish::DeploymentPaths.new(
-          @options[:webPath],
-          deploy_search_path
+        @options[:webPath],
+        deploy_search_path
       )
       @processed_docs = []
       @converter = converter_factory
     end
-
 
     # convert all adoc files
     # return true if all conversions went ok, false if at least one
@@ -63,17 +58,19 @@ module Giblish
       # traverse the src file tree and convert all files deemed as
       # adoc files
       conv_error = false
-      Find.find(@paths.src_root_abs) do |path|
-        p = Pathname.new(path)
-        begin
-          to_asciidoc(p) if adocfile? p
-        rescue Exception => e
-          str = "Error when converting file #{path.to_s}: #{e.message}\nBacktrace:\n"
-          e.backtrace.each { |l| str << "   #{l}\n" }
-          Giblog.logger.error { str }
-          conv_error = true
+      if @paths.src_root_abs.directory?
+        Find.find(@paths.src_root_abs) do |path|
+          p = Pathname.new(path)
+          begin
+            to_asciidoc(p) if adocfile? p
+          rescue => e
+            str = "Error when converting file #{path}: #{e.message}\nBacktrace:\n"
+            e.backtrace.each { |l| str << "   #{l}\n" }
+            Giblog.logger.error { str }
+            conv_error = true
+          end
         end
-      end if @paths.src_root_abs.directory?
+      end
 
       # create necessary search assets if needed
       create_search_assets if @options[:makeSearchable]
@@ -96,16 +93,16 @@ module Giblish
         adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
         gb = graph_builder_factory
         errors = @converter.convert_str(
-            gb.source(
-                @options[:makeSearchable]
-            ),
-            @paths.dst_root_abs,
-            "graph",
-            logger: adoc_logger
+          gb.source(
+            @options[:makeSearchable]
+          ),
+          @paths.dst_root_abs,
+          "graph",
+          logger: adoc_logger
         )
         gb.cleanup
         !errors
-      rescue Exception => e
+      rescue => e
         Giblog.logger.warn { e.message }
         Giblog.logger.warn { "The dependency graph will not be generated !!" }
       end
@@ -117,12 +114,12 @@ module Giblish
       adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
       ib = index_factory
       @converter.convert_str(
-          ib.source(
-              dep_graph_exist, @options[:makeSearchable]
-          ),
-          @paths.dst_root_abs,
-          @options[:indexBaseName],
-          logger: adoc_logger
+        ib.source(
+          dep_graph_exist, @options[:makeSearchable]
+        ),
+        @paths.dst_root_abs,
+        @options[:indexBaseName],
+        logger: adoc_logger
       )
 
       # clean up cached files and adoc resources
@@ -134,20 +131,20 @@ module Giblish
     def index_factory
       raise "Internal logic error!" if @options[:suppressBuildRef]
       SimpleIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
-                             @options[:resolveDocid])
+        @options[:resolveDocid])
     end
 
     def graph_builder_factory
       Giblish::GraphBuilderGraphviz.new @processed_docs, @paths, @deploy_info,
-                                        @converter.converter_options
+        @converter.converter_options
     end
 
     # get the correct converter type
     def converter_factory
       case @options[:format]
-      when "html" then
+      when "html"
         HtmlConverter.new @paths, @deploy_info, @options
-      when "pdf" then
+      when "pdf"
         PdfConverter.new @paths, @deploy_info, @options
       else
         raise ArgumentError, "Unknown conversion format: #{@options[:format]}"
@@ -184,16 +181,13 @@ module Giblish
 
     # convert a single adoc doc to whatever the user wants
     def to_asciidoc(filepath)
-      adoc = nil
-      begin
-        adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
-        adoc = @converter.convert(filepath, logger: adoc_logger)
+      adoc_logger = Giblish::AsciidoctorLogger.new Logger::Severity::WARN
+      adoc = @converter.convert(filepath, logger: adoc_logger)
 
-        add_doc(adoc, adoc_logger.user_info_str.string)
-      rescue Exception => e
-        add_doc_fail(filepath, e)
-        raise
-      end
+      add_doc(adoc, adoc_logger.user_info_str.string)
+    rescue => e
+      add_doc_fail(filepath, e)
+      raise
     end
 
     # predicate that decides if a path is a asciidoc file or not
@@ -207,7 +201,7 @@ module Giblish
 
       # only include files matching the include regexp
       ir = Regexp.new @options[:includeRegexp]
-      return !ir.match(fs).nil?
+      !ir.match(fs).nil?
     end
 
     def manage_searchability(opts)
@@ -256,14 +250,16 @@ module Giblish
 
       # traverse the src file tree and copy all published adoc files
       # to the search_assets dir
-      Find.find(@paths.src_root_abs) do |path|
-        p = Pathname.new(path)
-        next unless adocfile? p
+      if @paths.src_root_abs.directory?
+        Find.find(@paths.src_root_abs) do |path|
+          p = Pathname.new(path)
+          next unless adocfile? p
 
-        dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
-        FileUtils.mkdir_p(dst_dir)
-        FileUtils.cp(p.to_s, dst_dir)
-      end if @paths.src_root_abs.directory?
+          dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
+          FileUtils.mkdir_p(dst_dir)
+          FileUtils.cp(p.to_s, dst_dir)
+        end
+      end
     end
 
     # Register the asciidoctor extension that handles doc ids and traverse
@@ -280,10 +276,12 @@ module Giblish
 
       # traverse the src file tree and collect ids from all
       # .adoc or .ADOC files
-      Find.find(@paths.src_root_abs) do |path|
-        p = Pathname.new(path)
-        idc.parse_file(p) if adocfile? p
-      end if @paths.src_root_abs.directory?
+      if @paths.src_root_abs.directory?
+        Find.find(@paths.src_root_abs) do |path|
+          p = Pathname.new(path)
+          idc.parse_file(p) if adocfile? p
+        end
+      end
       idc
     end
   end
@@ -308,26 +306,24 @@ module Giblish
     def convert
       conv_error = false
       (@user_branches + @user_tags).each do |co|
-        begin
-          has_error = convert_one_checkout(co)
-          if has_error == true
-            conv_error = true
-          end
-        rescue => e
+        has_error = convert_one_checkout(co)
+        if has_error == true
           conv_error = true
-          next
         end
+      rescue
+        conv_error = true
+        next
       end
 
       # Render the summary page
       index_builder = GitSummaryIndexBuilder.new @git_repo,
-                                                 @user_branches,
-                                                 @user_tags
+        @user_branches,
+        @user_tags
 
-      conv_error = conv_error || @converter.convert_str(
-          index_builder.source,
-          @master_paths.dst_root_abs,
-          "index"
+      conv_error ||= @converter.convert_str(
+        index_builder.source,
+        @master_paths.dst_root_abs,
+        "index"
       )
 
       # clean up
@@ -340,12 +336,12 @@ module Giblish
 
     def index_factory
       GitRepoIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
-                              @options[:resolveDocid], @options[:gitRepoRoot])
+        @options[:resolveDocid], @options[:gitRepoRoot])
     end
 
     def graph_builder_factory
       Giblish::GitGraphBuilderGraphviz.new @processed_docs, @paths, @deploy_info,
-                                           @converter.converter_options, @git_repo
+        @git_repo, @converter.converter_options
     end
 
     def add_doc(adoc, adoc_stderr)
@@ -374,7 +370,7 @@ module Giblish
       # Connect to the git repo
       begin
         git_repo = Git.open(git_repo_root)
-      rescue Exception => e
+      rescue => e
         raise "Could not find a git repo at #{git_repo_root} !"\
             "\n\n(#{e.message})"
       end
@@ -382,7 +378,7 @@ module Giblish
       # fetch all remote refs if ok with user
       begin
         git_repo.fetch unless local_only
-      rescue Exception => e
+      rescue => e
         raise "Could not fetch from origin"\
             "(do you need '--local-only'?)!\n\n(#{e.message})"
       end
@@ -396,7 +392,7 @@ module Giblish
       regexp = Regexp.new checkout_regexp
       user_checkouts = @git_repo.branches.remote.select do |b|
         # match branches but remove eventual HEAD -> ... entry
-        regexp.match b.name unless b.name =~ /^HEAD/
+        regexp.match b.name unless /^HEAD/.match?(b.name)
       end
       Giblog.logger.debug { "selected git branches: #{user_checkouts}" }
       user_checkouts
@@ -406,10 +402,9 @@ module Giblish
       return [] unless tag_regexp
 
       regexp = Regexp.new @options[:gitTagRegexp]
-      tags = @git_repo.tags.select do |t|
+      @git_repo.tags.select do |t|
         regexp.match t.name
       end
-      tags
     end
 
     # convert all docs from one particular git commit
@@ -445,7 +440,7 @@ module Giblish
       Giblog.logger.info { "Convert docs into dir #{@paths.dst_root_abs}" }
       # parent_convert
       begin
-        FileTreeConverter.instance_method(:convert).bind(self).call
+        FileTreeConverter.instance_method(:convert).bind_call(self)
       rescue => e
         raise "convert_one_checkout has a failure with #{co}!\n\n(#{e.message})"
       end

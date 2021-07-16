@@ -431,7 +431,7 @@ end
 #
 if __FILE__ == $PROGRAM_NAME
 
-  STDOUT.sync = true
+  $stdout.sync = true
   if ARGV.length == 0
     # 'Normal' cgi usage, as called from a web server
 
@@ -440,7 +440,7 @@ if __FILE__ == $PROGRAM_NAME
     print cgi.header
     begin
       cgi_main(cgi, false)
-    rescue Exception => e
+    rescue StandardError => e
       print e.message
       print ""
       print e.backtrace

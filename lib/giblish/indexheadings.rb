@@ -5,7 +5,6 @@ require "asciidoctor/extensions"
 require_relative "./utils"
 
 module Giblish
-
   # This hook is called by Asciidoctor once for each document _before_
   # Asciidoctor processes the adoc content.
   #
@@ -36,7 +35,6 @@ module Giblish
   #   }]
   # }
   class IndexHeadings < Asciidoctor::Extensions::Preprocessor
-
     # Use a class-global heading_index dict since asciidoctor creates a new instance
     # of this class for each processed file
     @heading_index = {"file_infos" => []}
@@ -46,16 +44,14 @@ module Giblish
     # 2. values taken from the document
     # 3. default values
     @id_elements = {
-#        prefix: "_",
-#        separator: "_"
+      #        prefix: "_",
+      #        separator: "_"
     }
 
     class << self
       attr_accessor :id_elements
 
-      def heading_index
-        @heading_index
-      end
+      attr_reader :heading_index
 
       def clear_index
         @heading_index = {"file_infos" => []}
@@ -73,11 +69,11 @@ module Giblish
           # remove the base_dir part of the file path
           heading_index["file_infos"].each do |file_info|
             file_info["filepath"] = Pathname.new(file_info["filepath"])
-                                        .relative_path_from(base_dir)
+              .relative_path_from(base_dir)
           end
         end
 
-        Giblog.logger.info { "writing json to #{dst_dir.join("heading_index.json").to_s}" }
+        Giblog.logger.info { "writing json to #{dst_dir.join("heading_index.json")}" }
         File.open(dst_dir.join("heading_index.json").to_s, "w") do |f|
           f.write(heading_index.to_json)
         end
@@ -106,9 +102,9 @@ module Giblish
       Giblog.logger.debug { "indexing headings in #{src_path}" }
       sections = []
       file_info_hash = {
-          "filepath" => src_path,
-          "title" => title,
-          "sections" => sections
+        "filepath" => src_path,
+        "title" => title,
+        "sections" => sections
       }
 
       index_sections(reader, file_info_hash, opts)
@@ -190,8 +186,8 @@ module Giblish
     def set_id_attributes(lines)
       # default values
       result = {
-          id_prefix: "_",
-          id_separator: "_"
+        id_prefix: "_",
+        id_separator: "_"
       }
 
       # check if the doc specifies id attributes
@@ -208,7 +204,6 @@ module Giblish
         end
       end
 
-
       if IndexHeadings.id_elements.has_key?(:id_prefix)
         result[:id_prefix] = IndexHeadings.id_elements[:id_prefix]
       end
@@ -221,9 +216,8 @@ module Giblish
     end
 
     def get_unique_id(doc_heading_dict, heading_str, opts)
-
       id_base = Giblish.to_valid_id(heading_str, opts[:id_prefix], opts[:id_separator])
-      return id_base if !doc_heading_dict.key? id_base
+      return id_base unless doc_heading_dict.key? id_base
 
       # handle the case with several sections with the same name
       idx = 1
@@ -234,7 +228,7 @@ module Giblish
         # some code here
         break unless doc_heading_dict.key? heading_id
       end
-      return heading_id
+      heading_id
     end
 
     # Helper method to shorten calls to the heading_index from instance methods

@@ -1,11 +1,9 @@
-
 require_relative "cmdline"
 require_relative "core"
 require_relative "utils"
 
 module Giblish
   class Application
-
     # return exit status (0 for success)
     def run_with_args(args)
       run args
@@ -42,7 +40,7 @@ module Giblish
           conv_error = tc.convert
         end
         Giblog.logger.info { "Giblish is done!" }
-      rescue Exception => e
+      rescue => e
         log_error e
         conv_error = true
       end

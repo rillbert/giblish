@@ -4,14 +4,14 @@ require "fileutils"
 
 class GiblogFormatter
   def call severity, datetime, progname, msg
-    "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
+    "#{datetime.strftime("%H:%M:%S")} #{severity} - #{msg}\n"
   end
 end
 
 class Giblog
   def self.setup
     return if defined? @logger
-    @logger = Logger.new(STDOUT)
+    @logger = Logger.new($stdout)
     @logger.formatter = GiblogFormatter.new
     # @logger.formatter = proc do |severity, datetime, _progname, msg|
     #   "#{datetime.strftime('%H:%M:%S')} #{severity} - #{msg}\n"
@@ -28,13 +28,10 @@ class Giblog
   end
 end
 
-
-
 # Public: Contains a number of generic utility methods.
 module Giblish
-
   class UserInfoFormatter
-    SEVERITY_LABELS = { 'WARN' => 'WARNING', 'FATAL' => 'FAILED' }
+    SEVERITY_LABELS = {"WARN" => "WARNING", "FATAL" => "FAILED"}
 
     # {:text=>"...",
     #  :source_location=>#<Asciidoctor::Reader::Cursor:0x000055e65a8729e0
@@ -51,22 +48,22 @@ module Giblish
                   # asciidoctor seem to emit a hash with error text and source location info
                   # for warnings and errors
                   str = ""
-                  str << "Line #{msg[:source_location].lineno.to_s} - " if msg[:source_location]
-                  str << "#{msg[:text].to_s}" if msg[:text]
+                  str << "Line #{msg[:source_location].lineno} - " if msg[:source_location]
+                  str << (msg[:text]).to_s if msg[:text]
                   str
                 else
                   msg.inspect
-                end
-      %(#{datetime.strftime('%H:%M:%S')} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{message}\n)
+      end
+      %(#{datetime.strftime("%H:%M:%S")} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{message}\n)
     end
   end
-  class AsciidoctorLogger < ::Logger
 
+  class AsciidoctorLogger < ::Logger
     attr_reader :max_severity
     attr_reader :user_info_str
 
     def initialize user_info_log_level
-      super(STDOUT,progname: "(from asciidoctor)", formatter: UserInfoFormatter.new)
+      super($stdout, progname: "(from asciidoctor)", formatter: UserInfoFormatter.new)
       @user_info_str = StringIO.new
       @user_info_logger = ::Logger.new(@user_info_str, formatter: UserInfoFormatter.new, level: user_info_log_level)
     end
@@ -75,29 +72,28 @@ module Giblish
       if (severity ||= UNKNOWN) > (@max_severity ||= severity)
         @max_severity = severity
       end
-      @user_info_logger.add(severity,message,progname)
+      @user_info_logger.add(severity, message, progname)
       super
     end
   end
 
   class DeploymentPaths
-
     attr_reader :web_path
 
     def initialize(web_path, search_asset_path)
       @search_assets_path = if search_asset_path.nil?
-                              nil
-                            else
-                              Pathname.new("/#{search_asset_path.to_s}").cleanpath
-                            end
+        nil
+      else
+        Pathname.new("/#{search_asset_path}").cleanpath
+      end
       @web_path = if web_path.nil?
-                    nil
-                  else
-                    Pathname.new("/#{web_path.to_s}/web_assets").cleanpath
-                  end
+        nil
+      else
+        Pathname.new("/#{web_path}/web_assets").cleanpath
+      end
     end
 
-    def search_assets_path(branch_dir=nil)
+    def search_assets_path(branch_dir = nil)
       if branch_dir.nil?
         @search_assets_path
       else
@@ -105,9 +101,7 @@ module Giblish
       end
     end
 
-    def search_assets_path=(path)
-      @search_assets_path = path
-    end
+    attr_writer :search_assets_path
   end
 
   # Helper class to ease construction of different paths for input and output
@@ -128,7 +122,7 @@ module Giblish
     #                resources
     # create_search_asset_dir - true if this instance shall create a dir for storing
     #                search artefacts, false otherwise
-    def initialize(src_root, dst_root, resource_dir = nil,create_search_asset_dir=false)
+    def initialize(src_root, dst_root, resource_dir = nil, create_search_asset_dir = false)
       # Make sure that the source root exists in the file system
       @src_root_abs = Pathname.new(src_root).realpath
       self.dst_root_abs = dst_root
@@ -208,7 +202,7 @@ module Giblish
     # return the relative path from a generated document to
     # the supplied folder given the corresponding absolute source
     # file path
-    def relpath_to_dir_after_generate(src_filepath,dir_path)
+    def relpath_to_dir_after_generate(src_filepath, dir_path)
       dst_abs = dst_abs_from_src_abs(src_filepath)
       dir = self.class.to_pathname(dir_path)
       dir.relative_path_from(dst_abs)
@@ -281,7 +275,7 @@ module Giblish
     #          - the directory itself when called with an existing directory
     #          - the parent dir when called with a non-existing file/directory
     def self.closest_dir(in_path)
-      sr = self.to_pathname(in_path)
+      sr = to_pathname(in_path)
       if sr.exist?
         sr.directory? ? sr.realpath : sr.dirname.realpath
       else
@@ -303,7 +297,7 @@ module Giblish
         return p if git_dir.directory?
       end
     end
-  end # end of PathManager
+  end
 
   # Helper method that provides the user with a way of processing only the
   # lines within the asciidoc header block.
@@ -345,7 +339,7 @@ module Giblish
   # end
   def process_header_lines_from_file(path)
     lines = File.readlines(path)
-    process_header_lines(lines,&Proc.new)
+    process_header_lines(lines, &Proc.new)
   end
   module_function :process_header_lines_from_file
 
@@ -362,7 +356,7 @@ module Giblish
   module_function :with_captured_stderr
 
   # transforms strings to valid asciidoctor id strings
-  def to_valid_id(input_str,id_prefix="_", id_separator="_")
+  def to_valid_id(input_str, id_prefix = "_", id_separator = "_")
     id_str = input_str.strip.downcase.gsub(%r{[^a-z0-9]+}, id_separator)
     id_str = "#{id_prefix}#{id_str}"
     id_str.chomp(id_separator)
@@ -375,17 +369,16 @@ module Giblish
   # Ex
   #   which('ruby') #=> /usr/bin/ruby
   def which(cmd)
-    exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';') : ['']
-    ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+    exts = ENV["PATHEXT"] ? ENV["PATHEXT"].split(";") : [""]
+    ENV["PATH"].split(File::PATH_SEPARATOR).each do |path|
       exts.each { |ext|
         exe = File.join(path, "#{cmd}#{ext}")
         return exe if File.executable?(exe) && !File.directory?(exe)
       }
     end
-    return nil
+    nil
   end
   module_function :which
-
 
   # returns raw html that displays a search box to let the user
   # acces the text search functionality.
@@ -401,7 +394,6 @@ module Giblish
   #                                  as seen from the local file system on the machine that
   #                                  runs the search script)
   def generate_search_box_html(css, cgi_path, opts)
-
     # Replace the button with the below to use a text-only version of the btn
     # <button id="search" type="submit">Search</button>
     <<~SEARCH_INFO
@@ -421,12 +413,11 @@ module Giblish
 
             <input type="hidden" name="searchassetstop" value="#{opts[:search_assets_top]}"</input>
             <input type="hidden" name="webassetstop" value="#{opts[:web_assets_top]}"</input>
-            #{'<input type="hidden" name="css" value="' + css +'"</input>' unless css.nil? }
+            #{'<input type="hidden" name="css" value="' + css + '"</input>' unless css.nil?}
         </form>
       ++++
 
     SEARCH_INFO
   end
   module_function :generate_search_box_html
-
 end

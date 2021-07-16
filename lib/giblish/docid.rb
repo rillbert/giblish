@@ -1,4 +1,3 @@
-
 require_relative "./utils"
 require "asciidoctor"
 require "asciidoctor/extensions"
@@ -15,13 +14,9 @@ module Giblish
     @docid_deps = {}
 
     class << self
-      def docid_cache
-        @docid_cache
-      end
+      attr_reader :docid_cache
 
-      def docid_deps
-        @docid_deps
-      end
+      attr_reader :docid_deps
 
       def clear_cache
         @docid_cache = {}
@@ -128,9 +123,9 @@ module Giblish
       end
 
       rel_path = docid_cache[doc_id]
-                 .dirname
-                 .relative_path_from(Pathname.new(src_path).dirname) +
-                 docid_cache[doc_id].basename
+        .dirname
+        .relative_path_from(Pathname.new(src_path).dirname) +
+        docid_cache[doc_id].basename
       rel_path.to_s
     end
 
@@ -175,7 +170,6 @@ module Giblish
       docid_cache[id] = Pathname(path)
     end
   end
-
 
   # Helper method to register the docid preprocessor extension with
   # the asciidoctor engine.

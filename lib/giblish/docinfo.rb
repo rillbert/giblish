@@ -23,19 +23,17 @@ module Giblish
     # running in a mixed Windows/Linux setting.
     # that is why we explicitly encodes them when
     # writing to them
-    def title
-      @title
-    end
+    attr_reader :title
+
     def title=(rhs)
       @title = rhs.nil? ? nil : rhs.encode("utf-8")
     end
-    def rel_path
-      @rel_path
-    end
+
+    attr_reader :rel_path
+
     # attr_accessor :rel_path
-    def src_file
-      @src_file
-    end
+    attr_reader :src_file
+
     def src_file=(rhs)
       @src_file = rhs.nil? ? nil : rhs.encode("utf-8")
     end
@@ -63,14 +61,14 @@ module Giblish
 
       # fill in doc meta data
       d_attr = adoc.attributes
-      self.src_file=(d_attr["docfile"])
-      self.title=(adoc.doctitle)
+      self.src_file = (d_attr["docfile"])
+      self.title = (adoc.doctitle)
       @doc_id = d_attr["docid"]
       return if dst_root_abs.nil?
 
       # Get the relative path beneath the root dir to the doc
       @rel_path = Pathname.new(
-          "#{d_attr['outdir']}/#{d_attr['docname']}#{d_attr['docfilesuffix']}".encode("utf-8")
+        "#{d_attr["outdir"]}/#{d_attr["docname"]}#{d_attr["docfilesuffix"]}".encode("utf-8")
       ).relative_path_from(dst_root_abs)
     end
 
@@ -85,8 +83,8 @@ module Giblish
       purpose_str = ""
       adoc.blocks.each do |section|
         next unless section.is_a?(Asciidoctor::Section) &&
-            (section.level == 1) &&
-            (section.name =~ /^Purpose$/)
+          (section.level == 1) &&
+          (section.name =~ /^Purpose$/)
 
         # filter out 'odd' text, such as lists etc...
         section.blocks.each do |bb|

@@ -10,7 +10,6 @@ require_relative "giblish/application"
 
 module Giblish
   class << self
-
     def application
       @application ||= Giblish::Application.new
     end

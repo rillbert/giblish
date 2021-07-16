@@ -1,7 +1,7 @@
 require "test_helper"
 require "asciidoctor"
 require "asciidoctor-pdf"
-require_relative "../lib/giblish/indexheadings.rb"
+require_relative "../lib/giblish/indexheadings"
 
 class IndexHeadingTest < Minitest::Test
   include Giblish::TestUtils
@@ -42,7 +42,7 @@ class IndexHeadingTest < Minitest::Test
   end
 
   def test_create_search_index
-    TmpDocDir.open() do |tmp_doc_dir|
+    TmpDocDir.open do |tmp_doc_dir|
       root_dir = tmp_doc_dir.dir
       # arrange input
       out_dir_path = Pathname.new(root_dir).join("output")
@@ -52,19 +52,18 @@ class IndexHeadingTest < Minitest::Test
 
       # act on the input data
       args = ["-m",
-              root_dir,
-              out_dir_path.to_s]
+        root_dir,
+        out_dir_path.to_s]
       status = Giblish.application.run args
-
 
       assert_equal 0, status
 
       # assert that the searchable index has been created
       search_root = out_dir_path.join("search_assets")
-      assert_equal true , Dir.exist?(search_root.to_s)
-      assert_equal true , File.exist?(search_root.join("heading_index.json"))
-      assert_equal true , File.exist?(search_root.join(doc_1))
-      assert_equal true , File.exist?(search_root.join(doc_2))
+      assert_equal true, Dir.exist?(search_root.to_s)
+      assert_equal true, File.exist?(search_root.join("heading_index.json"))
+      assert_equal true, File.exist?(search_root.join(doc_1))
+      assert_equal true, File.exist?(search_root.join(doc_2))
 
       # assert stuff of the json contents
       # File.open(search_root.join("heading_index.json")).each do |l|

@@ -34,15 +34,15 @@ class AttributesTest < Minitest::Test
 
   def test_xref_short_style_via_attrib_flag
     expected_ref_text = ["Section 2",
-                         "Section 1"]
+      "Section 1"]
 
     TmpDocDir.open do |tmp_docs|
       # act on the input data
       adoc_filename = tmp_docs.add_doc_from_str @xref_str
       args = ["--log-level", "info",
-              "-a", "xrefstyle=short",
-              tmp_docs.dir,
-              tmp_docs.dir]
+        "-a", "xrefstyle=short",
+        tmp_docs.dir,
+        tmp_docs.dir]
       Giblish.application.run args
 
       # assert that the expected matches the actual
@@ -59,15 +59,15 @@ class AttributesTest < Minitest::Test
   def test_xref_full_style_via_attrib_flag
     # note the 'smart quotes'...
     expected_ref_text = ["Section 2, “My Second Section”",
-                         "Section 1, “My First Section”"]
+      "Section 1, “My First Section”"]
 
     TmpDocDir.open do |tmp_docs|
       # act on the input data
       adoc_filename = tmp_docs.add_doc_from_str @xref_str
       args = ["--log-level", "info",
-              "-a", "xrefstyle=full",
-              tmp_docs.dir,
-              tmp_docs.dir]
+        "-a", "xrefstyle=full",
+        tmp_docs.dir,
+        tmp_docs.dir]
       Giblish.application.run args
 
       # assert that the expected matches the actual
@@ -84,17 +84,17 @@ class AttributesTest < Minitest::Test
   def test_xref_and_note_attrib
     # note the 'smart quotes'...
     expected_ref_text = ["Section 2, “My Second Section”",
-                         "Section 1, “My First Section”"]
+      "Section 1, “My First Section”"]
     expected_note_text = "TestNote"
 
     TmpDocDir.open do |tmp_docs|
       # act on the input data
       adoc_filename = tmp_docs.add_doc_from_str @xref_str
       args = ["--log-level", "info",
-              "-a", "xrefstyle=full",
-              "-a", "note-caption=#{expected_note_text}",
-              tmp_docs.dir,
-              tmp_docs.dir]
+        "-a", "xrefstyle=full",
+        "-a", "note-caption=#{expected_note_text}",
+        tmp_docs.dir,
+        tmp_docs.dir]
       Giblish.application.run args
 
       # assert that the expected matches the actual
