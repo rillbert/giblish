@@ -29,33 +29,6 @@ module Giblish
       src_tree
     end
 
-    # Amend the same pdf styling to all source nodes
-    def setup_pdf(src_tree, pdf_style_path, pdf_fontsdir)
-      src_tree.traverse_preorder do |level, n|
-        next unless n.leaf? && !n.data.nil?
-
-        class << n.data
-          include PdfCustomStyle
-        end
-
-        n.data.pdf_style_path = pdf_style_path
-        n.data.pdf_fontsdir = pdf_fontsdir
-      end
-    end
-
-    # Amend the same linked css ref to all source nodes
-    def setup_linked_css(src_tree, css_path, relative_from = nil)
-      src_tree.traverse_preorder do |level, n|
-        next unless n.leaf? && !n.data.nil?
-
-        class << n.data
-          include LinkedCssAttribs
-        end
-
-        n.data.css_path = relative_from.nil? ? css_path : css_path.relative_path_from(n.pathname)
-      end
-    end
-
     def test_generate_index_default_style
       TmpDocDir.open(preserve: true) do |tmp_docs|
         # create three adoc files under .../src and .../src/subdir
@@ -89,7 +62,7 @@ module Giblish
     end
 
     def test_generate_index_linked_css
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         # create three adoc files under .../src and .../src/subdir
         ["src", "src", "src/subdir"].each { |d| tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
 
@@ -104,8 +77,11 @@ module Giblish
 
         # setup a post-builder to build index pages in each dir using a relative
         # css path
-        css_path = "web_assets/hejsan/hopp.css"        
-        index_builder = IndexTreeBuilder.new(p / "dst", RelativeCss.new(p / "dst" / css_path))
+        css_path = "web_assets/hejsan/hopp.css"
+        index_builder = IndexTreeBuilder.new(
+          p / "dst",
+          RelativeCss.new(p / "dst" / css_path)
+        )
 
         # Convert all adoc files in the src tree to html and use the
         # post builder for indices
@@ -132,7 +108,7 @@ module Giblish
             next if csslink.get("href").start_with?("https://cdnjs.cloudflare.com")
 
             assert_equal "stylesheet", csslink.get("rel")
-            
+
             # get the expected relative path from the top dst dir
             rp = it.pathname.relative_path_from(n.pathname.dirname) / css_path
             # rp = Pathname.new(css_path).relative_path_from(
@@ -147,7 +123,7 @@ module Giblish
     end
 
     def test_generate_index_pdf
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         # create three adoc files under .../src and .../src/subdir
         ["src", "src", "src/subdir"].each { |d| puts tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
 
@@ -160,16 +136,19 @@ module Giblish
         st = fs_root.node(p / "src", from_root: true)
 
         # setup a post builder to generate pdf index pages for each dir
-        index_builder = IndexTreeBuilder.new(p / "dst", PdfCustomStyle.new(p / "resources/themes/giblish.yml"))
+        index_builder = IndexTreeBuilder.new(
+          p / "dst",
+          PdfCustomStyle.new(p / "resources/themes/giblish.yml")
+        )
 
         # Convert all adoc files in the src tree to pdf
-        tc = TreeConverter.new(st, p / "dst", 
+        tc = TreeConverter.new(st, p / "dst",
           {
             adoc_api_opts: {
               backend: "pdf"
             },
             post_builders: index_builder
-            })
+          })
         tc.run
 
         # filter out the 'index.pdf' files in a new tree

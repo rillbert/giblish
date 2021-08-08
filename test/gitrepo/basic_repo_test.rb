@@ -62,23 +62,6 @@ module Giblish
       g.checkout(g.branch("main"))
     end
 
-    # Amend the same linked css ref to all source nodes
-    def setup_linked_css(src_tree, css_path, relative_from = nil)
-      src_tree.traverse_preorder do |level, n|
-        next unless n.leaf? && !n.data.nil?
-
-        class << n.data
-          include LinkedCssAttribs
-        end
-
-        n.data.css_path = relative_from.nil? ? css_path : css_path.relative_path_from(n.pathname)
-      end
-    end
-
-    def test_setup_repo
-      setup_repo
-    end
-
     def test_generate_html_two_branches
       TmpDocDir.open(preserve: true) do |tmp_docs|
         root = Pathname.new(tmp_docs.dir)
@@ -132,8 +115,6 @@ module Giblish
         # 1. Get the src dir
         # 2. Convert and add index, ...
         # 3. Redo from 1.
-        tc = nil
-        index_builder = nil
         r = GitCheckoutManager.new(git_repo_root: repo, local_only: true, branch_regex: /.*product.*/)
         r.each_checkout do |name|
           Giblog.logger.info { "Working on #{name}" }
@@ -145,45 +126,45 @@ module Giblish
           # create a new top_dir for each branch/tag
           branch_dst = dst_root / name.sub("/", "_")
 
-          # remove all src nodes and reset to a fresh builder
-          index_builder = index_builder.nil? ? IndexTreeBuilder.new(branch_dst) : index_builder.reset(branch_dst)
+          # setup a post-builder to build index pages in each dir using a relative
+          # css path
+          css_path = "web_assets/hejsan/hopp.css"
+          index_builder = IndexTreeBuilder.new(
+            branch_dst,
+            RelativeCss.new(dst_root / css_path)
+          )
+
+          git_itf = Giblish::GitItf.new(repo)
 
           # setup a tree converter, using the index_builder
-          tc = tc.nil? ? TreeConverter.new(st, branch_dst,
+          tc = TreeConverter.new(st, branch_dst,
             {
               post_builders: index_builder,
               conversion_cb: {
                 success: ->(src, dst, dst_rel_path, doc, logstr) do
-                  tc.on_success(src, dst, dst_rel_path, doc, logstr)
+                  TreeConverter.on_success(src, dst, dst_rel_path, doc, logstr)
+
+                  p = src.pathname.relative_path_from(repo)
+                  
+                  # a bit hackish... These callbacks are also called when converting the index.adoc
+                  # files and they do not reside in the git repo since they're generated, thus we
+                  # skip those when getting the gitlog
+                  next if p.to_s.start_with?("..")
 
                   # Get the commit history of the doc
                   # (use a homegrown git log to get 'follow' flag)
-                  gi = Giblish::GitItf.new(repo)
-                  p = src.pathname.relative_path_from(repo)
-                  gi.file_log(p.to_s).each do |i|
+                  git_itf.file_log(p.to_s).each do |i|
                     dst.data.history << DocInfo::DocHistory.new(i["date"], i["author"], i["message"])
                   end
                 end,
-                failure: ->(src, dst, dst_rel_path, ex, logstr) { tc.on_failure(src, dst, dst_rel_path, ex, logstr) }
+                failure: ->(src, dst, dst_rel_path, ex, logstr) { TreeConverter.on_failure(src, dst, dst_rel_path, ex, logstr) }
               }
-            }) : tc.init_src_dst(st, branch_dst)
+            })
           tc.run
 
-          # Tweak all index nodes to use the correct path when linking to
-          # the css
-          # setup_linked_css(index_builder.src_tree, dst_root / "web_assets")
-
-          # Convert the index nodes to html and write them to the dst directories
-          ic = TreeConverter.new(index_builder.src_tree, branch_dst)
-          ic.run
-
           # assert that there now are 3 html files under "dst/<branch_name>"
-          dt = tc.dst_tree.node(dst_root, from_root: true)
-          assert_equal(3, dt.leave_pathnames.count)
-          assert_equal(
-            st.leave_pathnames.collect { |p| branch_dst.basename / p.sub_ext(".html").relative_path_from(st.pathname) },
-            dt.leave_pathnames.collect { |p| p.relative_path_from(dt.pathname) }
-          )
+          it = tc.dst_tree.filter(/index.html$/).node(branch_dst,from_root: true)
+          assert_equal(3, it.leave_pathnames.count)
         end
       end
     end

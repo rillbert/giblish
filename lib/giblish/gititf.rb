@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "open3"
-require_relative "utils"
+require_relative "pathutils"
 
 module Giblish
   # A home-grown interface class to git. Used for situations when the

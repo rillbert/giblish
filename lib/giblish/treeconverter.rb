@@ -85,10 +85,6 @@ module Giblish
 
     def post_build
       @post_builders.each { |pb| pb.run(@src_tree, @dst_tree, @converter)}
-
-      # @dst_tree.traverse_preorder do |level, n|
-      #   @post_builders.each { |pp| pp.run(n) }
-      # end
     end
 
     def self.on_success(src_node, dst_node, dst_top, doc, adoc_log_str)
