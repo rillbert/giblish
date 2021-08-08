@@ -36,7 +36,7 @@ require "set"
 # see https://www.geeksforgeeks.org/tree-traversals-inorder-preorder-and-postorder/
 #
 class PathTree
-  attr_reader :data, :children, :parent, :abs_root
+  attr_reader :data, :name, :children, :parent, :abs_root
   attr_writer :parent, :data
 
   def initialize(path, data = nil, parent = nil)
@@ -71,6 +71,16 @@ class PathTree
 
     @children.each { |c| d.children << c.dup(parent: d) }
     d
+  end
+
+  def name=(name)
+    name = Pathname.new(name)
+    
+    if !parent.nil? && @parent.children.any? {|c| c.name == name }
+      raise ArgumentError,"Can not rename to #{name}. An existing node already use that name" 
+    end
+
+    @name = name
   end
 
   # return:: a String with the path segment for this node
@@ -113,7 +123,7 @@ class PathTree
   # and associates the given data to the leaf of that path.
   def add_path(path, data = nil)
     p = clean(path)
-    raise ArgumentError, "Trying to add already existing path" unless node(p, from_root: true).nil?
+    raise ArgumentError, "Trying to add already existing path: #{path}" unless node(p, from_root: true).nil?
 
     # prune any part of the given path that already exists in this
     # tree
@@ -137,15 +147,19 @@ class PathTree
   #
   # the level and node are given as block parameters
   #
+  # === Returns
+  # A new array containing the values returned by the block
+  #
   # === Examples
   # Print the name of each node together with the level of the node
   #    traverse_preorder{ |level, n| puts "#{level} #{n.segment}" }
   #
   def traverse_preorder(level = 0, &block)
-    yield(level, self)
+    result = Array[yield(level, self)]
     @children.each do |c|
-      c.traverse_preorder(level + 1, &block)
+      result.append(*c.traverse_preorder(level + 1, &block))
     end
+    result
   end
 
   # Visits depth-first by left -> right -> root
@@ -160,10 +174,11 @@ class PathTree
   #    traverse_postorder{ |level, n| puts "#{level} #{n.segment}" }
   #
   def traverse_postorder(level = 0, &block)
+    result = []
     @children.each do |c|
-      c.traverse_postorder(level + 1, &block)
+      result.concat(c.traverse_postorder(level + 1, &block))
     end
-    yield(level, self)
+    result << yield(level, self)
   end
 
   # Visits bredth-first left -> right for each level top-down
@@ -178,14 +193,21 @@ class PathTree
   #    traverse_levelorder { |level, n| puts "#{level} #{n.segment}" }
   #
   def traverse_levelorder(level = 0, &block)
-    yield(level, self) if level == 0
+    result = []
+    # the node of the original call
+    result << yield(level, self) if level == 0
 
+    # this level
     @children.each do |c|
-      yield(level + 1, c)
+      result << yield(level + 1, c)
     end
+
+    # next level
     @children.each do |c|
-      c.traverse_levelorder(level + 1, &block)
+      result.concat(c.traverse_levelorder(level + 1, &block))
     end
+
+    result
   end
 
   # Sort the nodes on each level in the tree in lexical order but put
@@ -385,6 +407,36 @@ class PathTree
     return super(method_name,include_private) if data.nil?
     
     data.respond_to?(method_name)
+  end
+
+  def to_s
+    traverse_preorder do |level, n|
+       str = " "*4*level + "|-- " + n.segment.to_s
+       str += " <#{n.data}>" unless n.data.nil?
+       str
+    end.join("\n")
+  end
+
+  # Return a new PathTree with the nodes whith pathname matching the 
+  # given regex.
+  # 
+  # The copy will point to the same node data as the original.
+  #
+  # regex:: a Regex matching the pathname of the nodes to be included in
+  # the copy
+  # 
+  # === Returns
+  # a new PathTree with the nodes with pathnames matching the given regex
+  def filter(regex)
+    copy = nil
+  
+    traverse_preorder do |level, n|
+      p = n.pathname
+      next unless regex =~ p.to_s
+
+      copy.nil? ? copy = PathTree.new(p,n.data) : copy.add_path(p, n.data)
+    end
+    copy
   end
 
   private

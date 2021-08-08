@@ -163,36 +163,49 @@ module Giblish
   end
 
   class IndexTreeBuilder
-    attr_reader :src_tree
+    attr_reader :adoc_source
 
-    def initialize(dst_top_path)
-      reset(dst_top_path)
-    end
-
-    def reset(dst_top_path)
+    def initialize(dst_top_path, da_provider = nil, api_opt_provider = nil)
       @dst_top_path = dst_top_path
-      @src_root = PathTree.new(dst_top_path)
-      @src_tree = @src_root.node(@dst_top_path, from_root: true)
-      self
+      @da_provider = da_provider
+      @api_opt_provider = api_opt_provider
     end
 
-    def run(input_node)
-      # only care about dirs under dst_top_path
-      return if input_node.leaf? || (input_node.pathname <=> @dst_top_path) == -1
+    def document_attributes
+      @da_provider.nil? ? {} : @da_provider.document_attributes
+    end
 
-      # Preconditions:
-      # - All real adoc files have already been converted
-      # - The resulting dst_tree is accessible
-      #
-      # 1. Build a virtual source tree where each node is a dir
-      # index
-      # 2. Convert the virtual source tree to the same dst as the
-      # adoc files.
+    def api_options
+      @api_opt_provider.nil? ? {} : @api_opt_provider.api_options
+    end
 
-      index_dir = input_node.pathname.relative_path_from(@dst_top_path).cleanpath
-      Giblog.logger.info { "Setting up index for #{index_dir}" }
-      source = IndexSrcFromTree.new(input_node)
-      @src_tree.add_descendants(index_dir / "index.adoc", source)
+    # 1. Build a virtual source tree where each node is a dir
+    # index
+    # 2. Convert the virtual source tree to the same dst as the
+    # adoc files.
+    def run(src_tree, dst_tree, converter)
+      dst_tree.traverse_preorder do |level, dst_node|
+        # only care about dirs under dst_top_path
+        next if dst_node.leaf? || (dst_node.pathname <=> @dst_top_path) == -1
+
+        # get the relative path to the index dir from the top dir
+        index_dir = dst_node.pathname.relative_path_from(@dst_top_path).cleanpath
+        Giblog.logger.info { "Setting up index for #{index_dir}" }
+
+        # add a virtual 'index.adoc' node with this object as source for conversion options
+        # and adoc_source
+        @adoc_source = IndexSrcFromTree.new(dst_node).adoc_source
+        i_node = dst_node.add_descendants("index.adoc", self)
+
+        # setup any additional doc attributes
+        @da_provider.update_info(src_tree, dst_node, converter) unless @da_provider.nil?
+
+        # update the provider of api options with this node's info
+        @api_opt_provider.update_info(src_tree, dst_node, converter) unless @api_opt_provider.nil?
+
+        # do the conversion
+        converter.convert(i_node, i_node, dst_tree.node(@dst_top_path, from_root: true))
+      end
     end
   end
 end
