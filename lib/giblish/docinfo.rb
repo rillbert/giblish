@@ -2,6 +2,8 @@
 
 require "pathname"
 
+require_relative "pathutils"
+
 module Giblish
   # Container class for bundling together the data we cache for
   # each asciidoc file we come across
@@ -14,7 +16,7 @@ module Giblish
 
     # these members can have encoding issues when
     # running in a mixed Windows/Linux setting.
-    # that is why we explicitly encodes them when
+    # that is why we explicitly encode them when
     # writing to them
 
     def title=(rhs)
@@ -36,15 +38,17 @@ module Giblish
       @purpose_str = get_purpose_info adoc
 
       # fill in doc meta data
+      self.title = (adoc.doctitle)
+      src_dir = adoc.base_dir
+
       d_attr = adoc.attributes
       self.src_file = (d_attr["docfile"])
-      self.title = (adoc.doctitle)
       @doc_id = d_attr["docid"]
       return if dst_root_abs.nil?
 
       # Get the relative path beneath the root dir to the doc
       @rel_path = Pathname.new(
-        "#{d_attr["outdir"]}/#{d_attr["docname"]}#{d_attr["docfilesuffix"]}".encode("utf-8")
+        "#{src_dir}/#{d_attr["docfile"]}".encode("utf-8")
       ).relative_path_from(dst_root_abs)
     end
 
@@ -78,15 +82,17 @@ module Giblish
   class DocInfoStore
     attr_reader :doc_infos
 
-    # path_manager:: a PathManager instance containing relevant paths for 
+    # path_manager:: a PathManager instance containing relevant paths for
     # this run of giblish
     def initialize(path_manager)
       @doc_infos = []
       @paths = path_manager
     end
 
-    # @return  a Pathtree built by all current doc_infos and sorted
-    # with leafs first for each level
+    # Build a PathTree from all absolute paths of the stored
+    # DocInfo objects and the associated DocInfo as the data.
+    #
+    # return::  the built Pathtree sorted with leafs first for each level
     def pathtree
       tree = nil
       @doc_infos.each do |d|
@@ -101,7 +107,7 @@ module Giblish
         tree.add_path(p, d)
       end
       return nil if tree.nil?
-      
+
       # sort the tree
       tree.sort_leaf_first
       tree

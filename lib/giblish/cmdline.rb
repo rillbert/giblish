@@ -1,6 +1,4 @@
-# frozen_string_literal: true
-
-require_relative "utils"
+require_relative "pathutils"
 require_relative "version"
 
 # Parse the cmd line arguments

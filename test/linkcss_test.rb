@@ -120,16 +120,16 @@ class LinkCSSTest < Minitest::Test
       create_resource_dir r_dir
 
       # act on the input data
-      adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
+      adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "src/subdir")
       args = ["--log-level", "info",
         "-r", r_dir,
-        tmp_docs.dir,
-        tmp_docs.dir]
+        "#{tmp_docs.dir}/src",
+        "#{tmp_docs.dir}/dst"]
       Giblish.application.run args
 
       # assert that the css link is relative to the specific
       # css file (../web_assets/css/giblish.css)
-      tmp_docs.check_html_dom adoc_filename do |html_tree|
+      tmp_docs.check_html_dom adoc_filename.gsub('src/','dst/') do |html_tree|
         css_links = html_tree.xpath("html/head/link")
         assert_equal 1, css_links.count
 

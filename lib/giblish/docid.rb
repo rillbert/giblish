@@ -92,10 +92,9 @@ module Giblish
     @docid_deps = {}
 
     class << self
-      attr_reader :docid_cache, :docid_deps
+      attr_accessor :docid_cache, :docid_deps
 
       # execute the first pass to collect all doc ids
-      # @param src_root  the path to the source root directory
       def run_pass1(adoc_files:)
         # make sure that we start with a clean id cache and
         # dependency tree
@@ -105,12 +104,6 @@ module Giblish
         p1.run
       end
     end
-
-    # NOTE: I don't know how to hook into the 'initialize' or if I should
-    # let this be, currently it is disabled...
-    # def initialize(*everything)
-    #   super(everything)
-    # end
 
     # Helper method to shorten calls to docid_cache from instance methods
     def docid_cache
@@ -213,6 +206,7 @@ module Giblish
   # Helper method to register the docid preprocessor extension with
   # the asciidoctor engine.
   def self.register_docid_extension
+    # see https://docs.asciidoctor.org/asciidoctor/latest/extensions/register/
     Asciidoctor::Extensions.register do
       preprocessor DocidCollector
     end

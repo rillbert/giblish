@@ -2,6 +2,7 @@
 
 require "pathname"
 
+require_relative "pathutils"
 require_relative "docconverter"
 require_relative "docinfo"
 require_relative "docid"
@@ -156,8 +157,9 @@ module Giblish
     # predicate that decides if a path is a asciidoc file or not
     def adocfile?(path)
       fs = path.to_s
+
+      # exclude file if user wishes
       unless @options[:excludeRegexp].nil?
-        # exclude file if user wishes
         er = Regexp.new @options[:excludeRegexp]
         return false unless er.match(fs).nil?
       end

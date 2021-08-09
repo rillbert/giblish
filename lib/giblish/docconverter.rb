@@ -4,7 +4,7 @@ require "pathname"
 require "asciidoctor"
 require "asciidoctor-pdf"
 
-require_relative "utils"
+require_relative "pathutils"
 
 module Giblish
   # Base class for document converters. It contains a hash of
