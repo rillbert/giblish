@@ -62,6 +62,24 @@ class PathTreeTest < Minitest::Test
     assert_equal(2, s.count)
   end
 
+  def test_name
+    t = PathTree.new("/1")
+    {"/1/2/4" => 124, "/1/2/5" => 125, "/1/2/6" => 126, "/1/3" => 13}.each { |p, d|
+      t.add_path(p, d)
+    }
+
+    k = t.node("1/2/4")
+    k.name = "44"
+    assert(Pathname.new("1/2/44"), k.pathname)
+
+    assert_raises(ArgumentError) {
+      k.name = "5"
+    }
+
+    t.name = "11"
+    assert(Pathname.new("11/2,44"), k.pathname)
+  end
+
   def test_pathname
     t = PathTree.new("/1")
     {"/1/2/4" => 124, "/1/2/5" => 125, "/1/2/6" => 126, "/1/3" => 13}.each { |p, d|
@@ -144,6 +162,7 @@ class PathTreeTest < Minitest::Test
     order = ""
     data = []
     level = []
+    puts "===="
     root.traverse_preorder do |l, node|
       level << l
       order << node.segment
@@ -152,6 +171,7 @@ class PathTreeTest < Minitest::Test
     assert_equal("124563", order)
     assert_equal([0, 1, 2, 2, 2, 1], level)
     assert_equal([nil, nil, 124, 125, 126, 13], data)
+    puts root.to_s
   end
 
   def test_postorder_ok
@@ -383,8 +403,47 @@ class PathTreeTest < Minitest::Test
 
     # call String::split via delegation
     assert_equal(["my", "data"], n.split)
-    
+
     # call String::upcase via delegation
     assert_equal("MY DATA", n.upcase)
+  end
+
+  def test_to_s
+    root = PathTree.new("1")
+    {"1/2/4" => 124,
+     "1/2/5" => 125,
+     "1/2/6" => 126,
+     "1/3" => 13}.each { |p, d|
+      root.add_path(p, d)
+    }
+
+    value = root.to_s + "\n"
+    expect = <<~TREE_STR
+      |-- 1
+          |-- 2
+              |-- 4 <124>
+              |-- 5 <125>
+              |-- 6 <126>
+          |-- 3 <13>
+    TREE_STR
+
+    assert_equal(expect, value)
+  end
+
+  def test_filter
+    root = PathTree.new("1")
+    {"1/2" => 12,
+     "1/2/4" => 124,
+     "1/2/5" => 125,
+     "1/2/6" => 126,
+     "1/3" => 13}.each { |p, d|
+      root.add_path(p, d)
+    }
+
+    copy = root.filter(/2$/)
+    puts copy
+    assert_equal(2, copy.count)
+    assert_equal(Pathname.new("1/2"), copy.node("2").pathname)
+    assert_equal(12, copy.node("2").data)
   end
 end
