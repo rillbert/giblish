@@ -63,7 +63,7 @@ module Giblish
     end
 
     def test_generate_html_two_branches
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         root = Pathname.new(tmp_docs.dir)
         dst_root = root / "dst"
 
