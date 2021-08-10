@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "open3"
 require_relative "utils"
 
@@ -49,7 +47,7 @@ module Giblish
         end
 
         if in_message
-          hsh["message"] << "#{line[4..]}\n"
+          hsh["message"] << "#{line[4..-1]}\n"
           next
         end
 
