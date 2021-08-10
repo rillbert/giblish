@@ -279,6 +279,7 @@ module Giblish
   class PdfConverter < DocConverter
     def initialize(paths, deployment_info, options)
       super paths, deployment_info, options
+      require "asciidoctor-mathematical"
 
       # identify ourselves as a pdf converter
       add_backend_options({backend: "pdf", fileext: "pdf"})

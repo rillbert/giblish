@@ -308,7 +308,13 @@ module Giblish
     def convert
       conv_error = false
       (@user_branches + @user_tags).each do |co|
-        conv_error = conv_error || convert_one_checkout(co)
+        has_error = convert_one_checkout(co)
+        if has_error == true
+          conv_error = true
+        end
+      rescue
+        conv_error = true
+        next
       end
 
       # Render the summary page
@@ -436,7 +442,11 @@ module Giblish
       # Parse and convert docs using given args
       Giblog.logger.info { "Convert docs into dir #{@paths.dst_root_abs}" }
       # parent_convert
-      FileTreeConverter.instance_method(:convert).bind(self).call
+      begin
+        FileTreeConverter.instance_method(:convert).bind_call(self)
+      rescue => e
+        raise "convert_one_checkout has a failure with #{co}!\n\n(#{e.message})"
+      end
     end
   end
 end
