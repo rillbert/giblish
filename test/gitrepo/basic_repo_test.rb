@@ -89,7 +89,7 @@ module Giblish
           # init a converter that use ".../src" as the top dir,
           # and generates html to ".../dst"
           branch_dst = dst_root / name.sub("/", "_")
-          tc = tc.nil? ? TreeConverter.new(st, branch_dst) : tc.init_src_dst(st, branch_dst)
+          tc = TreeConverter.new(st, branch_dst)
           tc.run
 
           # assert that there now are 3 html files under "dst/<branch_name>"

@@ -14,12 +14,3 @@ class GiblishAdminTest < Minitest::Test
     refute_nil ::Giblish::VERSION
   end
 end
-
-class PathManagerTest < Minitest::Test
-  include Giblish::TestUtils
-
-  def setup
-    # setup logging
-    Giblog.setup
-  end
-end
