@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "oga"
-require "test_helper"
+require_relative "../test_helper"
 
 module Giblish
   # tests that asciidoc attributes can be set via the -a or

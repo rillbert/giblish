@@ -1,5 +1,5 @@
-require "test_helper"
-require_relative "../lib/giblish"
+require_relative "../test_helper"
+require_relative "../../lib/giblish"
 
 module Giblish
   # tests the basic functionality of the Application class
