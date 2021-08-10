@@ -171,7 +171,7 @@ module Giblish
           "cgi-bin dir in your webserver and rename it from .rb to .cgi") do |m|
           @make_searchable = m
         end
-        parser.on("-mp","--search-assets-deploy PATH",
+        parser.on("-mp", "--search-assets-deploy PATH",
           "the absolute path to the 'search_assets' folder where the search",
           "script can find the data needed for implementing the text search",
           "(default is <dst_dir_top>).",
@@ -201,7 +201,7 @@ module Giblish
 
     # converts the given cmd line args to an Options instance.
     #
-    # Raises MissingArgument or InvalidArgument if the cmd line arg 
+    # Raises MissingArgument or InvalidArgument if the cmd line arg
     # validation fails.
     #
     # === Returns
@@ -215,8 +215,12 @@ module Giblish
         # take care of positional arguments
         raise OptionParser::MissingArgument, "Both srcdir and dstdir must be provided!" unless args.count == 2
 
-        @cmdline.srcdir = Pathname.new(args[0])
-        @cmdline.dstdir = Pathname.new(args[1])
+        # we always work with absolute paths
+        @cmdline.srcdir, @cmdline.dstdir = [args[0], args[1]].collect do |a|
+          s = Pathname.new(a)
+          s = Pathname.new(Dir.pwd) / s unless s.absolute?
+          s.cleanpath
+        end
 
         validate_cmdline(@cmdline)
       end

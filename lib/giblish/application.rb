@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
 require_relative "cmdline"
-require_relative "core"
 require_relative "pathutils"
+require_relative "converters"
+require_relative "treeconverter"
 
 module Giblish
   # The app class for the giblish application
   class Application
-    # return exit status (0 for success)
+    # returns on success, raises otherwise
     def run(args)
       # force immediate output
       $stdout.sync = true
@@ -21,7 +22,17 @@ module Giblish
 
       execute_conversion(cmdline)
       Giblog.logger.info { "Giblish is done!" }
-      0
+    end
+
+    # does not return, exits with status code
+    def run_from_cmd_line
+      run(ARGV)
+      exit_code = 0
+      rescue => exc
+        Giblog.logger.error { exc.message }
+        exit_code = 1
+      end
+      exit(exit_code)
     end
 
     private

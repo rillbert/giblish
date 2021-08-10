@@ -91,25 +91,6 @@ module Giblish
     end
   end
 
-  # module PdfCustomStyle
-  #   attr_accessor :pdf_style_path, :pdf_fontsdir
-  #   def document_attributes
-  #     result = {
-  #       "pdf-style" => @pdf_style_path.basename.to_s,
-  #       "pdf-stylesdir" => @pdf_style_path.dirname.to_s,
-  #       "icons" => "font"
-  #     }
-  #     result["pdf-fontsdir"] = @pdf_fontsdir.to_s unless @pdf_fontsdir.nil?
-  #     result
-  #   end
-
-  #   def api_options
-  #     {
-  #       backend: "pdf"
-  #     }
-  #   end
-  # end
-
   class SrcFromFile
     def initialize(tree_node)
       @node = tree_node
