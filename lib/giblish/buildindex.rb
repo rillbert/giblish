@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "pathname"
 require "git"
 
@@ -8,6 +6,7 @@ require_relative "gititf"
 require_relative "docinfo"
 
 module Giblish
+
   # Base class with common functionality for all index builders
   class BasicIndexBuilder
     # set up the basic index building info
@@ -20,42 +19,29 @@ module Giblish
       @src_str = ""
       @manage_docid = handle_docid
       @search_opts = {
-        web_assets_top: @deployment_info.web_path,
-        search_assets_top: @deployment_info.search_assets_path
+          web_assets_top: @deployment_info.web_path,
+          search_assets_top: @deployment_info.search_assets_path,
       }
     end
 
-    def source(dep_graph_exists: false, make_searchable: false)
+    def source(dep_graph_exists = false, make_searchable = false)
       <<~DOC_STR
         #{generate_title_and_header}
-
         #{generate_date_info}
-
         #{add_search_box if make_searchable}
-
-        #{add_docid_info if @manage_docid}
-
-        #{add_depgraph_id if dep_graph_exists}
-
-        #{generate_tree}
-
+        #{generate_tree(dep_graph_exists)}
         #{generate_details}
-
         #{generate_footer}
       DOC_STR
     end
 
     protected
-
-    def source_root
-      @paths.src_root_abs
-    end
-
     def generate_title_and_header
       <<~DOC_HEADER
         = Document index
-        from #{source_root}
+        from #{@paths.src_root_abs}
         :icons: font
+
       DOC_HEADER
     end
 
@@ -64,6 +50,7 @@ module Giblish
       <<~SRC_FILE_TXT
         Source file::
         #{doc_info.src_file}
+
       SRC_FILE_TXT
     end
 
@@ -75,14 +62,14 @@ module Giblish
     end
 
     def add_search_box
-      Giblish.generate_search_box_html(
-        @converter.converter_options[:attributes]["stylesheet"],
-        "/cgi-bin/giblish-search.cgi",
-        @search_opts
+      Giblish::generate_search_box_html(
+          @converter.converter_options[:attributes]["stylesheet"],
+          "/cgi-bin/giblish-search.cgi",
+          @search_opts
       )
     end
 
-    def docid_statistics
+    def get_docid_statistics
       largest = ""
       clash = []
       @processed_docs.each do |d|
@@ -95,42 +82,52 @@ module Giblish
       # find the duplicate doc ids (if any)
       duplicates = clash.select { |id| clash.count(id) > 1 }.uniq.sort
 
-      [largest, duplicates]
+      return largest,duplicates
     end
 
-    def add_docid_info
-      largest, duplicates = docid_statistics
-      <<~DOC_ID_INFO
-        *Document id numbers:* The 'largest' document id found when resolving
-        :docid: tags in all documents is *#{largest}*.
+    def generate_doc_id_info(dep_graph_exists)
+      largest,duplicates = get_docid_statistics
+      docid_info_str = if ! @manage_docid
+                         ""
+                       else
+                         "The 'largest' document id found when resolving :docid: tags in all documents is *#{largest}*."
+                       end
 
-        #{if duplicates.length.zero?
-            ''
-          else
-            'WARNING: The following document ids are used for '\
-            'more than one document. '\
-            "_#{duplicates.map(&:to_s).join(',')}_"
-          end}
+      docid_warn_str = if duplicates.length.zero?
+                         ""
+                       else
+                         "WARNING: The following document ids are used for more than one document. " +
+                             "_#{duplicates.map {|id| id.to_s}.join(",") }_"
+                       end
 
-      DOC_ID_INFO
-    end
-
-    def add_depgraph_id
       # include link to dependency graph if it exists
-      <<~DEPGRAPH_STR
-        _A visual graph of document dependencies can be found
-        <<./graph.adoc#,here>>
-      DEPGRAPH_STR
+      dep_graph_str = if dep_graph_exists
+                        "_(a visual graph of document dependencies can be found " \
+                      "<<./graph.adoc#,here>>)_"
+                      else
+                        ""
+                      end
+
+      if @manage_docid
+        <<~DOC_ID_INFO
+        *Document id numbers:* #{docid_info_str} #{dep_graph_str}
+  
+        #{docid_warn_str}
+
+        DOC_ID_INFO
+      else
+        ""
+      end
     end
 
-    def generate_tree
+    def generate_tree(dep_graph_exists)
       # output tree intro
-      tree_string = String.new(
-        <<~DOC_HEADER
-          [subs=\"normal\"]
-          ----
-        DOC_HEADER
-      )
+      tree_string = <<~DOC_HEADER
+        #{generate_doc_id_info dep_graph_exists}
+
+        [subs=\"normal\"]
+        ----
+      DOC_HEADER
 
       # build up tree of paths
       root = PathTree.new
@@ -156,11 +153,10 @@ module Giblish
 
     private
 
-    def generate_conversion_info(doc_info)
-      return "" if doc_info.stderr.empty?
-
+    def generate_conversion_info(d)
+      return "" if d.stderr.empty?
       # extract conversion warnings from asciddoctor std err
-      conv_warnings = doc_info.stderr.gsub(/^/, " * ")
+      conv_warnings = d.stderr.gsub(/^/, " * ")
 
       # assemble info to index page
       <<~CONV_INFO
@@ -202,7 +198,7 @@ module Giblish
 
       # Calculate padding to get (conv issues) and details aligned between entries
       padding = 70
-      [doc_title, prefix_str, warning_label].each { |p| padding -= p.length }
+      [doc_title, prefix_str, warning_label].each {|p| padding -= p.length}
       padding = 0 unless padding.positive?
       "#{prefix_str} #{doc_link}#{' ' * padding}#{warning_label} #{doc_details}"
     end
@@ -226,51 +222,51 @@ module Giblish
     end
 
     # Derived classes can override this with useful info
-    def generate_history_info(_doc_info)
+    def generate_history_info(_d)
       ""
     end
 
-    def generate_detail_fail(doc_info)
+    def generate_detail_fail(d)
       <<~FAIL_INFO
-        === #{doc_info.src_file}
+        === #{d.src_file}
 
         #{display_source_file(d)}
 
         Error detail::
-        #{doc_info.stderr}
+        #{d.stderr}
 
         ''''
 
       FAIL_INFO
     end
 
-    def generate_detail(doc_info)
+    def generate_detail(d)
       # Generate detail info
-      purpose_str = if doc_info.purpose_str.nil?
+      purpose_str = if d.purpose_str.nil?
                       ""
                     else
-                      "Purpose::\n#{doc_info.purpose_str}"
+                      "Purpose::\n#{d.purpose_str}"
                     end
 
-      doc_id_str = if !doc_info.doc_id.nil? && @manage_docid
-                     "Doc id::\n_#{doc_info.doc_id}_"
+      doc_id_str = if !d.doc_id.nil? && @manage_docid
+                     "Doc id::\n_#{d.doc_id}_"
                    else
                      ""
                    end
 
       <<~DETAIL_SRC
-        [[#{Giblish.to_valid_id(doc_info.title.encode('utf-8'))}]]
-        === #{doc_info.title.encode('utf-8')}
+        [[#{Giblish.to_valid_id(d.title.encode("utf-8"))}]]
+        === #{d.title.encode("utf-8")}
 
         #{doc_id_str}
 
         #{purpose_str}
 
-        #{generate_conversion_info doc_info}
+        #{generate_conversion_info d}
 
-        #{display_source_file(doc_info)}
+        #{display_source_file(d)}
 
-        #{generate_history_info doc_info}
+        #{generate_history_info d}
 
         ''''
 
@@ -283,7 +279,7 @@ module Giblish
         root.add_path(d.rel_path.to_s, d)
       end
 
-      details_str = String.new("== Document details\n\n")
+      details_str = "== Document details\n\n"
 
       root.traverse_top_down do |_level, node|
         details_str << if node.leaf?
@@ -322,43 +318,49 @@ module Giblish
         # a git repo root
         @git_repo = Git.open(git_repo_root)
         @git_repo_root = git_repo_root
-      rescue StandardError => e
-        Giblog.logger.error { "No git repo! exception: #{e.message}" }
+      rescue Exception => e
+        Giblog.logger.error {"No git repo! exception: #{e.message}"}
       end
     end
 
     protected
-
     # override basic version and use the relative path to the
     # git repo root instead
     def display_source_file(doc_info)
       # Use the path relative to the git repo root as display
-      src_file = Pathname
-                 .new(doc_info.src_file)
-                 .relative_path_from(@git_repo_root).to_s
+      src_file = Pathname.
+          new(doc_info.src_file).
+          relative_path_from(@git_repo_root).to_s
       <<~SRC_FILE_TXT
         Source file::
         #{src_file}
+
       SRC_FILE_TXT
     end
 
-    def source_root
-      @git_repo.current_branch
+
+    def generate_title_and_header
+      t = Time.now
+      <<~DOC_HEADER
+        = Document index
+        #{@git_repo.current_branch}
+
+        :icons:
+
+      DOC_HEADER
     end
 
-    def generate_history_info(doc_info)
-      str = String.new(
-        <<~HISTORY_HEADER
-          File history::
+    def generate_history_info(d)
+      str = <<~HISTORY_HEADER
+        File history::
 
-          [cols=\"2,3,8\",options=\"header\"]
-          |===
-          |Date |Author |Message
-        HISTORY_HEADER
-      )
+        [cols=\"2,3,8\",options=\"header\"]
+        |===
+        |Date |Author |Message
+      HISTORY_HEADER
 
       # Generate table rows of history information
-      doc_info.history.each do |h|
+      d.history.each do |h|
         str << <<~HISTORY_ROW
           |#{h.date.strftime('%Y-%m-%d')}
           |#{h.author}
@@ -429,9 +431,10 @@ module Giblish
       # get the branch-unique dst-dir
       str = <<~TAG_INFO
         == Tags
-
+        
         |===
-        |Tag |Tag comment |Creator |Tagged commit
+        |Tag |Tag comment |Creator |Tagged commit 
+
       TAG_INFO
 
       str << @tags.collect do |t|
@@ -440,8 +443,8 @@ module Giblish
 
         <<~A_ROW
           |link:#{dirname}/index.html[#{t.name}]
-          |#{t.annotated? ? t.message : '-'}
-          |#{t.annotated? ? t.tagger.name : '-'}
+          |#{t.annotated? ? t.message : "-"}
+          |#{t.annotated? ? t.tagger.name : "-"}
           |#{t.sha[0, 8]}... committed at #{c.author.date}
         A_ROW
       end.join("\n")
