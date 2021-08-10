@@ -1,6 +1,6 @@
-require "test_helper"
 require "logger"
 require_relative "../../lib/giblish/cmdline"
+require_relative "../test_helper"
 
 module Giblish
   class CmdLineTest < Minitest::Test
@@ -17,6 +17,16 @@ module Giblish
 
       assert_raises(OptionParser::MissingArgument) {
         CmdLine.new.parse(%w[-f pdf src])
+      }
+    end
+
+    def test_invalid_combos
+      assert_raises(OptionParser::InvalidArgument) {
+        CmdLine.new.parse(%w[--search-assets-deploy hejhopp src dst])
+      }
+
+      assert_raises(OptionParser::InvalidArgument) {
+        CmdLine.new.parse(%w[--make-searchable -f pdf src dst])
       }
     end
 

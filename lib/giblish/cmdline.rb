@@ -3,10 +3,12 @@ require "optparse"
 module Giblish
   # parse the cmd line
   class CmdLine
+    # Container class for all supported options that are
+    # accessible via the cmd line.
     class Options
       attr_accessor :format, :no_index, :index_basename, :include_regex, :exclude_regex,
         :resource_dir, :style_name, :web_path, :branch_regex, :tag_regex, :doc_attributes,
-        :resolve_docid, :log_level, :srcdir, :dstdir
+        :resolve_docid, :make_searchable, :search_assets_deploy, :log_level, :srcdir, :dstdir
 
       OUTPUT_FORMATS = ["html", "pdf"]
 
@@ -28,6 +30,8 @@ module Giblish
         @branch_regex, @tag_regex = nil, nil
         @doc_attributes = {}
         @resolve_docid = false
+        @make_searchable = false
+        @search_assets_deploy = nil
         @log_level = "info"
       end
 
@@ -142,9 +146,46 @@ module Giblish
           "generated documents") do |d|
           @resolve_docid = d
         end
+        parser.on("-m", "--make-searchable",
+          "(only supported for html generation)",
+          "take steps to make it possible to",
+          "search the published content via a cgi-script. This",
+          "flag will do the following:",
+          "  1. index all headings in all source files and store",
+          "     the result in a JSON file",
+          "  2. copy the JSON file and all source (adoc) files to",
+          "     a 'search_assets' folder in the top-level dir of",
+          "     the destination.",
+          "  3. add html code that displays a search field in the",
+          "     index page that will try to call the cgi-script",
+          "     'giblish-search' when the user inputs some text.",
+          "To actually provide search functionality for a user, you",
+          "need to provide the cgi-script and configure your web-server",
+          "to invoke it when needed. NOTE: The generated search box cgi",
+          "is currently hard-coded to look for the cgi script at the URL:",
+          "http://<your-web-domain>/cgi-bin/giblish-search.cgi",
+          "E.g.",
+          "http://example.com/cgi-bin/giblish-search.cgi",
+          "An implementation of the giblish-search cgi-script is found",
+          "within the lib folder of this gem, you can copy that to your",
+          "cgi-bin dir in your webserver and rename it from .rb to .cgi") do |m|
+          @make_searchable = m
+        end
+        parser.on("-mp","--search-assets-deploy PATH",
+          "the absolute path to the 'search_assets' folder where the search",
+          "script can find the data needed for implementing the text search",
+          "(default is <dst_dir_top>).",
+          "Set this to the file system path where the generated html",
+          "docs will be deployed (if different from dst_dir_top):",
+          "E.g.",
+          "If the generated html docs will be deployed to the folder",
+          "'/var/www/mysite/blah/mydocs,'",
+          "this is what you shall set the path to.") do |p|
+          @search_assets_deploy = Pathname.new(p)
+        end
         parser.on("--log-level LEVEL", LOG_LEVELS,
           "set the log level explicitly. Must be one of",
-          LOG_LEVELS.keys.join(",").to_s,"(default 'info')") do |level|
+          LOG_LEVELS.keys.join(",").to_s, "(default 'info')") do |level|
           @log_level = level
         end
         parser.on_tail("-h", "--help", "Show this message") do
@@ -158,10 +199,14 @@ module Giblish
       end
     end
 
+    # converts the given cmd line args to an Options instance.
+    #
+    # Raises MissingArgument or InvalidArgument if the cmd line arg 
+    # validation fails.
+    #
+    # === Returns
+    # the option instance corresponding to the given cmd line args
     def parse(args)
-      # The options specified on the command line will be collected in
-      # *options*.
-
       @cmdline = Options.new
       @args = OptionParser.new do |parser|
         @cmdline.define_options(parser)
@@ -172,8 +217,26 @@ module Giblish
 
         @cmdline.srcdir = Pathname.new(args[0])
         @cmdline.dstdir = Pathname.new(args[1])
+
+        validate_cmdline(@cmdline)
       end
       @cmdline
+    end
+
+    private
+
+    # Raise InvalidArgument if an unsupported cmd line combo is
+    # discovered
+    def validate_cmdline(cmdline)
+      if cmdline.make_searchable && cmdline.format != "html"
+        raise OptionParser::InvalidArgument, "Error: The --make-searchable option "\
+        "is only supported for html rendering."
+      end
+
+      if cmdline.search_assets_deploy && !cmdline.make_searchable
+        raise OptionParser::InvalidArgument, "Error: The --search-assets-deploy (-mp)"\
+        "flag is only supported in combination with the --make-searchable (-m) flag."
+      end
     end
   end
 end
