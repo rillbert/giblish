@@ -1,6 +1,6 @@
 require "test_helper"
 require "logger"
-require_relative "../../lib/giblish/goblish"
+require_relative "../../lib/giblish/cmdline"
 
 module Giblish
   class CmdLineTest < Minitest::Test
