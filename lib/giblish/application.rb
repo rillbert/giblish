@@ -5,10 +5,8 @@ require_relative "core"
 require_relative "pathutils"
 
 module Giblish
-  class NewApplication
-    def initialize(cmdline)
-    end
-
+  # The app class for the giblish application
+  class Application
     # return exit status (0 for success)
     def run(args)
       # force immediate output
@@ -21,10 +19,12 @@ module Giblish
       cmdline = CmdLine.new.parse(args)
       Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
 
-      exit_code = execute_conversion(cmdline)
-      Giblog.logger.info { "Giblish is done!" } if exit_code.zero?
-      exit_code
+      execute_conversion(cmdline)
+      Giblog.logger.info { "Giblish is done!" }
+      0
     end
+
+    private
 
     def execute_conversion(cmdline)
       # setup conversion options
@@ -42,6 +42,31 @@ module Giblish
       else
         convert_file_tree(cmdline)
       end
+    end
+
+    def get_api_opts(cmdline)
+      {
+        backend: cmdline.format,
+      }
+    end
+
+    def convert_file_tree(cmdline)
+      src_tree = tree_from_srcdir(cmdline)
+      puts src_tree
+
+      # get an instance of each index_builder the user asked for
+      index_builders = create_index_builder(cmdline)
+
+      # setup conversion opts
+      conversion_opts = {
+        adoc_api_opts: get_api_opts(cmdline),
+        adoc_doc_attribs: cmdline.doc_attributes
+      }
+      conversion_opts[:post_builders] = index_builders unless index_builders.nil?
+
+      # run the conversion of the tree
+      tc = TreeConverter.new(src_tree, cmdline.dstdir, conversion_opts)
+      tc.run
     end
 
     def convert_git_repo(cmdline, conv_options)
@@ -87,12 +112,10 @@ module Giblish
         }
 
         # run the conversion of the tree
-        tc = TreeConverter.new(st, branch_dst,conversion_opts)
+        tc = TreeConverter.new(st, branch_dst, conversion_opts)
         tc.run
       end
     end
-
-    private
 
     def convert_files(src, dst, conv_options, converter = nil)
       # setup a PathTree with all complying adoc files
@@ -108,33 +131,11 @@ module Giblish
       [converter.run, converter]
     end
 
-    def setup_index_options
-      # remove all src nodes and reset to a fresh builder
-      index_builder = IndexTreeBuilder.new(dst)
+    def create_index_builder(cmdline)
+      return nil if cmdline.no_index
 
-      conv_options[:post_builders] << index_builder
-      return unless cmdline.branch_regex || cmdline.tag_regex
-
-      # add index options for a git repo
-      conv_options.merge!(
-        {
-          conversion_cb: {
-            success: ->(src, dst, dst_rel_path, doc, logstr) do
-              # use the original implementation to get basic info
-              TreeConverter.on_success(src, dst, dst_rel_path, doc, logstr)
-
-              # Get the commit history of the doc
-              # (use a homegrown git log to get 'follow' flag)
-              gi = Giblish::GitItf.new(repo)
-              p = src.pathname.relative_path_from(repo)
-              gi.file_log(p.to_s).each do |i|
-                dst.data.history << DocInfo::DocHistory.new(i["date"], i["author"], i["message"])
-              end
-            end,
-            failure: ->(src, dst, dst_rel_path, ex, logstr) { TreeConverter.on_failure(src, dst, dst_rel_path, ex, logstr) }
-          }
-        }
-      )
+      # TODO: Implement factory depending on cmdline
+      IndexTreeBuilder.new(cmdline.dstdir)
     end
 
     def resolve_docid(conv_options)
@@ -154,73 +155,9 @@ module Giblish
       src_tree.traverse_preorder do |level, n|
         next unless n.leaf?
 
-        n.data = AdocSrcFromFile.new(n)
+        n.data = SrcFromFile.new(n)
       end
-      src_tree
-    end
-  end
-
-  # The 'main' class of giblish
-  class Application
-    # does not return, exits with status code
-    def run_from_cmd_line
-      status = run(ARGV)
-      exit(status)
-    end
-
-    # return exit status (0 for success)
-    def run(args)
-      # force immediate output
-      $stdout.sync = true
-
-      # setup logging
-      Giblog.setup
-
-      # Parse cmd line
-      cmdline = CmdLineParser.new args
-      Giblog.logger.debug { "cmd line args: #{cmdline.args}" }
-
-      exit_code = execute_conversion(cmdline)
-      Giblog.logger.info { "Giblish is done!" } if exit_code.zero?
-      exit_code
-    end
-
-    private
-
-    # Convert using given args
-    # return exit code (0 for success)
-    def execute_conversion(cmdline)
-      conv_ok = true
-      begin
-        conv_ok = converter_factory(cmdline).convert
-      rescue => e
-        log_error e
-        conv_ok = false
-      end
-      conv_ok ? 0 : 1
-    end
-
-    # return the converter corresponding to the given cmd line
-    # options
-    def converter_factory(cmdline)
-      if cmdline.args[:gitRepoRoot]
-        Giblog.logger.info { "User asked to parse a git repo" }
-        GitRepoConverter.new(cmdline.args)
-      else
-        FileTreeConverter.new(cmdline.args)
-      end
-    end
-
-    def log_error(exc)
-      Giblog.logger.error do
-        <<~ERR_MSG
-          Error: #{exc.message}
-          Backtrace:
-          \t#{exc.backtrace.join("\n\t")}
-
-          cmdline.usage
-        ERR_MSG
-      end
+      src_tree.node(cmdline.srcdir, from_root: true)
     end
   end
 end
