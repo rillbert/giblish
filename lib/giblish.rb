@@ -7,7 +7,9 @@ require_relative "giblish/cmdline"
 require_relative "giblish/pathtree"
 require_relative "giblish/application"
 
+
 module Giblish
+  # The main entry point to the giblish application
   class << self
     def application
       @application ||= Giblish::Application.new
