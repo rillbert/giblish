@@ -26,8 +26,9 @@ module Giblish
 
     # does not return, exits with status code
     def run_from_cmd_line
-      run(ARGV)
-      exit_code = 0
+      begin
+        run(ARGV)
+        exit_code = 0
       rescue => exc
         Giblog.logger.error { exc.message }
         exit_code = 1
@@ -57,7 +58,7 @@ module Giblish
 
     def get_api_opts(cmdline)
       {
-        backend: cmdline.format,
+        backend: cmdline.format
       }
     end
 
