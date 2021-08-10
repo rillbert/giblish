@@ -41,50 +41,59 @@ module Giblish
     #  adoc_doc_attribs
     #  conversion_cb {success: Proc(src,dst,adoc) fail: Proc(src,dst,exc)
     def initialize(src_top, dst_top, opts = {})
-      init_src_dst(src_top, dst_top)
+      @src_top = src_top
+      @dst_tree = PathTree.new(dst_top, {})
+      @dst_top = @dst_tree.node(dst_top, from_root: true)
       @pre_builders = Array(opts.fetch(:pre_builders, []))
       @post_builders = Array(opts.fetch(:post_builders, []))
       @logger = opts.fetch(:logger, Giblog.logger)
       @adoc_log_level = opts.fetch(:adoc_log_level, Logger::Severity::WARN)
-      @converter = DefaultConverter.new(@logger,opts)
+      @converter = DefaultConverter.new(@logger, opts)
     end
 
-    def init_src_dst(src_top, dst_top)
-      @src_top = src_top
-      @dst_tree = PathTree.new(dst_top, {})
-      @dst_top = @dst_tree.node(dst_top, from_root: true)
-      self
+    # abort_on_exc:: if true, an exception lower down the chain will
+    # abort the conversion and raised to the caller. If false, exceptions
+    # will be swallowed. In both cases, an 'error' log entry is created.
+    def run(abort_on_exc: true)
+      pre_build(abort_on_exc: abort_on_exc)
+
+      build(abort_on_exc: abort_on_exc)
+
+      post_build(abort_on_exc: abort_on_exc)
     end
 
-    def run
-      pre_build
-      build
-      post_build
-    end
-
-    def pre_build
+    def pre_build(abort_on_exc)
       @src_top.traverse_preorder do |level, n|
         @pre_builders.each { |pp| pp.run(n) }
+      rescue => ex
+        log.error { "#{n.pathname} - #{ex.message}" }
+        raise ex if abort_on_exc
       end
     end
 
-    def build
-      ok = true
+    def build(abort_on_exc: true)
       @src_top.traverse_preorder do |level, n|
         next unless n.leaf?
 
         # create the destination node, using the correct suffix depending on conversion backend
         rel_path = n.relative_path_from(@src_top)
-        dst_node = @dst_top.add_descendants(rel_path.sub_ext(''))
+        dst_node = @dst_top.add_descendants(rel_path.sub_ext(""))
 
         # perform the conversion
-        ok = @converter.convert(n, dst_node, @dst_top) && ok
+        @converter.convert(n, dst_node, @dst_top)
+      rescue => exc
+        log.error { "#{n.pathname} - #{exc.message}" }
+        raise exc if abort_on_exc
       end
-      ok
     end
 
-    def post_build
-      @post_builders.each { |pb| pb.run(@src_tree, @dst_tree, @converter)}
+    def post_build(abort_on_exc: true)
+      @post_builders.each do |pb|
+        pb.run(@src_tree, @dst_tree, @converter)
+      rescue => exc
+        log.error { "#{n.pathname} - #{exc.message}" }
+        raise exc if abort_on_exc
+      end
     end
 
     def self.on_success(src_node, dst_node, dst_top, doc, adoc_log_str)
@@ -141,7 +150,7 @@ module Giblish
     #  adoc_log_level
     #  adoc_api_opts
     #  adoc_doc_attribs
-    #  conversion_cb { 
+    #  conversion_cb {
     #     success: lambda(src, dst, dst_rel_path, doc, logstr)
     #     fail: lambda(src,dst,exc)
     #  }
