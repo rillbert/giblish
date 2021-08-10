@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "find"
 require "fileutils"
 require "logger"

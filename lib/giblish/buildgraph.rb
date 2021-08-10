@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Giblish
   # Builds an asciidoc page with an svg image with a
   # digraph showing how documents reference each other.

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # This class can convert the following paths:
 # basedir/file_1
 # basedir/file_2
