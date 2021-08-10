@@ -110,7 +110,7 @@ module Giblish
     end
 
     def history_info(doc_info)
-      return "" unless doc_info.history
+      return "" unless defined?(doc_info.history) && !doc_info.history.empty?
 
       str = +HISTORY_TABLE_HEADING
 
@@ -154,9 +154,9 @@ module Giblish
 
         #{display_source_file(doc_info)}
 
-        #{history_info doc_info}
+        #{history_info(doc_info)}
 
-        ''''
+        '''
 
       DETAIL_SRC
     end
@@ -195,6 +195,7 @@ module Giblish
         # add a virtual 'index.adoc' node with this object as source for conversion options
         # and adoc_source
         @adoc_source = IndexSrcFromTree.new(dst_node).adoc_source
+
         i_node = dst_node.add_descendants("index.adoc", self)
 
         # setup any additional doc attributes
