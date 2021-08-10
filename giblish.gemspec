@@ -38,6 +38,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 11.0"
   spec.add_development_dependency "oga", "~> 2.15"
   spec.add_development_dependency 'thor', '~> 0.20.3'
+  spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.10"
