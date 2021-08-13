@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require_relative "cmdline"
 require_relative "core"
 require_relative "utils"

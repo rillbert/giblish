@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Giblish
-  VERSION = "0.7.6"
+  VERSION = "0.8.0".freeze
 end
