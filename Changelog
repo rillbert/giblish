@@ -1,5 +1,10 @@
 = giblish changelog
 
+== v0.8.0
+
+ * *Breaking change* require ruby 2.7
+ * update asciidoctor tool deps to latest versions
+
 == v0.7.0
 
  * *Breaking change* include the entire path in the -i and -j options

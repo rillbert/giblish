@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Giblish
   # Builds an asciidoc page with an svg image with a
   # digraph showing how documents reference each other.
@@ -47,9 +45,6 @@ module Giblish
         #{generate_deps}
         #{generate_footer}
       DOC_STR
-      puts ""
-      puts s
-      puts ""
       s
     end
 
