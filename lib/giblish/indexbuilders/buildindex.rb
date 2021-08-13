@@ -171,12 +171,12 @@ module Giblish
       @api_opt_provider = api_opt_provider
     end
 
-    def document_attributes
-      @da_provider.nil? ? {} : @da_provider.document_attributes
+    def document_attributes(src_node, dst_node, dst_top)
+      @da_provider.nil? ? {} : @da_provider.document_attributes(src_node, dst_node, dst_top)
     end
 
-    def api_options
-      @api_opt_provider.nil? ? {} : @api_opt_provider.api_options
+    def api_options(src_node, dst_node, dst_top)
+      @api_opt_provider.nil? ? {} : @api_opt_provider.api_options(dst_top)
     end
 
     # 1. Build a virtual source tree where each node is a dir

@@ -25,7 +25,7 @@ module Giblish
         @no_index, @index_basename = false, "index"
         @include_regex, @exclude_regex = /.*\.(?i)adoc$/, nil
         @resource_dir = Pathname.getwd
-        @style_name = "giblish"
+        @style_name = nil
         @web_path = nil
         @branch_regex, @tag_regex = nil, nil
         @doc_attributes = {}
@@ -73,7 +73,7 @@ module Giblish
           "associated with the output format (i.e specify 'mystyle'",
           "and the mystyle.css and mystyle.yml will be used for html",
           "and pdf generation respectively)",
-          "(default: #{@style_name})") do |style_name|
+          "(default: nil -> use default style") do |style_name|
           @style_name = style_name.to_s
         end
         parser.on("-i", "--include [REGEX]",

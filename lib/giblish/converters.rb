@@ -1,27 +1,24 @@
 module Giblish
-
   class DocAttributesBase
     def update_info(src_tree, dst_node, converter)
     end
 
-    def document_attributes
+    def document_attributes(src_node, dst_node, dst)
       raise NotImplementedError
     end
   end
-  class RelativeCss < DocAttributesBase
+
+  class RelativeCssDocAttr < DocAttributesBase
     def initialize(css_path)
-      @css_path = css_path
+      @css_path = Pathname.new(css_path)
       @rel_path = nil
     end
 
-    def update_info(src_tree, dst_node, converter)
-      @rel_path = @css_path.relative_path_from(dst_node.pathname)
-    end
-
-    def document_attributes
+    def document_attributes(src_node, dst_node, dst_top)
+      rel_path = @css_path.relative_path_from(dst_node.pathname)
       {
-        "stylesdir" => @rel_path.dirname.to_s,
-        "stylesheet" => @rel_path.basename.to_s,
+        "stylesdir" => rel_path.dirname.to_s,
+        "stylesheet" => rel_path.basename.to_s,
         "linkcss" => true,
         "copycss" => nil
       }
@@ -29,16 +26,12 @@ module Giblish
   end
 
   class PdfCustomStyle < DocAttributesBase
-
     def initialize(pdf_style_path, pdf_fontsdir = nil)
       @pdf_style_path = pdf_style_path
       @pdf_fontsdir = pdf_fontsdir
     end
 
-    # def update_info(src_tree, dst_node, converter)
-    # end
-
-    def document_attributes
+    def document_attributes(src_node, dst_node, dst_top)
       result = {
         "pdf-style" => @pdf_style_path.basename.to_s,
         "pdf-stylesdir" => @pdf_style_path.dirname.to_s,
@@ -47,90 +40,52 @@ module Giblish
       result["pdf-fontsdir"] = @pdf_fontsdir.to_s unless @pdf_fontsdir.nil?
       result
     end
-
-    # def api_options
-    #   {
-    #     backend: "pdf"
-    #   }
-    # end
   end
 
-
-
-  module LinkedCssAttribs
-    attr_accessor :css_path
-    def document_attributes
-      p = @css_path.relative_path_from(@node)
-      {
-        "stylesdir" => @css_path.dirname.to_s,
-        "stylesheet" => @css_path.basename.to_s,
-        "linkcss" => true,
-        "copycss" => nil
-      }
+  class AdocSrcBase
+    def adoc_source(src_node, dst_node, dst_top)
+      raise NotImplementedError
     end
-
-    def api_options
-      {
-        backend: "html5"
-      }
+  end
+  class SrcFromFile < AdocSrcBase
+    def adoc_source(src_node, dst_node, dst_top)
+      File.read(src_node.pathname)
     end
   end
 
-  module DefaultCssStyleAttribs
-    def document_attributes
-      {
-        "linkcss" => false,
-        "copycss" => true
-      }
-    end
-
-    def api_options
-      {
-        backend: "html5"
-      }
-    end
-  end
-
-  class SrcFromFile
-    def initialize(tree_node)
-      @node = tree_node
-    end
-
-    def adoc_source
-      File.read(@node.pathname)
-    end
-  end
-
-  class SrcFromString
-    attr_accessor :adoc_source
+  class SrcFromString < AdocSrcBase
     def initialize(src_str)
       @adoc_source = src_str
     end
-  end
 
-  class HtmlLinkedCssFileSrc < SrcFromFile
-    include LinkedCssAttribs
-
-    def initialize(src_node, rel_css_path)
-      super(src_node)
-      @css_path = rel_css_path.cleanpath
+    def adoc_source(src_node, dst_node, dst_top)
+      @adoc_source
     end
   end
 
-  class HtmlLinkedCssStringSrc < SrcFromString
-    include LinkedCssAttribs
-
-    def initialize(src_str, rel_css_path)
-      super(src_str)
-      @css_path = rel_css_path.cleanpath
+  class DataDelegator
+    def initialize(*delegate_arr)
+      @delegates = Array(delegate_arr)
     end
-  end
 
-  class HtmlDefaultStyleStringSrc < SrcFromString
-    include DefaultCssStyleAttribs
+    def method_missing(m, *args, &block)
+      d = @delegates.find do |d|
+        d.respond_to?(m) 
+      end
 
-    def initialize(src_str)
-      super(src_str)
+      if d.nil?
+        super
+      else
+        d.send(m, *args, &block) unless d.nil?
+      end
+    end
+
+    def respond_to_missing?(method_name, include_private = false)
+      ok = @delegates.find {
+        |d| d.respond_to?(method_name)
+      }
+
+      ok || super(method_name, include_private)
     end
   end
 end

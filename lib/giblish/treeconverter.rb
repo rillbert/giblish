@@ -66,7 +66,7 @@ module Giblish
       @src_top.traverse_preorder do |level, n|
         @pre_builders.each { |pp| pp.run(n) }
       rescue => ex
-        log.error { "#{n.pathname} - #{ex.message}" }
+        @logger&.error { "#{n.pathname} - #{ex.message}" }
         raise ex if abort_on_exc
       end
     end
@@ -82,7 +82,7 @@ module Giblish
         # perform the conversion
         @converter.convert(n, dst_node, @dst_top)
       rescue => exc
-        log.error { "#{n.pathname} - #{exc.message}" }
+        @logger&.error { "#{n.pathname} - #{exc.message}" }
         raise exc if abort_on_exc
       end
     end
@@ -91,7 +91,7 @@ module Giblish
       @post_builders.each do |pb|
         pb.run(@src_tree, @dst_tree, @converter)
       rescue => exc
-        log.error { "#{n.pathname} - #{exc.message}" }
+        @logger&.error { "#{n.pathname} - #{exc.message}" }
         raise exc if abort_on_exc
       end
     end
@@ -187,8 +187,8 @@ module Giblish
 
       # merge the common api opts with node specific
       api_opts = @adoc_api_opts.dup
-      api_opts.merge!(src_node.api_options) if src_node.respond_to?(:api_options)
-      api_opts[:attributes].merge!(src_node.document_attributes) if src_node.respond_to?(:document_attributes)
+      api_opts.merge!(src_node.api_options(src_node, dst_node, dst_top)) if src_node.respond_to?(:api_options)
+      api_opts[:attributes].merge!(src_node.document_attributes(src_node, dst_node, dst_top)) if src_node.respond_to?(:document_attributes)
 
       # use a new logger instance for each conversion
       adoc_logger = Giblish::AsciidoctorLogger.new(@adoc_log_level)
@@ -199,7 +199,7 @@ module Giblish
         # NOTE: the 'parse: false' is needed to prevent preprocessor extensions to be run as part
         # of loading the document. We want them to run during the 'convert' call later when
         # doc attribs have been amended.
-        doc = Asciidoctor.load(src_node.adoc_source, api_opts.merge(
+        doc = Asciidoctor.load(src_node.adoc_source(src_node, dst_node, dst_top), api_opts.merge(
           {
             parse: false,
             logger: adoc_logger
