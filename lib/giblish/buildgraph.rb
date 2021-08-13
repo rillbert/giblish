@@ -45,9 +45,6 @@ module Giblish
         #{generate_deps}
         #{generate_footer}
       DOC_STR
-      puts ""
-      puts s
-      puts ""
       s
     end
 
