@@ -91,7 +91,7 @@ module Giblish
       @post_builders.each do |pb|
         pb.run(@src_tree, @dst_tree, @converter)
       rescue => exc
-        @logger&.error { "#{n.pathname} - #{exc.message}" }
+        @logger&.error { "#{exc.message}" }
         raise exc if abort_on_exc
       end
     end

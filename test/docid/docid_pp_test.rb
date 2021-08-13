@@ -24,7 +24,7 @@ module Giblish
       src_tree.traverse_preorder do |level, n|
         next unless n.leaf?
 
-        n.data = AdocSrcFromFile.new(n)
+        n.data = SrcFromFile.new
       end
       src_tree
     end
@@ -54,7 +54,7 @@ module Giblish
 
         # run the tree converter prebuild step that will populate
         # the docid cache
-        tc.pre_build
+        tc.pre_build(false)
 
         assert_equal(3, d_pp.cache.keys.count)
         ["D-001", "D-002", "D-004"].each { |id| assert(d_pp.cache.key?(id)) }
@@ -87,7 +87,7 @@ module Giblish
 
         # run the tree converter prebuild step that will populate
         # the docid cache
-        tc.pre_build
+        tc.pre_build(false)
 
         # assert that all the docs' docids have been cached
         assert_equal(3, d_pp.cache.keys.count)

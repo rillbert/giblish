@@ -165,7 +165,7 @@ module Giblish
       src_tree.traverse_preorder do |level, n|
         next unless n.leaf?
 
-        n.data = SrcFromFile.new(n)
+        n.data = SrcFromFile.new
       end
       src_tree.node(cmdline.srcdir, from_root: true)
     end

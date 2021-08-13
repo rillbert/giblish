@@ -1,8 +1,7 @@
-require "test_helper"
-require_relative "../lib/giblish/utils"
-require_relative "../lib/giblish/docid"
+require_relative "../test_helper"
+require_relative "../../lib/giblish/application"
 
-class DocidCollectorTest < Minitest::Test
+class ResolveDocidTest < Minitest::Test
   include Giblish::TestUtils
 
   def setup
@@ -19,10 +18,9 @@ class DocidCollectorTest < Minitest::Test
         "-d",
         tmp_docs.src_data_top.join("wellformed/docidtest"),
         dst_top.to_s]
-      status = Giblish.application.run args
 
-      # assert expected
-      assert_equal 0, status
+        assert(Giblish.application.run args)
+
     end
   end
 
@@ -36,8 +34,7 @@ class DocidCollectorTest < Minitest::Test
         tmp_docs.src_data_top.join("wellformed/docidtest"),
         dst_top]
 
-      status = Giblish.application.run args
-      assert_equal 0, status
+      assert(Giblish.application.run args)
     end
   end
 end

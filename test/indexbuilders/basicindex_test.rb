@@ -24,7 +24,7 @@ module Giblish
       src_tree.traverse_preorder do |level, n|
         next unless n.leaf?
 
-        n.data = AdocSrcFromFile.new(n)
+        n.data = SrcFromFile.new
       end
       src_tree
     end
@@ -110,7 +110,8 @@ module Giblish
             assert_equal "stylesheet", csslink.get("rel")
 
             # get the expected relative path from the top dst dir
-            rp = it.pathname.relative_path_from(n.pathname.dirname) / css_path
+            rp = it.pathname.relative_path_from(n.pathname) / css_path
+
             # rp = Pathname.new(css_path).relative_path_from(
             #   (stem.basename + crown)
             # )

@@ -18,7 +18,7 @@ module Giblish
       src_tree.traverse_preorder do |level, n|
         next unless n.leaf?
 
-        n.data = AdocSrcFromFile.new(n)
+        n.data = SrcFromFile.new
       end
       src_tree
     end
@@ -59,9 +59,9 @@ module Giblish
         p = Pathname.new(tmp_docs.dir)
 
         # setup a 'virtual' PathTree using strings as content for the nodes
-        root = PathTree.new(p / "src/metafile_1", AdocFromString.new(CreateAdocDocSrc.new))
-        root.add_path(p / "src/metafile_2", AdocFromString.new(CreateAdocDocSrc.new))
-        root.add_path(p / "src/subdir/metafile_3", AdocFromString.new(CreateAdocDocSrc.new))
+        root = PathTree.new(p / "src/metafile_1", SrcFromString.new(CreateAdocDocSrc.new.source))
+        root.add_path(p / "src/metafile_2", SrcFromString.new(CreateAdocDocSrc.new.source))
+        root.add_path(p / "src/subdir/metafile_3", SrcFromString.new(CreateAdocDocSrc.new.source))
 
         st = root.node(p / "src", from_root: true)
 

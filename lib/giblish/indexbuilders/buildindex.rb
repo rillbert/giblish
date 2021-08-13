@@ -163,8 +163,6 @@ module Giblish
   end
 
   class IndexTreeBuilder
-    attr_reader :adoc_source
-
     def initialize(dst_top_path, da_provider = nil, api_opt_provider = nil)
       @dst_top_path = dst_top_path
       @da_provider = da_provider
@@ -173,6 +171,10 @@ module Giblish
 
     def document_attributes(src_node, dst_node, dst_top)
       @da_provider.nil? ? {} : @da_provider.document_attributes(src_node, dst_node, dst_top)
+    end
+
+    def adoc_source(src_node, dst_node, dst_top)
+      return @adoc_source
     end
 
     def api_options(src_node, dst_node, dst_top)

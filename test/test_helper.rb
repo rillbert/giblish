@@ -110,27 +110,6 @@ module Giblish
       end
     end
 
-    # helper class that gets the adoc source from the given file
-    class AdocSrcFromFile
-      def initialize(tree_node)
-        @node = tree_node
-      end
-
-      def adoc_source
-        File.read(@node.pathname)
-      end
-    end
-
-    # helper class that gets the adoc source from the string given
-    # at instantiation.
-    class AdocFromString
-      attr_reader :adoc_source
-
-      def initialize(adoc_source)
-        @adoc_source = adoc_source.to_s
-      end
-    end
-
     # Creates a string with adoc source, either a default string
     # or according to the user's wishes.
     class CreateAdocDocSrc
