@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
                        EOF
   spec.homepage      = "https://github.com/rillbert/giblish"
   spec.license       = "MIT"
-  spec.required_ruby_version = ">= 2.3"
+  spec.required_ruby_version = ">= 2.7"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
   # delete this section to allow pushing this gem to any host.
@@ -41,10 +41,10 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
-  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.10"
-  spec.add_runtime_dependency "asciidoctor-diagram", ["~> 1.5"]
-  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.5", ">= 1.5.3"]
-  spec.add_runtime_dependency "git", "~> 1.7"
-  spec.add_runtime_dependency "rouge", "~> 3.24"
-  spec.add_runtime_dependency "prawn-svg", "~> 0.30.0"
+  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.16"
+  spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.1"]
+  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.6", ">= 1.6.0"]
+  spec.add_runtime_dependency "git", "~> 1.9"
+  spec.add_runtime_dependency "rouge", "~> 3.0"
+  spec.add_runtime_dependency "prawn-svg", "~> 0.32.0"
 end
