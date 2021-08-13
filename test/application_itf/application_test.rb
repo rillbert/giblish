@@ -3,7 +3,7 @@ require_relative "../../lib/giblish"
 
 module Giblish
   # tests the basic functionality of the Application class
-  class AttributesTest < Minitest::Test
+  class ApplicationTest < Minitest::Test
     include Giblish::TestUtils
 
     ADOC_STR = <<~HELLO_WORLD
@@ -19,6 +19,16 @@ module Giblish
       Giblog.setup
     end
 
+    def test_get_help_and_version_msg
+      g = `lib/giblish.rb -h`
+      assert_equal 0, $?.exitstatus
+      assert_match(/^Usage/, g)
+  
+      g = `lib/giblish.rb -v`
+      assert_equal 0, $?.exitstatus
+      assert_match(/^Giblish v/, g)
+    end
+    
     def test_hello_world
       TmpDocDir.open(preserve: true) do |tmp_docs|
         # run the most basic conversion

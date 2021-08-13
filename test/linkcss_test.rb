@@ -121,7 +121,7 @@ class LinkCSSTest < Minitest::Test
 
       # act on the input data
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "src/subdir")
-      args = ["--log-level", "info",
+      args = ["--log-level", "info", 
         "-r", r_dir,
         "#{tmp_docs.dir}/src",
         "#{tmp_docs.dir}/dst"]
