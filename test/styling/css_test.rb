@@ -12,14 +12,19 @@ module Giblish
       Giblog.setup
     end
 
+    def test_option_setup
+      d = DataDelegator.new(RelativeCssDocAttr.new("hej"))
+      assert(d.respond_to?(:document_attributes))
+    end
+
     def test_embedded_default_styling
       TmpDocDir.open(preserve: true) do |tmp_docs|
         p = Pathname.new(tmp_docs.dir)
 
         # setup a 'virtual' PathTree using strings as content for the nodes
-        root = PathTree.new("src/metafile_1", HtmlDefaultStyleStringSrc.new(CreateAdocDocSrc.new.source))
-        root.add_path("src/metafile_2", HtmlDefaultStyleStringSrc.new(CreateAdocDocSrc.new.source))
-        root.add_path("src/subdir/metafile_3", HtmlDefaultStyleStringSrc.new(CreateAdocDocSrc.new.source))
+        root = PathTree.new("src/metafile_1", SrcFromString.new(CreateAdocDocSrc.new.source))
+        root.add_path("src/metafile_2", SrcFromString.new(CreateAdocDocSrc.new.source))
+        root.add_path("src/subdir/metafile_3", SrcFromString.new(CreateAdocDocSrc.new.source))
 
         tc = TreeConverter.new(root, p / "dst")
         tc.run
@@ -30,7 +35,7 @@ module Giblish
           css_links = document.xpath("html/head/link")
           assert_equal 1, css_links.count
 
-          # assert the href correspond to the one that exists in the default 
+          # assert the href correspond to the one that exists in the default
           # asciidoctor stylesheet
           css_links.each do |csslink|
             assert_equal "stylesheet", csslink.get("rel")
@@ -45,16 +50,17 @@ module Giblish
       TmpDocDir.open do |tmp_docs|
         p = Pathname.new(tmp_docs.dir)
 
-        # setup a 'virtual' PathTree using strings as content for the nodes
-        root = PathTree.new("src/metafile_1", HtmlLinkedCssStringSrc.new(
-          CreateAdocDocSrc.new.source, Pathname.new("../web_assets/css/giblish.css")
-        ))
-        root.add_path("src/metafile_2", HtmlLinkedCssStringSrc.new(
-          CreateAdocDocSrc.new.source, Pathname.new("../web_assets/css/giblish.css")
-        ))
-        root.add_path("src/subdir/metafile_3", HtmlLinkedCssStringSrc.new(
-          CreateAdocDocSrc.new.source, Pathname.new("../../web_assets/css/giblish.css")
-        ))
+        # setup a 'virtual' PathTree using strings as content and
+        # linked css as styling
+        css_path = "dst/web_assets/hejsan/hopp.css"
+        data_delegator = DataDelegator.new(
+          RelativeCssDocAttr.new(p / css_path),
+          SrcFromString.new(CreateAdocDocSrc.new.source)
+        )
+
+        root = PathTree.new("src/metafile_1", data_delegator)
+        root.add_path("src/metafile_2", data_delegator)
+        root.add_path("src/subdir/metafile_3", data_delegator)
 
         tc = TreeConverter.new(root, p / "dst")
         tc.run
@@ -67,7 +73,7 @@ module Giblish
 
           # get the expected relative path from the top dst dir
           stem, crown = n.split_stem
-          rp = Pathname.new("dst/web_assets/css/giblish.css").relative_path_from(
+          rp = Pathname.new(css_path).relative_path_from(
             (stem.basename + crown)
           )
 

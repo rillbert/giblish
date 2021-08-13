@@ -131,7 +131,7 @@ module Giblish
           css_path = "web_assets/hejsan/hopp.css"
           index_builder = IndexTreeBuilder.new(
             branch_dst,
-            RelativeCss.new(dst_root / css_path)
+            RelativeCssDocAttr.new(dst_root / css_path)
           )
 
           git_itf = Giblish::GitItf.new(repo)

@@ -80,7 +80,7 @@ module Giblish
         css_path = "web_assets/hejsan/hopp.css"
         index_builder = IndexTreeBuilder.new(
           p / "dst",
-          RelativeCss.new(p / "dst" / css_path)
+          RelativeCssDocAttr.new(p / "dst" / css_path)
         )
 
         # Convert all adoc files in the src tree to html and use the
