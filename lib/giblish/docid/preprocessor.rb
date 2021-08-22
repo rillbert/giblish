@@ -20,11 +20,12 @@ module Giblish
         @cache = {}
       end
 
-      # find a :docid: entry in the document header and cache it
-      def run(tree_node)
-        return unless tree_node.leaf?
+      def run(src_tree, dst_tree, converter)
+        src_tree.traverse_preorder do |level, src_node|
+          next unless src_node.leaf?
 
-        parse_node(tree_node)
+          parse_node(src_node)
+        end
       end
 
       private

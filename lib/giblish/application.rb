@@ -4,6 +4,95 @@ require_relative "converters"
 require_relative "treeconverter"
 
 module Giblish
+  class Configurator
+    attr_reader :tree_converter
+
+    # cmd_opts:: a Cmdline::Option instance with user options
+    # src_tree:: a Pathtree with the adoc files to convert as leaf nodes
+    def initialize(cmd_opts, src_tree)
+      pre_builders = []
+      post_builders = []
+      adoc_extensions = {
+        preprocessor: []
+      }
+      api_options = {}
+
+      # always resolve docid
+      d = DocIdExtension::DocIdCacheBuilder.new
+      pre_builders << d
+      adoc_extensions[:preprocessor] << DocIdExtension::DocidResolver.new({docid_cache: d})
+
+      # always generate index
+      idx = IndexTreeBuilder.new
+      post_builders << idx
+
+      doc_attr = nil
+      @use_case = case cmd_opts
+        in format: "html", resource_dir:
+        # copy local resources to dst and link the generated html with
+        # the given css
+        api_options[:backend] = "html"
+
+        c = CopyResourcesPreBuild.new(cmd_opts)
+        pre_builders << c
+
+        # make sure generated html has relative link to the copied css
+        p = FindStylePaths.new(cmd_opts)
+        doc_attr = RelativeCssDocAttr.new(p.web_dst_css_path)
+
+        # use same styling for indices
+        idx.da_provider = doc_attr
+
+        in format: "html", web_path:
+        # do not copy any local resources, use the given web path to link to css
+        api_options[:backend] = "html"
+
+        doc_attr = AbsoluteCssDocAttr.new(cmd_opts.web_path)
+
+        in format: "html"
+        # embed the default asciidoc stylesheet - do nothing
+        api_options[:backend] = "html"
+
+        in format: "pdf", resource_dir:
+        # generate pdf using asciidoctor-pdf with custom styling
+        api_options[:backend] = "pdf"
+
+        # make sure generated html has relative link to the copied css
+        dir_finder = FindFontDirs.new(cmd_opts)
+        p = FindStylePaths.new(cmd_opts)
+        doc_attr = PdfCustomStyle.new(p.src_style_path, dir_finder.font_dirs)
+
+        # use same styling for indices
+        idx.da_provider = doc_attr
+
+        in format: "pdf"
+        # generate pdf using asciidoctor-pdf with default styling
+        api_options[:backend] = "pdf"
+      else
+        raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{cmd_opts.inspect}"
+      end
+
+      # compose the attribute provider and associate it with all source
+      # nodes
+      provider = DataDelegator.new(SrcFromFile.new, doc_attr)
+      src_tree.traverse_preorder do |level, node|
+        next unless node.leaf?
+
+        node.data = provider
+      end
+
+      @tree_converter = TreeConverter.new(
+        src_tree,
+        cmd_opts.dstdir,
+        {
+          pre_builders: pre_builders,
+          post_builders: post_builders,
+          adoc_api_opts: api_options
+        }
+      )
+    end
+  end
+
   # The app class for the giblish application
   class Application
     # returns on success, raises otherwise
@@ -60,17 +149,59 @@ module Giblish
       }
     end
 
+    def get_doc_attribs(cmdline)
+      if cmdline.web_path
+        style_path = cmdline.web_path
+
+      end
+
+      # return the correct document_attribute provider instance
+      # depending on format
+      if cmdline.resource_dir && cmdline.style_name
+        format_config = {"html" => ["css", ".css"], "pdf" => ["pdftheme", ".yml"]}
+        config = format_config[cmdline.format]
+        style_path = cmdline.resource_dir / config[0] / Pathname.new(cmdline.style_name).sub_ext(config[1])
+        raise ArgumentError, "Could not find requested style info at #{style_path}" unless style_path.exist?
+
+        case cmdline.format
+        when "html"
+          style_path = (cmdline.dstdir / "web_assets/css" / cmdline.style_name).sub_ext(".css")
+          RelativeCssDocAttr.new(style_path)
+        when "pdf"
+          PdfCustomStyle.new(style_path, cmdline.resource_dir / "fonts")
+        when "epub"
+          raise NotYetImplemented
+        end
+      end
+    end
+
     def convert_file_tree(cmdline)
-      src_tree = tree_from_srcdir(cmdline)
-      puts src_tree
+      # create the pathtree with the files corresponding to the user filter
+      src_tree = PathTree.build_from_fs(cmdline.srcdir, prune: false) do |pt|
+        !pt.directory? && cmdline.include_regex =~ pt.to_s
+      end
+      src_tree = src_tree.node(cmdline.srcdir, from_root: true)
+
+      # add a data provider to each document node
+      data_proxy = DataDelegator.new(
+        SrcFromFile.new,
+        get_doc_attribs(cmdline)
+      )
+      src_tree.traverse_preorder do |level, n|
+        next unless n.leaf?
+
+        n.data = data_proxy
+      end
+
+      Giblog.logger.debug src_tree.to_s
 
       # get an instance of each index_builder the user asked for
       index_builders = create_index_builder(cmdline)
 
       # setup conversion opts
       conversion_opts = {
-        adoc_api_opts: get_api_opts(cmdline),
-        adoc_doc_attribs: cmdline.doc_attributes
+        adoc_api_opts: get_api_opts(cmdline)
+        # adoc_doc_attribs: cmdline.doc_attributes
       }
       conversion_opts[:post_builders] = index_builders unless index_builders.nil?
 
@@ -156,18 +287,6 @@ module Giblish
     end
 
     def tree_from_srcdir(cmdline)
-      # create the pathtree with the files corresponding to the user filter
-      src_tree = PathTree.build_from_fs(cmdline.srcdir, prune: false) do |pt|
-        !pt.directory? && cmdline.include_regex =~ pt.to_s
-      end
-
-      # add a file reading obj to each file
-      src_tree.traverse_preorder do |level, n|
-        next unless n.leaf?
-
-        n.data = SrcFromFile.new
-      end
-      src_tree.node(cmdline.srcdir, from_root: true)
     end
   end
 end

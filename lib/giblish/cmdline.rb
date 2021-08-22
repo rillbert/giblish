@@ -22,9 +22,10 @@ module Giblish
 
       def initialize
         @format = OUTPUT_FORMATS[0]
+        @publish_type = :local
         @no_index, @index_basename = false, "index"
         @include_regex, @exclude_regex = /.*\.(?i)adoc$/, nil
-        @resource_dir = Pathname.getwd
+        @resource_dir = nil
         @style_name = nil
         @web_path = nil
         @branch_regex, @tag_regex = nil, nil
@@ -61,8 +62,9 @@ module Giblish
           "The resources are expected to be located in a subfolder",
           "whose name matches the resource type (font, theme",
           "or css). If no resource dir is specified, the asciidoctor",
-          "defaults are used. (default: #{@resource_dir})") do |resource_dir|
-          @resource_dir = Pathname.new(resource_dir)
+          "defaults are used. (default: nil)") do |resource_dir|
+            r = Pathname.new(resource_dir)
+            @resource_dir = (r.absolute? ? r : (Pathname.new(Dir.pwd) / r)).cleanpath
         end
         parser.on("-s", "--style [NAME]",
           "The style information used when converting the documents",
@@ -98,7 +100,7 @@ module Giblish
           "E.g.",
           "If the docs are deployed to 'www.example.com/site_1/blah',",
           "this flag shall be set to '/site_1/blah'. This switch is only",
-          "used when generating html. giblish use this to link the deployed",
+          "used when generating html. giblish uses this to link the deployed",
           "html docs with the correct stylesheet.") do |path|
           @web_path = Pathname.new(path)
         end
@@ -197,6 +199,17 @@ module Giblish
           exit 0
         end
       end
+
+      # enable pattern matching of instances as if they were
+      # a hash
+      def deconstruct_keys(keys)
+        h = {}
+        instance_variables.each do |v| 
+          value = instance_variable_get(v)
+          h[v[1..].to_sym] = value unless value.nil?
+        end
+        h    
+      end
     end
 
     # converts the given cmd line args to an Options instance.
@@ -207,37 +220,49 @@ module Giblish
     # === Returns
     # the option instance corresponding to the given cmd line args
     def parse(args)
-      @cmdline = Options.new
+      @cmd_opts = Options.new
       @args = OptionParser.new do |parser|
-        @cmdline.define_options(parser)
+        @cmd_opts.define_options(parser)
         parser.parse!(args)
 
         # take care of positional arguments
         raise OptionParser::MissingArgument, "Both srcdir and dstdir must be provided!" unless args.count == 2
 
         # we always work with absolute paths
-        @cmdline.srcdir, @cmdline.dstdir = [args[0], args[1]].collect do |a|
-          s = Pathname.new(a)
-          s = Pathname.new(Dir.pwd) / s unless s.absolute?
-          s.cleanpath
+        @cmd_opts.srcdir, @cmd_opts.dstdir = [args[0], args[1]].collect do |arg|
+          d = Pathname.new(arg)
+          d = Pathname.new(Dir.pwd) / d unless d.absolute?
+          d.cleanpath
         end
 
-        validate_cmdline(@cmdline)
+        validate_options(@cmd_opts)
       end
-      @cmdline
+      @cmd_opts
     end
 
     private
 
     # Raise InvalidArgument if an unsupported cmd line combo is
     # discovered
-    def validate_cmdline(cmdline)
-      if cmdline.make_searchable && cmdline.format != "html"
+    def validate_options(opts)
+
+      raise OptionParser::InvalidArgument, "Could not find source path #{opts.srcdir}" unless opts.srcdir.exist?
+
+      if opts.resource_dir && !opts.resource_dir.exist?
+        raise OptionParser::InvalidArgument, "Could not find resource path #{opts.resource_dir}"
+      end
+
+      if opts.resource_dir && !opts.style_name
+        raise OptionParser::InvalidArgument, "Error: A style name must be "\
+        "specified if a resource dir has been specified."
+      end
+
+      if opts.make_searchable && opts.format != "html"
         raise OptionParser::InvalidArgument, "Error: The --make-searchable option "\
         "is only supported for html rendering."
       end
 
-      if cmdline.search_assets_deploy && !cmdline.make_searchable
+      if opts.search_assets_deploy && !opts.make_searchable
         raise OptionParser::InvalidArgument, "Error: The --search-assets-deploy (-mp)"\
         "flag is only supported in combination with the --make-searchable (-m) flag."
       end

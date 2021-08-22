@@ -1,10 +1,21 @@
 module Giblish
   class DocAttributesBase
-    def update_info(src_tree, dst_node, converter)
-    end
-
     def document_attributes(src_node, dst_node, dst)
       raise NotImplementedError
+    end
+  end
+
+  class AbsoluteCssDocAttr < DocAttributesBase
+    def initialize(css_path)
+      @css_path = Pathname.new(css_path)
+    end
+    def document_attributes(src_node, dst_node, dst_top)
+      {
+        "stylesdir" => @css_path.dirname.to_s,
+        "stylesheet" => @css_path.basename.to_s,
+        "linkcss" => true,
+        "copycss" => nil
+      }
     end
   end
 
@@ -15,7 +26,7 @@ module Giblish
     end
 
     def document_attributes(src_node, dst_node, dst_top)
-      rel_path = @css_path.relative_path_from(dst_node.pathname)
+      rel_path = @css_path.relative_path_from(dst_node.pathname.dirname)
       {
         "stylesdir" => rel_path.dirname.to_s,
         "stylesheet" => rel_path.basename.to_s,
@@ -26,9 +37,11 @@ module Giblish
   end
 
   class PdfCustomStyle < DocAttributesBase
-    def initialize(pdf_style_path, pdf_fontsdir = nil)
+    def initialize(pdf_style_path, pdf_font_dirs = nil)
       @pdf_style_path = pdf_style_path
-      @pdf_fontsdir = pdf_fontsdir
+      # one can specify multiple font dirs as:
+      # -a pdf-fontsdir="path/to/fonts;path/to/more-fonts"
+      @pdf_fontsdir = pdf_font_dirs&.collect {|d| d.to_s }&.join(';')
     end
 
     def document_attributes(src_node, dst_node, dst_top)
@@ -37,7 +50,7 @@ module Giblish
         "pdf-stylesdir" => @pdf_style_path.dirname.to_s,
         "icons" => "font"
       }
-      result["pdf-fontsdir"] = @pdf_fontsdir.to_s unless @pdf_fontsdir.nil?
+      result["pdf-fontsdir"] = '"' + @pdf_fontsdir + '"' unless @pdf_fontsdir.nil?
       result
     end
   end
@@ -66,6 +79,10 @@ module Giblish
   class DataDelegator
     def initialize(*delegate_arr)
       @delegates = Array(delegate_arr)
+    end
+
+    def add(delegate)
+      @delegates << []
     end
 
     def method_missing(m, *args, &block)

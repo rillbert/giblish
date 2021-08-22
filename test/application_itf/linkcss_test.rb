@@ -1,5 +1,5 @@
-require "test_helper"
-require_relative "../lib/giblish/utils"
+require_relative "../test_helper"
+require_relative "../../lib/giblish"
 
 class LinkCSSTest < Minitest::Test
   include Giblish::TestUtils
@@ -123,6 +123,7 @@ class LinkCSSTest < Minitest::Test
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "src/subdir")
       args = ["--log-level", "info", 
         "-r", r_dir,
+        "-s", "giblish",
         "#{tmp_docs.dir}/src",
         "#{tmp_docs.dir}/dst"]
       Giblish.application.run args
@@ -134,6 +135,7 @@ class LinkCSSTest < Minitest::Test
         assert_equal 1, css_links.count
 
         css_links.each do |csslink|
+          puts csslink
           assert_equal "stylesheet", csslink.get("rel")
           assert_equal "../web_assets/css/giblish.css",
             csslink.get("href")
@@ -176,4 +178,5 @@ class LinkCSSTest < Minitest::Test
       end
     end
   end
+
 end

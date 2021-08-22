@@ -65,6 +65,8 @@ module Giblish
         tc = TreeConverter.new(root, p / "dst")
         tc.run
 
+        puts tc.dst_tree
+
         # assert that the css link is relative to the specific
         # css file (../web_assets/css/giblish.css)
         tmp_docs.get_html_dom(tc.dst_tree) do |n, document|
@@ -72,10 +74,7 @@ module Giblish
           assert_equal 1, css_links.count
 
           # get the expected relative path from the top dst dir
-          stem, crown = n.split_stem
-          rp = Pathname.new(css_path).relative_path_from(
-            (stem.basename + crown)
-          )
+          rp = (p / css_path).relative_path_from(n.pathname.dirname)
 
           # assert the href correspond to the relative path
           css_links.each do |csslink|

@@ -163,22 +163,24 @@ module Giblish
   end
 
   class IndexTreeBuilder
-    def initialize(dst_top_path, da_provider = nil, api_opt_provider = nil)
-      @dst_top_path = dst_top_path
+    attr_accessor :da_provider
+
+    def initialize(da_provider = nil, api_opt_provider = nil)
       @da_provider = da_provider
       @api_opt_provider = api_opt_provider
+      @adoc_source = nil
     end
 
     def document_attributes(src_node, dst_node, dst_top)
       @da_provider.nil? ? {} : @da_provider.document_attributes(src_node, dst_node, dst_top)
     end
 
-    def adoc_source(src_node, dst_node, dst_top)
-      return @adoc_source
-    end
-
     def api_options(src_node, dst_node, dst_top)
       @api_opt_provider.nil? ? {} : @api_opt_provider.api_options(dst_top)
+    end
+
+    def adoc_source(src_node, dst_node, dst_top)
+      return @adoc_source
     end
 
     # 1. Build a virtual source tree where each node is a dir
@@ -187,11 +189,10 @@ module Giblish
     # adoc files.
     def run(src_tree, dst_tree, converter)
       dst_tree.traverse_preorder do |level, dst_node|
-        # only care about dirs under dst_top_path
-        next if dst_node.leaf? || (dst_node.pathname <=> @dst_top_path) == -1
+        next if dst_node.leaf?
 
         # get the relative path to the index dir from the top dir
-        index_dir = dst_node.pathname.relative_path_from(@dst_top_path).cleanpath
+        index_dir = dst_node.pathname.relative_path_from(dst_tree.pathname).cleanpath
         Giblog.logger.info { "Setting up index for #{index_dir}" }
 
         # add a virtual 'index.adoc' node with this object as source for conversion options
@@ -200,14 +201,8 @@ module Giblish
 
         i_node = dst_node.add_descendants("index.adoc", self)
 
-        # setup any additional doc attributes
-        @da_provider.update_info(src_tree, dst_node, converter) unless @da_provider.nil?
-
-        # update the provider of api options with this node's info
-        @api_opt_provider.update_info(src_tree, dst_node, converter) unless @api_opt_provider.nil?
-
         # do the conversion
-        converter.convert(i_node, i_node, dst_tree.node(@dst_top_path, from_root: true))
+        converter.convert(i_node, i_node, dst_tree)
       end
     end
   end

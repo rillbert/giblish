@@ -30,7 +30,7 @@ module Giblish
     end
     
     def test_hello_world
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         # run the most basic conversion
         tmp_docs.add_doc_from_str(ADOC_STR)
         args = [tmp_docs.dir, tmp_docs.dir]

@@ -365,7 +365,8 @@ class PathTree
   # You can submit a filter predicate that determine if a specific path
   # shall be part of the PathTree or not ->(Pathname) { return true/false}
   #
-  # return:: the resulting PathTree
+  # return:: the node corresponding to the given fs_point in the resulting
+  # pathtree or nil if no nodes matched the given predicate filter
   #
   # === Example
   #
@@ -383,14 +384,17 @@ class PathTree
     t = nil
     Find.find(top_node.to_s) do |path|
       p = Pathname.new(path)
-      if t.nil?
-        t = PathTree.new(p)
-      elsif (block_given? && yield(p)) || !block_given?
-        t.add_path(p)
+
+      if (block_given? && yield(p)) || !block_given?
+        t.nil? ? t = PathTree.new(p) : t.add_path(p)
       end
     end
+    return nil if t.nil?
 
-    (prune ? t.node(top_node, from_root: true).dup : t)
+    # always return the entry node but prune the parents if
+    # users wishes
+    entry_node = t.node(top_node, from_root: true)
+    (prune ? entry_node.dup : entry_node)
   end
 
   # delegate method calls not implemented by PathTree to the associated 'data'

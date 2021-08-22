@@ -9,8 +9,23 @@ module Giblish
   #
   # Requires that all leaf nodes has a 'data' member that can receive an
   # 'adoc_source' method that returns a string with the source to be converted.
+  #
+  # implements three phases with user hooks:
+  # pre_build -> build -> post_build
+  #
+  # Prebuild::
+  # add a pre_builder object that responds to:
+  # def run(src_tree, dst_tree, converter)
+  # where
+  # src_tree:: the node in a PathTree corresponding to the top of the
+  # src directory
+  # dst_tree:: the node in a PathTree corresponding to the top of the
+  # dst directory
+  # converter:: the specific converter used to convert the adoc source to
+  # the desired destination format.
+
   class TreeConverter
-    attr_reader :dst_tree
+    attr_reader :dst_tree, :pre_builders, :post_builders
 
     class << self
       # register all asciidoctor extensions given at instantiation
@@ -41,13 +56,17 @@ module Giblish
     #  adoc_doc_attribs
     #  conversion_cb {success: Proc(src,dst,adoc) fail: Proc(src,dst,exc)
     def initialize(src_top, dst_top, opts = {})
-      @src_top = src_top
-      @dst_tree = PathTree.new(dst_top, {})
-      @dst_top = @dst_tree.node(dst_top, from_root: true)
-      @pre_builders = Array(opts.fetch(:pre_builders, []))
-      @post_builders = Array(opts.fetch(:post_builders, []))
+      # setup logging
       @logger = opts.fetch(:logger, Giblog.logger)
       @adoc_log_level = opts.fetch(:adoc_log_level, Logger::Severity::WARN)
+
+      # get the top-most node of the source and destination trees
+      @src_top = src_top
+      @dst_tree = PathTree.new(dst_top, {}).node(dst_top, from_root: true)
+
+      # setup build-phase callback objects
+      @pre_builders = Array(opts.fetch(:pre_builders, []))
+      @post_builders = Array(opts.fetch(:post_builders, []))
       @converter = DefaultConverter.new(@logger, opts)
     end
 
@@ -63,10 +82,10 @@ module Giblish
     end
 
     def pre_build(abort_on_exc)
-      @src_top.traverse_preorder do |level, n|
-        @pre_builders.each { |pp| pp.run(n) }
+      @pre_builders.each do |pb|
+        pb.run(@src_top, @dst_tree, @converter)
       rescue => ex
-        @logger&.error { "#{n.pathname} - #{ex.message}" }
+        @logger&.error { ex.message.to_s }
         raise ex if abort_on_exc
       end
     end
@@ -77,10 +96,10 @@ module Giblish
 
         # create the destination node, using the correct suffix depending on conversion backend
         rel_path = n.relative_path_from(@src_top)
-        dst_node = @dst_top.add_descendants(rel_path.sub_ext(""))
+        dst_node = @dst_tree.add_descendants(rel_path.sub_ext(""))
 
         # perform the conversion
-        @converter.convert(n, dst_node, @dst_top)
+        @converter.convert(n, dst_node, @dst_tree)
       rescue => exc
         @logger&.error { "#{n.pathname} - #{exc.message}" }
         raise exc if abort_on_exc
@@ -91,18 +110,18 @@ module Giblish
       @post_builders.each do |pb|
         pb.run(@src_tree, @dst_tree, @converter)
       rescue => exc
-        @logger&.error { "#{exc.message}" }
+        @logger&.error { exc.message.to_s }
         raise exc if abort_on_exc
       end
     end
 
-    def self.on_success(src_node, dst_node, dst_top, doc, adoc_log_str)
+    def self.on_success(src_node, dst_node, dst_tree, doc, adoc_log_str)
       dst_node.data = ConversionInfo.new(
-        adoc: doc, src_node: src_node, dst_node: dst_node, dst_top: dst_top, adoc_stderr: adoc_log_str
+        adoc: doc, src_node: src_node, dst_node: dst_node, dst_top: dst_tree, adoc_stderr: adoc_log_str
       )
     end
 
-    def self.on_failure(src_node, dst_node, dst_top, ex, adoc_log_str)
+    def self.on_failure(src_node, dst_node, dst_tree, ex, adoc_log_str)
       @logger&.error { ex.message }
       # the only info we have is the source file name
       info = ConversionInfo.new
@@ -227,6 +246,7 @@ module Giblish
         @conv_cb[:success]&.call(src_node, dst_node, dst_top, doc, adoc_logger.in_mem_storage.string)
         true
       rescue => ex
+        @logger&.error { "Conversion failed for #{src_node.pathname}" }
         @logger&.error { ex.message }
         @logger&.error { ex.backtrace }
         @conv_cb[:failure]&.call(src_node, dst_node, dst_top, ex, adoc_logger.in_mem_storage.string)

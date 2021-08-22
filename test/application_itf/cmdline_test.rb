@@ -34,7 +34,7 @@ module Giblish
       cmdline = CmdLine.new.parse(%w[-f pdf --log-level warn src dst])
       assert_equal(Logger::WARN, cmdline.log_level)
     end
-    
+
     def test_format
       cmdline = CmdLine.new.parse(%w[-f pdf src dst])
       assert_equal("pdf", cmdline.format)
@@ -42,5 +42,16 @@ module Giblish
       cmdline = CmdLine.new.parse(%w[-f html src dst])
       assert_equal("html", cmdline.format)
     end
+
+    # def test_resource_dir
+    #   opts = CmdLine.new.parse(%w[-f html -w http://www.example.com/style.css -r /somewhere/local -s mystyle src dst])
+
+    #   case opts
+    #     in web_path: String => wp, style_name: String =>
+    #     assert_equal("http://www.example.com/style.css", wp )
+    #     in resource_dir: Pathname => r, style_name: String => s
+    #     assert(false)
+    #   end
+    # end
   end
 end
