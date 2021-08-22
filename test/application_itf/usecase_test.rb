@@ -277,7 +277,7 @@ module Giblish
         copy_test_resources(topdir / "my/resources")
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
-        opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish-theme #{topdir} #{topdir / "dst"}])
+        opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts, src_top)
         app.tree_converter.run
 

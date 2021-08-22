@@ -1,14 +1,13 @@
 extends: default
 font:
   catalog:
+    merge: true
     Urbanist:
       normal: Urbanist-Regular.ttf
       bold: Urbanist-Bold.ttf
       italic: Urbanist-Italic.ttf
       bold_italic: Urbanist-BoldItalic.ttf
 
-  fallbacks:
-    - Arial
 main_font_family: Urbanist
 
 base:
