@@ -63,8 +63,6 @@ module Giblish
   # copy everything under cmd_opts.resource_dir to
   # dst_top/web_assets/.
   class CopyResourcesPreBuild
-    attr_reader :css_path
-
     # required opts:
     # resource_dir:: Pathname to the top of the resource area to be copied
     # style_name:: basename of the css to use for styling

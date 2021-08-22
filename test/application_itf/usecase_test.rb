@@ -187,7 +187,6 @@ module Giblish
         r = PathTree.build_from_fs(topdir, prune: true)
         assert(r.node("dst/web_assets/dir1"))
         assert(r.node("dst/web_assets/dir1/custom.css"))
-        assert_equal(topdir / "dst/web_assets/dir1/custom.css", pb.css_path)
       end
     end
 
@@ -210,11 +209,11 @@ module Giblish
     def test_find_font_dir
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
+        # fake an empty resource dir - we expect no font dirs
+        (topdir / "my/resources").mkpath
 
         opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s custom #{topdir} dst])
 
-        # fake an empty resource dir - we expect no font dirs
-        (topdir / "my/resources").mkpath
         no_font_dirs = FindFontDirs.new(opts)
         assert(no_font_dirs.font_dirs.empty?)
 
@@ -222,7 +221,7 @@ module Giblish
         create_resource_dir(topdir / "my/resources")
 
         one_font_dir = FindFontDirs.new(opts)
-        assert_equal(Set[Pathname.new("resources/dir1")], one_font_dir.font_dirs)
+        assert_equal(Set[topdir / "my/resources/dir1"], one_font_dir.font_dirs)
       end
     end
 
