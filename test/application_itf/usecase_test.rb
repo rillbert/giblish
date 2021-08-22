@@ -272,12 +272,12 @@ module Giblish
     end
 
     def test_generate_pdf_custom_yml
-      TmpDocDir.open(preserve: false) do |tmp_docs|
+      TmpDocDir.open(preserve: true) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
-        create_resource_dir(topdir / "my/resources")
+        copy_test_resources(topdir / "my/resources")
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
-        opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s custom #{topdir} #{topdir / "dst"}])
+        opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish-theme #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts, src_top)
         app.tree_converter.run
 

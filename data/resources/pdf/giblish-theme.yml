@@ -1,0 +1,16 @@
+extends: default
+font:
+  catalog:
+    Urbanist:
+      normal: Urbanist-Regular.ttf
+      bold: Urbanist-Bold.ttf
+      italic: Urbanist-Italic.ttf
+      bold_italic: Urbanist-BoldItalic.ttf
+
+  fallbacks:
+    - Arial
+main_font_family: Urbanist
+
+base:
+  font_family: $main_font_family
+  font-color: #ff0000

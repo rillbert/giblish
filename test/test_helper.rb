@@ -105,7 +105,7 @@ module Giblish
           # parse the generated html and return the result to the user
           handle = File.open(n.pathname.to_s)
           document = Oga.parse_html(handle)
-          yield n,document
+          yield n, document
         end
       end
     end
@@ -159,6 +159,17 @@ module Giblish
           
         EOF
       end
+    end
+
+    # copies .../data/resources/* to dst_dir/.
+    def copy_test_resources(dst_dir)
+      r_top = (Pathname.new(__FILE__) / "../../data/resources").cleanpath
+      d = Pathname.new(dst_dir)
+      d.mkpath
+      FileUtils.cp_r(
+        r_top.to_s + "/.",
+        dst_dir
+      )
     end
   end
 end

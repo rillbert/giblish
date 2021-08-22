@@ -48,7 +48,7 @@ module Giblish
     attr_reader :font_dirs
     def initialize(cmd_opts)
       r_top = cmd_opts.resource_dir
-      tree = PathTree.build_from_fs(r_top, prune: true) do |p|
+      tree = PathTree.build_from_fs(r_top) do |p|
         FONT_REGEX =~ p.to_s
       end
       @font_dirs = Set.new

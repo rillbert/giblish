@@ -57,7 +57,7 @@ module Giblish
         # generate pdf using asciidoctor-pdf with custom styling
         api_options[:backend] = "pdf"
 
-        # make sure generated html has relative link to the copied css
+        # make sure generated pdfs use custom styling
         dir_finder = FindFontDirs.new(cmd_opts)
         p = FindStylePaths.new(cmd_opts)
         doc_attr = PdfCustomStyle.new(p.src_style_path, dir_finder.font_dirs)
