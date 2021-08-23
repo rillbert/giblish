@@ -20,16 +20,18 @@ module Giblish
   end
 
   class RelativeCssDocAttr < DocAttributesBase
-    def initialize(css_path)
-      @css_path = Pathname.new(css_path)
-      @rel_path = nil
+    # dst_css_path_rel:: the relative path to the dst top to the location of the 
+    # css file to use
+    def initialize(dst_css_path_rel)
+      @css_path = Pathname.new(dst_css_path_rel)
     end
 
     def document_attributes(src_node, dst_node, dst_top)
-      rel_path = @css_path.relative_path_from(dst_node.pathname.dirname)
+      href_path = dst_top.relative_path_from(dst_node).dirname / @css_path
+      # rel_path = @css_path.relative_path_from(dst_node.pathname.dirname)
       {
-        "stylesdir" => rel_path.dirname.to_s,
-        "stylesheet" => rel_path.basename.to_s,
+        "stylesdir" => href_path.dirname.to_s,
+        "stylesheet" => href_path.basename.to_s,
         "linkcss" => true,
         "copycss" => nil
       }
@@ -37,6 +39,9 @@ module Giblish
   end
 
   class PdfCustomStyle < DocAttributesBase
+    # pdf_style_path:: the path name (preferable absolute) to the yml file
+    # pdf_font_dirs:: a collection of Pathnames to each font dir that shall be 
+    # checked for fonts
     def initialize(pdf_style_path, pdf_font_dirs = nil)
       @pdf_style_path = pdf_style_path
       # one can specify multiple font dirs as:

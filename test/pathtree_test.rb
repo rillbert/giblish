@@ -430,6 +430,23 @@ class PathTreeTest < Minitest::Test
     assert_equal(expect, value)
   end
 
+  def test_match
+    root = PathTree.new("1")
+    {"1/2" => 12,
+     "1/2/4" => 124,
+     "1/2/5" => 125,
+     "1/2/6" => 126,
+     "1/3" => 13}.each { |p, d|
+      root.add_path(p, d)
+    }
+
+    copy = root.match(/2$/)
+    puts copy
+    assert_equal(2, copy.count)
+    assert_equal(Pathname.new("1/2"), copy.node("2").pathname)
+    assert_equal(12, copy.node("2").data)
+  end
+
   def test_filter
     root = PathTree.new("1")
     {"1/2" => 12,
@@ -440,7 +457,7 @@ class PathTreeTest < Minitest::Test
       root.add_path(p, d)
     }
 
-    copy = root.filter(/2$/)
+    copy = root.filter { |l, n| /2$/ =~ n.pathname.to_s }
     puts copy
     assert_equal(2, copy.count)
     assert_equal(Pathname.new("1/2"), copy.node("2").pathname)

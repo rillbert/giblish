@@ -1,9 +1,9 @@
-require_relative "../test_helper"
-require_relative "../../lib/giblish/resource_management"
+require_relative "test_helper"
+require_relative "../lib/giblish/resource_management"
 
 module Giblish
   # tests the basic functionality of the Application class
-  class HtmlLocalResourceTest < Minitest::Test
+  class ResourceTests < Minitest::Test
     include Giblish::TestUtils
 
     def setup
@@ -165,97 +165,92 @@ module Giblish
       font_fake.close
     end
 
-    def create_adoc_src_tree tmp_docs, src_topdir
-      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir)
-      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir / "subdir1")
-      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir / "subdir1")
-      p_top = Pathname.new(tmp_docs.dir) / src_topdir
-      src_tree = PathTree.build_from_fs(p_top)
-      src_tree.node(p_top, from_root: true)
-    end
-
-    def test_generate_html_default_css
-      TmpDocDir.open(preserve: true) do |tmp_docs|
-        topdir = Pathname.new(tmp_docs.dir)
-        create_resource_dir(topdir / "my/resources")
-        src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
-
-        opts = CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
-
-        r = PathTree.build_from_fs(topdir, prune: true)
-        puts r
-      end
-    end
-
-    def test_generate_html_use_resource_dir
+    def test_copy_resources_absolute
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
-        copy_test_resources(topdir / "resources")
-        src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
+        create_resource_dir(topdir / "my/resources")
 
-        opts = CmdLine.new.parse(%W[-f html -r #{topdir / "resources"} -s giblish #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s custom #{topdir} #{topdir / "dst"}])
 
-        # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
-        docs = r.filter { |l, n| !(/web_assets/ =~ n.pathname.to_s) }
-        assert_equal(5, docs.leave_pathnames.count)
-        assert_equal(2, r.match(/index.html$/).leave_pathnames.count)
+        pb = CopyResourcesPreBuild.new(opts)
+        pb.run(nil, nil, nil)
+
+        r = PathTree.build_from_fs(topdir, prune: true)
+        assert(r.node("dst/web_assets/dir1"))
+        assert(r.node("dst/web_assets/dir1/custom.css"))
       end
     end
 
-    def test_generate_html_use_fix_css_path
-      TmpDocDir.open(preserve: true) do |tmp_docs|
-        topdir = Pathname.new(tmp_docs.dir)
-        # copy_test_resources(topdir / "resources")
-        src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
-
-        opts = CmdLine.new.parse(%W[-f html -w my/style/giblish.css #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
-
-        # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
-        docs = r.filter { |l, n| !(/web_assets/ =~ n.pathname.to_s) }
-        assert_equal(5, docs.leave_pathnames.count)
-        assert_equal(2, r.match(/index.html$/).leave_pathnames.count)
-      end
-    end
-
-    def test_generate_pdf_default_style
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+    def test_copy_resources_use_working_dir
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
         create_resource_dir(topdir / "my/resources")
-        src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
-        opts = CmdLine.new.parse(%W[-f pdf #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        Dir.chdir(topdir.to_s) do
+          opts = CmdLine.new.parse(%W[-f html -r my/resources -s custom #{topdir} dst])
 
-        # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
-        assert_equal(5, r.leave_pathnames.count)
-        assert_equal(2, r.match(/index.pdf$/).leave_pathnames.count)
+          CopyResourcesPreBuild.new(opts).run(nil, nil, nil)
+
+          r = PathTree.build_from_fs(topdir, prune: true)
+          assert(r.node("dst/web_assets/dir1"))
+        end
       end
     end
 
-    def test_generate_pdf_custom_yml
+    def test_resource_paths_empty
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        topdir = Pathname.new(tmp_docs.dir)
+        # fake an empty resource dir
+        (topdir / "my/resources").mkpath
+
+        opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s custom #{topdir} dst])
+        # no custom.css -> explode
+        assert_raises(OptionParser::InvalidArgument) { ResourcePaths.new(opts) }
+
+        opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s custom #{topdir} dst])
+        # no custom.yml -> explode
+        assert_raises(OptionParser::InvalidArgument) { ResourcePaths.new(opts) }
+      end
+    end
+
+    def test_resource_paths
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
         copy_test_resources(topdir / "my/resources")
-        src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
+
+        opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
+        p = ResourcePaths.new(opts)
+        assert_equal(
+          Pathname.new("web/giblish.css"),
+          p.src_style_path_rel
+        )
+        assert_equal(
+          Pathname.new("web_assets/web/giblish.css"),
+          p.dst_style_path_rel
+        )
+        assert_equal(
+          Set[topdir / "my/resources/custom_fonts/urbanist"],
+          p.font_dirs_abs
+        )
+        assert_equal(
+          topdir / "dst/web_assets",
+          p.dst_resource_dir_abs
+        )
 
         opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
-
-        # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
-        assert_equal(5, r.leave_pathnames.count)
-        assert_equal(2, r.match(/index.pdf$/).leave_pathnames.count)
+        p = ResourcePaths.new(opts)
+        assert_equal(
+          Pathname.new("pdf/giblish.yml"),
+          p.src_style_path_rel
+        )
+        assert_equal(
+          Pathname.new("web_assets/pdf/giblish.yml"),
+          p.dst_style_path_rel
+        )
+        assert_equal(
+          Set[topdir / "my/resources/custom_fonts/urbanist"],
+          p.font_dirs_abs
+        )
       end
     end
   end

@@ -37,8 +37,8 @@ module Giblish
         pre_builders << c
 
         # make sure generated html has relative link to the copied css
-        p = FindStylePaths.new(cmd_opts)
-        doc_attr = RelativeCssDocAttr.new(p.web_dst_css_path)
+        p = ResourcePaths.new(cmd_opts)
+        doc_attr = RelativeCssDocAttr.new(p.dst_style_path_rel)
 
         # use same styling for indices
         idx.da_provider = doc_attr
@@ -58,9 +58,8 @@ module Giblish
         api_options[:backend] = "pdf"
 
         # make sure generated pdfs use custom styling
-        dir_finder = FindFontDirs.new(cmd_opts)
-        p = FindStylePaths.new(cmd_opts)
-        doc_attr = PdfCustomStyle.new(p.src_style_path, dir_finder.font_dirs)
+        p = ResourcePaths.new(cmd_opts)
+        doc_attr = PdfCustomStyle.new(p.src_style_path_abs, p.font_dirs_abs)
 
         # use same styling for indices
         idx.da_provider = doc_attr

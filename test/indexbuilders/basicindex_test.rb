@@ -91,7 +91,7 @@ module Giblish
         tc.run
 
         # filter out the 'index.html' files in a new tree
-        it = tc.dst_tree.filter(/.*index.html$/)
+        it = tc.dst_tree.match(/.*index.html$/)
         it = it.node(p / "dst", from_root: true)
 
         # assert that there now are 2 index files under "dst"
@@ -153,7 +153,7 @@ module Giblish
         tc.run
 
         # filter out the 'index.pdf' files in a new tree
-        it = tc.dst_tree.filter(/.*index.pdf$/)
+        it = tc.dst_tree.match(/.*index.pdf$/)
         it = it.node(p / "dst", from_root: true)
 
         assert_equal(2, it.leave_pathnames.count)
