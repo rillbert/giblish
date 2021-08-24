@@ -173,7 +173,7 @@ module Giblish
           "cgi-bin dir in your webserver and rename it from .rb to .cgi") do |m|
           @make_searchable = m
         end
-        parser.on("-mp", "--search-assets-deploy PATH",
+        parser.on("-p", "--search-assets-deploy PATH",
           "the absolute path to the 'search_assets' folder where the search",
           "script can find the data needed for implementing the text search",
           "(default is <dst_dir_top>).",

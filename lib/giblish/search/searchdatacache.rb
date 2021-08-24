@@ -27,76 +27,78 @@ module Giblish
   # |- branch_2_top_dir
   # | ...
   class SearchDataCache
+    attr_reader :id_prefix, :id_separator
+
     # the class-global cache of indexed section headings.
-    @heading_index = {fileinfos: []}
-    @id_prefix = nil
-    @id_separator = nil
-
-    class << self
-      attr_reader :heading_index
-      attr_accessor :id_separator, :id_prefix
-
-      def clear
-        @heading_index = {fileinfos: []}
-      end
-
-      # add the indexed sections from the given file to the
-      # data cache
-      def add_file_index(src_path:, title:, sections:)
-        @heading_index[:fileinfos] << {
-          filepath: src_path,
-          title: title,
-          sections: sections
-        }
-      end
-    end
-
-    # Convenience method that let users access the global data cache
-    # via a SearchDataCache object
-    def heading_index
-      SearchDataCache.heading_index
-    end
+    attr_reader :heading_index
 
     # clean the global data cache and set up parameters given by the
     # user
-    def initialize(file_set:, paths:, id_prefix: nil, id_separator: nil)
-      @adoc_files = file_set
-      @paths = paths
-      SearchDataCache.id_prefix = id_prefix
-      SearchDataCache.id_separator = id_separator
-
-      # make sure we start from a clean slate
-      SearchDataCache.clear
+    def initialize(file_tree:, id_prefix: nil, id_separator: nil)
+      @heading_index = {fileinfos: []}
+      @src_tree = file_tree
+      @id_prefix = id_prefix
+      @id_separator = id_separator
     end
 
-    # Create needed assets for the search to work. This method
-    # 1. Serializes the 'database' with the indexed headings to a JSON
-    #    file in the proper location in the destination
-    # 2. Copies all source files that are included in the search space to
-    #    a mirrored hierarchy within the destination tree.
-    def deploy_search_assets(asset_top_dir = nil)
-      # get the proper dir for the search assets
-      assets_dir = @paths.search_assets_abs
+    # add the indexed sections from the given file to the
+    # data cache
+    def add_file_index(src_path:, title:, sections:)
+      @heading_index[:fileinfos] << {
+        filepath: src_path,
+        title: title,
+        sections: sections
+      }
+    end
+
+    # called by the TreeConverter during the post_build phase
+    def run(src_tree, dst_tree, converter)
+      search_topdir = dst_tree.pathname / "search_assets"
 
       # store the JSON file
-      serialize_section_index(assets_dir, asset_top_dir || @paths.src_root_abs)
+      serialize_section_index(search_topdir, search_topdir)
+      
+      # copy all converted adoc files
+      dst_tree.traverse_preorder do |level, dst_node|
+        # only copy files that were successfully converted
+        next if !dst_node.leaf? || dst_node.data.nil?
+        # do not copy index files, they are generated
+        next if dst_node.pathname.basename.sub_ext("").to_s == "index"
 
-      # traverse the src file tree and copy all processed adoc files
-      # to the search_assets dir
-      @adoc_files.each do |p|
-        dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
-        FileUtils.mkdir_p(dst_dir)
-        FileUtils.cp(p.to_s, dst_dir)
+        # copy all other files
+        dst_path = search_topdir / dst_node.relative_path_from(dst_tree)
+        FileUtils.mkdir_p(dst_path.dirname.to_s)
+        FileUtils.cp(dst_node.data.src_file, dst_path.dirname)
       end
     end
+
+    # # Create needed assets for the search to work. This method
+    # # 1. Serializes the 'database' with the indexed headings to a JSON
+    # #    file in the proper location in the destination
+    # # 2. Copies all source files that are included in the search space to
+    # #    a mirrored hierarchy within the destination tree.
+    # def deploy_search_assets(asset_top_dir = nil)
+    #   # get the proper dir for the search assets
+    #   assets_dir = @paths.search_assets_abs
+
+    #   # store the JSON file
+    #   serialize_section_index(assets_dir, asset_top_dir || @paths.src_root_abs)
+
+    #   # traverse the src file tree and copy all processed adoc files
+    #   # to the search_assets dir
+    #   @adoc_files.each do |p|
+    #     dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
+    #     FileUtils.mkdir_p(dst_dir)
+    #     FileUtils.cp(p.to_s, dst_dir)
+    #   end
+    # end
 
     private
 
     # write the index to a file in dst_dir and remove the base_dir
     # part of the path for each filename
     def serialize_section_index(dst_dir, base_dir)
-      # make sure its a Pathname
-      dst_dir = Pathname.new(dst_dir)
+      dst_dir.mkpath
 
       remove_base_dir(base_dir)
 

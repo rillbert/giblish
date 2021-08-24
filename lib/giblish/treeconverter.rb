@@ -35,14 +35,21 @@ module Giblish
       #
       # see https://docs.asciidoctor.org/asciidoctor/latest/extensions/register/
       def register_adoc_extensions(adoc_ext)
+        return if adoc_ext.nil?
+
         %i[preprocessor tree_processor postprocessor docinfo_processor block
           block_macro inline_macro include_processor].each do |e|
           next unless adoc_ext.key?(e)
 
           Array(adoc_ext[e])&.each do |c|
+            puts "Register #{c.class} as #{e}"
             Asciidoctor::Extensions.register { send(e, c) }
           end
         end
+      end
+
+      def unregister_adoc_extenstions
+        Asciidoctor::Extensions.unregister_all
       end
     end
 
@@ -62,23 +69,25 @@ module Giblish
 
       # get the top-most node of the source and destination trees
       @src_top = src_top
-      @dst_tree = PathTree.new(dst_top, {}).node(dst_top, from_root: true)
+      @dst_tree = PathTree.new(dst_top).node(dst_top, from_root: true)
 
       # setup build-phase callback objects
       @pre_builders = Array(opts.fetch(:pre_builders, []))
       @post_builders = Array(opts.fetch(:post_builders, []))
       @converter = DefaultConverter.new(@logger, opts)
+      @adoc_ext = opts.fetch(:adoc_extensions, nil)
     end
 
     # abort_on_exc:: if true, an exception lower down the chain will
     # abort the conversion and raised to the caller. If false, exceptions
     # will be swallowed. In both cases, an 'error' log entry is created.
     def run(abort_on_exc: true)
+      TreeConverter.register_adoc_extensions(@adoc_ext)
       pre_build(abort_on_exc: abort_on_exc)
-
       build(abort_on_exc: abort_on_exc)
-
       post_build(abort_on_exc: abort_on_exc)
+    ensure
+      TreeConverter.unregister_adoc_extenstions
     end
 
     def pre_build(abort_on_exc)
@@ -108,7 +117,7 @@ module Giblish
 
     def post_build(abort_on_exc: true)
       @post_builders.each do |pb|
-        pb.run(@src_tree, @dst_tree, @converter)
+        pb.run(@src_top, @dst_tree, @converter)
       rescue => exc
         @logger&.error { exc.message.to_s }
         raise exc if abort_on_exc

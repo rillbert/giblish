@@ -20,8 +20,8 @@ module Giblish
       |Date |Author |Message
     HISTORY_HEADER
 
-    # options:
     def initialize(src_tree)
+      puts src_tree
       @adoc_source = <<~DOC_STR
         #{title}
         #{subtitle(src_tree)}
@@ -180,13 +180,14 @@ module Giblish
     end
 
     def adoc_source(src_node, dst_node, dst_top)
-      return @adoc_source
+      @adoc_source
     end
 
-    # 1. Build a virtual source tree where each node is a dir
-    # index
-    # 2. Convert the virtual source tree to the same dst as the
-    # adoc files.
+    # Called from TreeConverter during post build phase
+    #
+    # adds a 'index' node for each directory in the source tree
+    # and convert that index using the options from the provider
+    # objects given at instantiation of this object
     def run(src_tree, dst_tree, converter)
       dst_tree.traverse_preorder do |level, dst_node|
         next if dst_node.leaf?
@@ -195,14 +196,21 @@ module Giblish
         index_dir = dst_node.pathname.relative_path_from(dst_tree.pathname).cleanpath
         Giblog.logger.info { "Setting up index for #{index_dir}" }
 
-        # add a virtual 'index.adoc' node with this object as source for conversion options
+        # build the index source for all nodes below dst_node
+        @adoc_source= IndexSrcFromTree.new(dst_node).adoc_source
+
+        # add a virtual 'index.adoc' node as the only node in a source tree
+        # with this object as source for conversion options
         # and adoc_source
-        @adoc_source = IndexSrcFromTree.new(dst_node).adoc_source
+        v_path = Pathname.new("/virtual") / index_dir / "index.adoc"
+        v_tree = PathTree.new(v_path, self)
+        src_node = v_tree.node(v_path, from_root: true)
 
-        i_node = dst_node.add_descendants("index.adoc", self)
-
+        # add the destination node where the converted file will be stored
+        i_node = dst_node.add_descendants("index")
+        
         # do the conversion
-        converter.convert(i_node, i_node, dst_tree)
+        converter.convert(src_node, i_node, dst_tree)
       end
     end
   end

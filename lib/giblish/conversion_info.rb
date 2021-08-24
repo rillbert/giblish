@@ -28,7 +28,7 @@ module Giblish
     end
 
     def initialize(adoc: nil, src_node: nil, dst_node: nil, dst_top: nil, adoc_stderr: "")
-      @src_file = nil
+      @src_file = src_node.nil? ? nil : src_node.pathname.to_s 
       @history = []
       @converted = true
       @stderr = adoc_stderr
@@ -40,7 +40,6 @@ module Giblish
       # fill in doc meta data
       d_attr = adoc.attributes
       self.title = (adoc.doctitle)
-      self.src_file = (d_attr["docfile"])
       @doc_id = d_attr["docid"]
       return if dst_node.nil?
 

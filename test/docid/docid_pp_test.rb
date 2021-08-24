@@ -79,12 +79,16 @@ module Giblish
 
         # Create a docid preprocessor and register it with all future TreeConverters
         d_pp = DocIdExtension::DocIdCacheBuilder.new
-        TreeConverter.register_adoc_extensions({preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})})
         tc = TreeConverter.new(st, p / "dst",
           {
             pre_builders: d_pp
           })
 
+        # must register explicitly since we don't call tc.run
+        TreeConverter.register_adoc_extensions(
+          {preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})}
+        )
+        
         # run the tree converter prebuild step that will populate
         # the docid cache
         tc.pre_build(false)

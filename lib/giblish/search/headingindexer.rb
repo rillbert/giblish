@@ -42,30 +42,28 @@ module Giblish
     HEADING_REGEX = /^=+\s+(.*)$/.freeze
     ANCHOR_REGEX = /^\[\[(\w+)\]\]\s*$/.freeze
 
-    # register this class as a preprocessor hook with the asciidoctor
-    # engine
-    def self.register
-      Asciidoctor::Extensions.register { preprocessor HeadingIndexer }
+    def initialize(data_cache)
+      super({})
+      @data_cache = data_cache
     end
 
     def process(document, reader)
       # Add doc as a source dependency for doc ids
-      src_path = document.attributes["docfile"]
+      src_node = document.attributes["giblish-src-tree-node"]
+      puts "headingindexer src_path: #{src_node.pathname}"
 
-      # NOTE: the nil check is there to prevent us adding generated
-      # asciidoc docs that does not exist in the file system (e.g. the
-      # generated index pages). This is a bit hackish and should maybe be
-      # done differently
-      return if src_path.nil?
+      # only index source files that reside on the 'physical' file system
+      return if src_node.nil? || !src_node.pathname.exist?
 
       # make sure we use the correct id elements when indexing
       # sections
       opts = find_id_attributes(reader.lines)
-
+      src_path = src_node.pathname
+      
       # Index all headings in the doc
       Giblog.logger.debug { "indexing headings in #{src_path}" }
 
-      SearchDataCache.add_file_index(
+      @data_cache.add_file_index(
         src_path: src_path,
         # get the title from the raw text (asciidoctor has not yet
         # processed the text)
@@ -157,8 +155,8 @@ module Giblish
     def find_id_attributes(lines)
       # prio 1 - use values from invoking user
       result = {
-        id_prefix: SearchDataCache.id_prefix,
-        id_separator: SearchDataCache.id_separator
+        id_prefix: @data_cache.id_prefix,
+        id_separator: @data_cache.id_separator
       }
       return result if result[:id_prefix] && result[:id_separator]
 
