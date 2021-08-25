@@ -21,7 +21,6 @@ module Giblish
     HISTORY_HEADER
 
     def initialize(src_tree)
-      puts src_tree
       @adoc_source = <<~DOC_STR
         #{title}
         #{subtitle(src_tree)}

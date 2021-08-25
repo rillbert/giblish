@@ -61,9 +61,7 @@ module Giblish
 
           # enable custom pdf styling
           doc_attr.add_doc_attr_providers(
-            PdfCustomStyle.new(
-              ResourcePaths.new(cmd_opts).src_style_path_abs, p.font_dirs_abs
-            )
+            PdfCustomStyle.new(ResourcePaths.new(cmd_opts))
           )
         in format: "pdf"
           # generate pdf using asciidoctor-pdf with default styling
@@ -73,7 +71,7 @@ module Giblish
       end
 
       case cmd_opts
-        in format: "html", make_searchable:
+        in format: "html", make_searchable: true
           # enabling text search
           attr = cmd_opts.doc_attributes
           search_cache = SearchDataCache.new(
@@ -83,7 +81,8 @@ module Giblish
           )
           build_options[:post_builders] << search_cache
           build_options[:adoc_extensions][:tree_processor] << HeadingIndexer.new(search_cache)
-          # build_options[:adoc_extensions][:tree_processor] << TestAttribs.new
+        else
+          # do nothing
         end
 
       # compose the attribute provider and associate it with all source

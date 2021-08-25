@@ -202,6 +202,7 @@ module Giblish
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)
         docs = r.filter { |l, n| !(/web_assets/ =~ n.pathname.to_s) }
+        puts docs
         assert_equal(5, docs.leave_pathnames.count)
         assert_equal(2, r.match(/index.html$/).leave_pathnames.count)
       end
@@ -259,19 +260,5 @@ module Giblish
       end
     end
 
-    def test_generate_search_data_assets
-      TmpDocDir.open(preserve: true) do |tmp_docs|
-        topdir = Pathname.new(tmp_docs.dir)
-        src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
-
-        # opts = CmdLine.new.parse(%W[-f html -m #{topdir} #{topdir / "dst"}])
-        opts = CmdLine.new.parse(%W[-f html -a idprefix=idefix -m #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
-
-        # r = PathTree.build_from_fs(topdir, prune: true)
-        # puts r
-      end
-    end
   end
 end

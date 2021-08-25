@@ -42,7 +42,7 @@ module Giblish
           next unless adoc_ext.key?(e)
 
           Array(adoc_ext[e])&.each do |c|
-            puts "Register #{c.class} as #{e}"
+            Giblog.logger.debug { "Register #{c.class} as #{e}" }
             Asciidoctor::Extensions.register { send(e, c) }
           end
         end
