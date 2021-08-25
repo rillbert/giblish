@@ -9,64 +9,65 @@ module Giblish
   class Configurator
     attr_reader :tree_converter
 
+    # 1. Source text -> adoc_source
+    # 2. API options -> eg backend
+    # 3. Doc attribs -> style info, xref style, variables, ...
+    #
     # cmd_opts:: a Cmdline::Option instance with user options
     # src_tree:: a Pathtree with the adoc files to convert as leaf nodes
     def initialize(cmd_opts, src_tree)
-      pre_builders = []
-      post_builders = []
-      adoc_extensions = {}
-      api_options = {}
+      build_options = {
+        pre_builders: [],
+        post_builders: [],
+        adoc_api_opts: {},
+        # add a hash where all values are initiated as empty arrays
+        adoc_extensions: Hash.new {|hash, key| hash.key?(key) ? hash[key] : hash[key] = [] }
+      }
 
-      # always resolve docid
-      d = DocIdExtension::DocIdCacheBuilder.new
-      pre_builders << d
-      adoc_extensions[:preprocessor] = [DocIdExtension::DocidResolver.new({docid_cache: d})]
+      # Initiate the doc attribute repo used during 'run-time'
+      doc_attr = DocAttrBuilder.new(
+        GiblishDefaultDocAttribs.new
+      )
 
-      # always generate index
-      idx = IndexTreeBuilder.new
-      post_builders << idx
+      setup_common_stuff(cmd_opts, build_options, doc_attr)
 
-      doc_attr = nil
       case cmd_opts
         in format: "html", resource_dir:
           # copy local resources to dst and link the generated html with
           # the given css
-          api_options[:backend] = "html"
-
-          c = CopyResourcesPreBuild.new(cmd_opts)
-          pre_builders << c
+          build_options[:adoc_api_opts][:backend] = "html"
+          build_options[:pre_builders] << CopyResourcesPreBuild.new(cmd_opts)
 
           # make sure generated html has relative link to the copied css
-          p = ResourcePaths.new(cmd_opts)
-          doc_attr = RelativeCssDocAttr.new(p.dst_style_path_rel)
-
-          # use same styling for indices
-          idx.da_provider = doc_attr
-
+          doc_attr.add_doc_attr_providers(
+            RelativeCssDocAttr.new(
+              ResourcePaths.new(cmd_opts).dst_style_path_rel
+            )
+          )
         in format: "html", web_path:
           # do not copy any local resources, use the given web path to link to css
-          api_options[:backend] = "html"
-
-          doc_attr = AbsoluteCssDocAttr.new(cmd_opts.web_path)
+          build_options[:adoc_api_opts][:backend] = "html"
+          doc_attr.add_doc_attr_providers(
+            AbsoluteLinkedCss.new(cmd_opts.web_path)
+          )
 
         in format: "html"
           # embed the default asciidoc stylesheet - do nothing
-          api_options[:backend] = "html"
+          build_options[:adoc_api_opts][:backend] = "html"
 
         in format: "pdf", resource_dir:
           # generate pdf using asciidoctor-pdf with custom styling
-          api_options[:backend] = "pdf"
+          build_options[:adoc_api_opts][:backend] = "pdf"
 
-          # make sure generated pdfs use custom styling
-          p = ResourcePaths.new(cmd_opts)
-          doc_attr = PdfCustomStyle.new(p.src_style_path_abs, p.font_dirs_abs)
-
-          # use same styling for indices
-          idx.da_provider = doc_attr
-
+          # enable custom pdf styling
+          doc_attr.add_doc_attr_providers(
+            PdfCustomStyle.new(
+              ResourcePaths.new(cmd_opts).src_style_path_abs, p.font_dirs_abs
+            )
+          )
         in format: "pdf"
           # generate pdf using asciidoctor-pdf with default styling
-          api_options[:backend] = "pdf"
+          build_options[:adoc_api_opts][:backend] = "pdf"
         else
           raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{cmd_opts.inspect}"
       end
@@ -74,15 +75,16 @@ module Giblish
       case cmd_opts
         in format: "html", make_searchable:
           # enabling text search
-          doc_attr = cmd_opts.doc_attributes
+          attr = cmd_opts.doc_attributes
           search_cache = SearchDataCache.new(
             file_tree: src_tree,
-            id_prefix: (doc_attr.nil? ? nil : doc_attr.fetch("idprefix", nil)),
-            id_separator: (doc_attr.nil? ? nil : doc_attr.fetch("idseparator", nil))
+            id_prefix: (attr.nil? ? nil : attr.fetch("idprefix", nil)),
+            id_separator: (attr.nil? ? nil : attr.fetch("idseparator", nil))
           )
-          post_builders << search_cache
-          adoc_extensions[:preprocessor] << HeadingIndexer.new(search_cache)
-      end
+          build_options[:post_builders] << search_cache
+          build_options[:adoc_extensions][:tree_processor] << HeadingIndexer.new(search_cache)
+          # build_options[:adoc_extensions][:tree_processor] << TestAttribs.new
+        end
 
       # compose the attribute provider and associate it with all source
       # nodes
@@ -93,16 +95,26 @@ module Giblish
         node.data = provider
       end
 
+      # override doc attributes with ones from cmdline to
+      # ensure they have highest pref
+      doc_attr.add_doc_attr_providers(CmdLineDocAttribs.new(cmd_opts))
+
       @tree_converter = TreeConverter.new(
         src_tree,
         cmd_opts.dstdir,
-        {
-          pre_builders: pre_builders,
-          post_builders: post_builders,
-          adoc_api_opts: api_options,
-          adoc_extensions: adoc_extensions
-        }
+        build_options
       )
+    end
+
+    def setup_common_stuff(cmd_opts, build_options, doc_attr)
+      # always resolve docid
+      d = DocIdExtension::DocIdCacheBuilder.new
+      build_options[:pre_builders] << d
+      build_options[:adoc_extensions][:preprocessor] << DocIdExtension::DocidResolver.new({docid_cache: d})
+
+      # always generate index
+      idx = IndexTreeBuilder.new(doc_attr)
+      build_options[:post_builders] << idx
     end
   end
 

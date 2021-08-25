@@ -38,7 +38,7 @@ module Giblish
   #     ...
   #   }]
   # }
-  class HeadingIndexer < Asciidoctor::Extensions::Preprocessor
+  class HeadingIndexer < Asciidoctor::Extensions::TreeProcessor
     HEADING_REGEX = /^=+\s+(.*)$/.freeze
     ANCHOR_REGEX = /^\[\[(\w+)\]\]\s*$/.freeze
 
@@ -47,31 +47,31 @@ module Giblish
       @data_cache = data_cache
     end
 
-    def process(document, reader)
-      # Add doc as a source dependency for doc ids
-      src_node = document.attributes["giblish-src-tree-node"]
-      puts "headingindexer src_path: #{src_node.pathname}"
+    def process(document)
+      attrs = document.attributes
+      # Get the document's source node info (giblish-specific)
+      src_node = attrs["giblish-src-tree-node"]
 
       # only index source files that reside on the 'physical' file system
       return if src_node.nil? || !src_node.pathname.exist?
 
       # make sure we use the correct id elements when indexing
       # sections
-      opts = find_id_attributes(reader.lines)
-      src_path = src_node.pathname
-      
-      # Index all headings in the doc
-      Giblog.logger.debug { "indexing headings in #{src_path}" }
+      opts =       {
+        id_prefix: (attrs.key?("idprefix") ? attrs["idprefix"] : "_"),
+        id_separator: (attrs.key?("id_separator") ? attrs["id_separator"] : "_")
+      }
 
+      src_path = src_node.pathname
+      Giblog.logger.debug "index headings in #{src_path} using prefix '#{opts[:id_prefix]}' and separator '#{opts[:id_separator]}'"
+
+      # Index all headings in the doc
       @data_cache.add_file_index(
         src_path: src_path,
-        # get the title from the raw text (asciidoctor has not yet
-        # processed the text)
-        title: find_title(reader.lines),
-        sections: index_sections(reader, opts)
+        title: attrs.key?("doctitle") ? attrs["doctitle"] : "No title found!",
+        sections: index_sections(document.reader.source_lines, opts)
       )
-      # asciidoctor wants the reader object returned
-      reader
+      nil
     end
 
     private
@@ -79,12 +79,12 @@ module Giblish
     # index all section headings found in the current file
     # @return an array of {:id, :title, :line_no} dicts, one for each
     #         indexed heading
-    def index_sections(reader, opts)
+    def index_sections(lines, opts)
       sections = []
       line_no = 0
       match_str = ""
       state = :text
-      reader.lines.each do |line|
+      lines.each do |line|
         line_no += 1
         # implement a state machine that supports both custom
         # anchors for a heading and the default heading ids generated
@@ -133,44 +133,6 @@ module Giblish
       sections
     end
 
-    def find_title(lines)
-      title = "No title Found!"
-      Giblish.process_header_lines(lines) do |line|
-        m = /^=+(.*)$/.match(line)
-        if m
-          # We found a decent title
-          title = m[1].strip
-        end
-      end
-      title
-    end
-
-    # Find the attributes that determines how section ids are created
-    #
-    # The section id attributes can come from three different sources,
-    # their internal prio is (1 is highest):
-    # 1. values in class variable
-    # 2. values taken from doc
-    # 3. default values
-    def find_id_attributes(lines)
-      # prio 1 - use values from invoking user
-      result = {
-        id_prefix: @data_cache.id_prefix,
-        id_separator: @data_cache.id_separator
-      }
-      return result if result[:id_prefix] && result[:id_separator]
-
-      # prio 2
-      # use values specified within the doc
-      result = find_section_id_attributes(lines, result)
-
-      # prio 3
-      # use default values
-      result[:id_prefix] = "_" unless result[:id_prefix]
-      result[:id_separator] = "_" unless result[:id_separator]
-      result
-    end
-
     # find the section id delimiters from the document
     # header, if they are set there
     def find_section_id_attributes(lines, result)
@@ -199,6 +161,15 @@ module Giblish
         break unless sections.find { |s| s["id"] == heading_id }
       end
       heading_id
+    end
+  end
+
+  class TestAttribs < Asciidoctor::Extensions::TreeProcessor
+    def process(document)
+      src_node = document.attributes["giblish-src-tree-node"]
+
+      puts "checking idprefix for #{src_node.pathname}..."
+      puts "idprefix: #{document.attributes["idprefix"]}" if document.attributes.key?("idprefix")
     end
   end
 end

@@ -166,7 +166,7 @@ module Giblish
     end
 
     def create_adoc_src_tree tmp_docs, src_topdir
-      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir)
+      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new({header: ":idprefix: custom"}).source, src_topdir)
       tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir / "subdir1")
       tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir / "subdir1")
       p_top = Pathname.new(tmp_docs.dir) / src_topdir
@@ -264,12 +264,13 @@ module Giblish
         topdir = Pathname.new(tmp_docs.dir)
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
-        opts = CmdLine.new.parse(%W[-f html -m #{topdir} #{topdir / "dst"}])
+        # opts = CmdLine.new.parse(%W[-f html -m #{topdir} #{topdir / "dst"}])
+        opts = CmdLine.new.parse(%W[-f html -a idprefix=idefix -m #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts, src_top)
         app.tree_converter.run
 
-        r = PathTree.build_from_fs(topdir, prune: true)
-        puts r
+        # r = PathTree.build_from_fs(topdir, prune: true)
+        # puts r
       end
     end
   end

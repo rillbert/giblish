@@ -120,6 +120,7 @@ module Giblish
       def initialize(opts = {})
         @source = nil
         @title = opts.fetch(:title, "File #{@@count}")
+        @header = opts.fetch(:header, "")
         @toc_str = opts.fetch(:toc_str, ":toc:")
         @docid = opts.fetch(:docid, "")
         @first_sec_lines = opts.fetch(:first_sec_lines, ["Some dummy text..."])
@@ -145,11 +146,12 @@ module Giblish
       private
 
       def default_source
+        h = [":numbered:", @header, @toc_str, @docid].select do |i| 
+          !(i.nil? || i.empty?)
+        end.join("\n")
         <<~EOF
           = #{@title}
-          :numbered:
-          #{@toc_str}
-          #{":docid: #{@docid}" unless @docid.empty?}
+          #{h}
           
           == My First Section
   
