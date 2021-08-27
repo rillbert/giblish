@@ -1,5 +1,5 @@
 require_relative "../test_helper"
-require_relative "../../lib/giblish/resource_management"
+require_relative "../../lib/giblish/resourcepaths"
 
 module Giblish
   # tests the basic functionality of the Application class
@@ -203,7 +203,7 @@ module Giblish
     def test_generate_html_default_css
       # generate docs with asciidoctor's default css embedded in the doc
 
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
         src_top = topdir / "src"
         dst_top = topdir / "dst"
@@ -310,7 +310,7 @@ module Giblish
     end
 
     def test_generate_html_use_fix_css_path
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
         # copy_test_resources(topdir / "resources")
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
@@ -328,7 +328,7 @@ module Giblish
     end
 
     def test_generate_pdf_default_style
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
         create_resource_dir(topdir / "my/resources")
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
@@ -353,6 +353,7 @@ module Giblish
         opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts, src_top)
         app.tree_converter.run
+        all = PathTree.build_from_fs(topdir / "dst", prune: true)
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)

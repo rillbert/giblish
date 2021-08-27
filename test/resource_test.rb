@@ -1,5 +1,5 @@
 require_relative "test_helper"
-require_relative "../lib/giblish/resource_management"
+require_relative "../lib/giblish/resourcepaths"
 
 module Giblish
   # tests the basic functionality of the Application class

@@ -11,11 +11,11 @@ module Giblish
     FONT_REGEX = /.*\.(ttf)|(TTF)$/
     RESOURCE_DST_TOP_BASENAME = Pathname.new("web_assets")
 
-    # the relative path from the top of the resource area to the 
+    # the relative path from the top of the resource area to the
     # style file
     attr_reader :src_style_path_rel
 
-    # the absolute path from the top of the resource area to the 
+    # the absolute path from the top of the resource area to the
     # style file
     attr_reader :src_style_path_abs
 
@@ -49,7 +49,6 @@ module Giblish
     # returns:: the relative path from the top of the file_tree to
     # the style file
     def find_style_file(file_tree, cmd_opts)
-
       # Get all files matching the style name
       style_basename = Pathname.new(cmd_opts.style_name).sub_ext(@style_ext)
       style_tree = file_tree.match(/.*#{style_basename}$/)

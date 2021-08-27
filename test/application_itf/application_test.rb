@@ -38,9 +38,17 @@ module Giblish
     end
 
     def test_hello_world_pdf
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = tmp_docs.dir
         g = `lib/giblish.rb -f pdf data/testdocs/wellformed #{topdir}`
+        assert_equal 0, $?.exitstatus
+      end
+    end
+
+    def test_hello_world_pdf_custom_style
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        topdir = tmp_docs.dir
+        g = `lib/giblish.rb -f pdf -r data/resources -s giblish data/testdocs/wellformed #{topdir}`
         assert_equal 0, $?.exitstatus
       end
     end

@@ -31,20 +31,19 @@ module Giblish
 
     def test_build_docid_cache
       TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
-        file_1 = tmp_docs.add_doc_from_str(CreateAdocDocSrc.new({docid: "D-001"}).source, "src")
-        file_2 = tmp_docs.add_doc_from_str(CreateAdocDocSrc.new({docid: "D-002"}).source, "src")
-        file_3 = tmp_docs.add_doc_from_str(CreateAdocDocSrc.new({docid: "D-004"}).source, "src/subdir")
+        srcdir = Pathname.new(tmp_docs.dir) / "src"
+        dstdir = Pathname.new(tmp_docs.dir) / "dst"
 
-        p = Pathname.new(tmp_docs.dir)
-        src_tree = PathTree.build_from_fs(p / "src", prune: false) do |pt|
-          !pt.directory? && pt.extname == ".adoc"
-        end
-        # find the PathTree node pointing to the "src" dir
-        st = src_tree.node(p / "src", from_root: true)
+        tmp_docs.create_adoc_src_on_disk(srcdir, [
+          {header: ":docid: D-001"},
+          {header: ":docid: D-002"},
+          {header: ":docid: D-004", subdir: "subdir"}
+        ])
+        src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with a TreeConverter
         d_pp = DocIdExtension::DocIdCacheBuilder.new
-        tc = TreeConverter.new(st, p / "dst",
+        tc = TreeConverter.new(src_tree, dstdir,
           {
             pre_builders: d_pp,
             adoc_extensions: {
@@ -62,40 +61,40 @@ module Giblish
     end
 
     def test_parse_docid_refs
-      TmpDocDir.open(preserve: true) do |tmp_docs|
-        # create three adoc files under .../src and .../src/subdir
-        docid = ["D-001", "D-002", "D-003"]
-        refs = [["D-002", "D-003"], ["D-001"], ["D-004"]]
-        ["src", "src", "src/subdir"].each_with_index do |d, i|
-          tmp_docs.add_doc_from_str(CreateAdocDocSrc.new({docid: docid[i]}).add_ref(refs[i]), d)
-        end
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        srcdir = Pathname.new(tmp_docs.dir) / "src"
+        dstdir = Pathname.new(tmp_docs.dir) / "dst"
 
-        # setup a src PathTree from the src_top dir
-        p = Pathname.new(tmp_docs.dir)
-        fs_root = tree_from_src_dir(p / "src")
-
-        # find the PathTree node pointing to the "src" dir
-        st = fs_root.node(p / "src", from_root: true)
+        tmp_docs.create_adoc_src_on_disk(srcdir, [
+          {header: ":docid: D-001",
+           paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-002>> and <<:docid:D-003>>."]},
+          {header: ":docid: D-002",
+           paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-001>>."]},
+          {header: ":docid: D-003",
+           paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-004>>."],
+           subdir: "subdir"}
+        ])
+        src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with all future TreeConverters
         d_pp = DocIdExtension::DocIdCacheBuilder.new
-        tc = TreeConverter.new(st, p / "dst",
+        tc = TreeConverter.new(src_tree, dstdir,
           {
-            pre_builders: d_pp
+            pre_builders: d_pp,
           })
 
         # must register explicitly since we don't call tc.run
         TreeConverter.register_adoc_extensions(
           {preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})}
         )
-        
+
         # run the tree converter prebuild step that will populate
         # the docid cache
         tc.pre_build(false)
 
         # assert that all the docs' docids have been cached
         assert_equal(3, d_pp.cache.keys.count)
-        docid.each { |id| assert(d_pp.cache.key?(id)) }
+        ["D-001", "D-002","D-003"].each { |id| assert(d_pp.cache.key?(id)) }
 
         # run the build step -> will replace the :docid: with resolved :xref:
         # references before generating html

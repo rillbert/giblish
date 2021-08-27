@@ -30,28 +30,26 @@ module Giblish
     end
 
     def test_generate_index_default_style
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        srcdir = Pathname.new(tmp_docs.dir) / "src"
+        dstdir = Pathname.new(tmp_docs.dir) / "dst"
+
         # create three adoc files under .../src and .../src/subdir
-        ["src", "src", "src/subdir"].each { |d| puts tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
+        tmp_docs.create_adoc_src_on_disk(srcdir, [{}, {}, {subdir: "subdir"}])
 
         # setup the corresponding PathTree
-        p = Pathname.new(tmp_docs.dir)
-        fs_root = tree_from_src_dir(p / "src")
+        src_tree = tree_from_src_dir(srcdir)
+        assert_equal(3, src_tree.leave_pathnames.count)
 
-        # find the PathTree node pointing to the "src" dir
-        st = fs_root.node(p / "src", from_root: true)
-
-        assert_equal(3, st.leave_pathnames.count)
-
-        # Convert all adoc files in the src tree to html and use s
+        # Convert all adoc files in the src tree to html and use a
         # 'post builder' to generate adoc source for index pages for each
         # directory.
-        index_builder = IndexTreeBuilder.new(p / "dst")
-        tc = TreeConverter.new(st, p / "dst", {post_builders: index_builder})
+        index_builder = IndexTreeBuilder.new
+        tc = TreeConverter.new(src_tree, dstdir, {post_builders: index_builder})
         tc.run
 
         # get the node in the dst tree that points to .../dst
-        dt = tc.dst_tree.node(p / "dst", from_root: true)
+        dt = tc.dst_tree.node(dstdir, from_root: true)
 
         # assert that there now are 2 index files under "dst"
         assert_equal(5, dt.leave_pathnames.count)
@@ -63,36 +61,26 @@ module Giblish
 
     def test_generate_index_linked_css
       TmpDocDir.open(preserve: false) do |tmp_docs|
+        srcdir = Pathname.new(tmp_docs.dir) / "src"
+        dstdir = Pathname.new(tmp_docs.dir) / "dst"
+
         # create three adoc files under .../src and .../src/subdir
-        ["src", "src", "src/subdir"].each { |d| tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
+        tmp_docs.create_adoc_src_on_disk(srcdir, [{}, {}, {subdir: "subdir"}])
 
-        # Build a PathTree using the 'src' dir as root
-        p = Pathname.new(tmp_docs.dir)
-        fs_root = tree_from_src_dir(p / "src")
-
-        # find the PathTree node pointing to the "src" dir
-        st = fs_root.node(p / "src", from_root: true)
-
-        assert_equal(3, st.leave_pathnames.count)
-
-        # setup a post-builder to build index pages in each dir using a relative
-        # css path
-        css_path = "web_assets/hejsan/hopp.css"
-        index_builder = IndexTreeBuilder.new(
-          p / "dst",
-          RelativeCssDocAttr.new(p / "dst" / css_path)
-        )
+        # setup the corresponding PathTree
+        src_tree = tree_from_src_dir(srcdir)
+        assert_equal(3, src_tree.leave_pathnames.count)
 
         # Convert all adoc files in the src tree to html and use the
         # post builder for indices
-        tc = TreeConverter.new(st, p / "dst", {
-          post_builders: index_builder
+        css_path = "web_assets/hejsan/hopp.css"
+        tc = TreeConverter.new(src_tree, dstdir, {
+          post_builders: IndexTreeBuilder.new(RelativeCssDocAttr.new(css_path))
         })
         tc.run
 
         # filter out the 'index.html' files in a new tree
         it = tc.dst_tree.match(/.*index.html$/)
-        it = it.node(p / "dst", from_root: true)
 
         # assert that there now are 2 index files under "dst"
         assert_equal(2, it.leave_pathnames.count)
@@ -110,11 +98,7 @@ module Giblish
             assert_equal "stylesheet", csslink.get("rel")
 
             # get the expected relative path from the top dst dir
-            rp = it.pathname.relative_path_from(n.pathname) / css_path
-
-            # rp = Pathname.new(css_path).relative_path_from(
-            #   (stem.basename + crown)
-            # )
+            rp = it.pathname.relative_path_from(n.pathname.dirname) / css_path
 
             assert_equal rp.to_s,
               csslink.get("href")
@@ -125,36 +109,29 @@ module Giblish
 
     def test_generate_index_pdf
       TmpDocDir.open(preserve: false) do |tmp_docs|
+        srcdir = Pathname.new(tmp_docs.dir) / "src"
+        dstdir = Pathname.new(tmp_docs.dir) / "dst"
+
         # create three adoc files under .../src and .../src/subdir
-        ["src", "src", "src/subdir"].each { |d| puts tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d) }
+        tmp_docs.create_adoc_src_on_disk(srcdir, [{}, {}, {subdir: "subdir"}])
 
         # setup the corresponding PathTree
-        p = Pathname.new(tmp_docs.dir)
-
-        fs_root = tree_from_src_dir(p / "src")
-
-        # find the PathTree node pointing to the "src" dir
-        st = fs_root.node(p / "src", from_root: true)
-
-        # setup a post builder to generate pdf index pages for each dir
-        index_builder = IndexTreeBuilder.new(
-          p / "dst",
-          PdfCustomStyle.new(p / "resources/themes/giblish.yml")
-        )
+        src_tree = tree_from_src_dir(srcdir)
+        assert_equal(3, src_tree.leave_pathnames.count)
 
         # Convert all adoc files in the src tree to pdf
-        tc = TreeConverter.new(st, p / "dst",
+        # setup a post builder to generate pdf index pages for each dir
+        tc = TreeConverter.new(src_tree, dstdir,
           {
             adoc_api_opts: {
               backend: "pdf"
             },
-            post_builders: index_builder
+            post_builders: IndexTreeBuilder.new
           })
         tc.run
 
         # filter out the 'index.pdf' files in a new tree
         it = tc.dst_tree.match(/.*index.pdf$/)
-        it = it.node(p / "dst", from_root: true)
 
         assert_equal(2, it.leave_pathnames.count)
       end

@@ -51,11 +51,11 @@ class LinkCSSTest < Minitest::Test
     Giblog.setup
   end
 
-
-  # this test shall generate a doc with asciidoctors default css
-  # embedded in the docs (the given webroot will not be used)
+  # generate a doc without embedded style info but pointing
+  # to the stylesheet given by the -w flag.
+  # TODO: Decide how to treat a set -w and unset -s!!!
   #  giblish -w '/my/webserver/topdir' src dst
-  def test_default_styling_with_webroot
+  def test_webroot_only
     TmpDocDir.open do |tmp_docs|
       # create a doc under the .../subdir folder
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
@@ -67,14 +67,20 @@ class LinkCSSTest < Minitest::Test
 
       # assert that the css link is only the google font api
       # used by asciidoctor by default
+      expected_hrefs = [
+        "/my/webserver/topdir"
+      ]
+      count = 0
       tmp_docs.check_html_dom adoc_filename do |html_dom|
         html_dom.xpath("html/head/link").each do |csslink|
+          count += 1
           assert_equal "stylesheet", csslink.get("rel")
-          assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
-            "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
-            csslink.get("href")
+          puts "csslink: #{csslink.get("href")}"
+          expected_hrefs.reject! { |l| l == csslink.get("href") }
         end
       end
+      assert_equal(1, count)
+      assert_equal(0, expected_hrefs.count)
     end
   end
 
@@ -97,7 +103,7 @@ class LinkCSSTest < Minitest::Test
 
       # act on the input data
       adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "src/subdir")
-      args = ["--log-level", "info", 
+      args = ["--log-level", "info",
         "-r", r_dir,
         "-s", "giblish",
         "#{tmp_docs.dir}/src",
@@ -106,7 +112,7 @@ class LinkCSSTest < Minitest::Test
 
       # assert that the css link is relative to the specific
       # css file (../web_assets/css/giblish.css)
-      tmp_docs.check_html_dom adoc_filename.gsub('src/','dst/') do |html_tree|
+      tmp_docs.check_html_dom adoc_filename.gsub("src/", "dst/") do |html_tree|
         css_links = html_tree.xpath("html/head/link")
         assert_equal 1, css_links.count
 
@@ -121,6 +127,7 @@ class LinkCSSTest < Minitest::Test
   end
 
   # test that the css link is a relative link to the css file
+  # TODO: Decide how to treat this combo of flags
   # giblish -w /my/web/root -r <resource_dir> -s custom src dst
   def test_custom_styling_with_webroot
     TmpDocDir.open do |tmp_docs|
@@ -154,5 +161,4 @@ class LinkCSSTest < Minitest::Test
       end
     end
   end
-
 end

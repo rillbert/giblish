@@ -29,7 +29,6 @@ module Giblish
 
     def document_attributes(src_node, dst_node, dst_top)
       href_path = dst_top.relative_path_from(dst_node).dirname / @css_path
-      # rel_path = @css_path.relative_path_from(dst_node.pathname.dirname)
       {
         "stylesdir" => href_path.dirname.to_s,
         "stylesheet" => href_path.basename.to_s,
@@ -41,14 +40,14 @@ module Giblish
 
   class PdfCustomStyle < DocAttributesBase
     # pdf_style_path:: the path name (preferable absolute) to the yml file
-    # pdf_font_dirs:: a collection of Pathnames to each font dir that shall be
+    # pdf_font_dirs:: one or more Pathnames to each font dir that shall be
     # checked for fonts
-    def initialize(resource_paths)
-      @pdf_style_path = resource_paths.src_style_path_abs
+    def initialize(pdf_style_path, *pdf_font_dirs)
+      @pdf_style_path = pdf_style_path
       # one can specify multiple font dirs as:
       # -a pdf-fontsdir="path/to/fonts;path/to/more-fonts"
       # Always use the GEM_FONTS_DIR token to load the adoc-pdf gem's font dirs as well
-      @pdf_fontsdir = (resource_paths.font_dirs_abs.to_a << "GEM_FONTS_DIR").collect { |d| d.to_s }&.join(";")
+      @pdf_fontsdir = (Array(pdf_font_dirs) << "GEM_FONTS_DIR").collect { |d| d.to_s }&.join(";")
     end
 
     def document_attributes(src_node, dst_node, dst_top)

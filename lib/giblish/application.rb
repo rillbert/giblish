@@ -1,6 +1,6 @@
 require_relative "cmdline"
 require_relative "config_utils"
-# require_relative "pathutils"
+require_relative "resourcepaths"
 require_relative "converters"
 require_relative "treeconverter"
 require_relative "docid/preprocessor"
@@ -62,8 +62,9 @@ module Giblish
           build_options[:adoc_api_opts][:backend] = "pdf"
 
           # enable custom pdf styling
+          rp = ResourcePaths.new(cmd_opts)
           doc_attr.add_doc_attr_providers(
-            PdfCustomStyle.new(ResourcePaths.new(cmd_opts))
+            PdfCustomStyle.new(rp.src_style_path_abs, *(rp.font_dirs_abs.to_a))
           )
         in format: "pdf"
           # generate pdf using asciidoctor-pdf with default styling
@@ -159,91 +160,6 @@ module Giblish
 
     private
 
-    def execute_conversion(cmdline)
-      # setup conversion options
-      conv_options = {
-        pre_builders: [],
-        post_builders: []
-      }
-
-      # enable docid extension if asked for
-      resolve_docid(conv_options) if cmdline.resolve_docid
-
-      # convert adoc files on disk
-      if cmdline.branch_regex || cmdline.tag_regex
-        convert_git_repo(cmdline, conv_options)
-      else
-        convert_file_tree(cmdline)
-      end
-    end
-
-    def get_api_opts(cmdline)
-      {
-        backend: cmdline.format
-      }
-    end
-
-    def get_doc_attribs(cmdline)
-      if cmdline.web_path
-        style_path = cmdline.web_path
-
-      end
-
-      # return the correct document_attribute provider instance
-      # depending on format
-      if cmdline.resource_dir && cmdline.style_name
-        format_config = {"html" => ["css", ".css"], "pdf" => ["pdftheme", ".yml"]}
-        config = format_config[cmdline.format]
-        style_path = cmdline.resource_dir / config[0] / Pathname.new(cmdline.style_name).sub_ext(config[1])
-        raise ArgumentError, "Could not find requested style info at #{style_path}" unless style_path.exist?
-
-        case cmdline.format
-        when "html"
-          style_path = (cmdline.dstdir / "web_assets/css" / cmdline.style_name).sub_ext(".css")
-          RelativeCssDocAttr.new(style_path)
-        when "pdf"
-          PdfCustomStyle.new(style_path, cmdline.resource_dir / "fonts")
-        when "epub"
-          raise NotYetImplemented
-        end
-      end
-    end
-
-    def convert_file_tree(cmdline)
-      # create the pathtree with the files corresponding to the user filter
-      src_tree = PathTree.build_from_fs(cmdline.srcdir, prune: false) do |pt|
-        !pt.directory? && cmdline.include_regex =~ pt.to_s
-      end
-      src_tree = src_tree.node(cmdline.srcdir, from_root: true)
-
-      # add a data provider to each document node
-      data_proxy = DataDelegator.new(
-        SrcFromFile.new,
-        get_doc_attribs(cmdline)
-      )
-      src_tree.traverse_preorder do |level, n|
-        next unless n.leaf?
-
-        n.data = data_proxy
-      end
-
-      Giblog.logger.debug src_tree.to_s
-
-      # get an instance of each index_builder the user asked for
-      index_builders = create_index_builder(cmdline)
-
-      # setup conversion opts
-      conversion_opts = {
-        adoc_api_opts: get_api_opts(cmdline)
-        # adoc_doc_attribs: cmdline.doc_attributes
-      }
-      conversion_opts[:post_builders] = index_builders unless index_builders.nil?
-
-      # run the conversion of the tree
-      tc = TreeConverter.new(src_tree, cmdline.dstdir, conversion_opts)
-      tc.run
-    end
-
     def convert_git_repo(cmdline, conv_options)
       # Create a handle to our git interface
       git_itf = Giblish::GitItf.new(repo)
@@ -290,37 +206,6 @@ module Giblish
         tc = TreeConverter.new(st, branch_dst, conversion_opts)
         tc.run
       end
-    end
-
-    def convert_files(src, dst, conv_options, converter = nil)
-      # setup a PathTree with all complying adoc files
-      fs_root = tree_from_src_dir(src)
-      st = fs_root.node(repo, from_root: true)
-
-      converter = if converter.nil?
-        TreeConverter.new(st, dst, conv_options)
-      else
-        converter.init_src_dst(st, dst)
-      end
-
-      [converter.run, converter]
-    end
-
-    def create_index_builder(cmdline)
-      return nil if cmdline.no_index
-
-      # TODO: Implement factory depending on cmdline
-      IndexTreeBuilder.new(cmdline.dstdir)
-    end
-
-    def resolve_docid(conv_options)
-      # Create a docid pre-builder/preprocessor and register it with all future TreeConverters
-      d_pp = DocIdExtension::DocIdCacheBuilder.new
-      TreeConverter.register_adoc_extensions({preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})})
-      conv_options[:pre_builders] << d_pp
-    end
-
-    def tree_from_srcdir(cmdline)
     end
   end
 end

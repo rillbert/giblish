@@ -101,14 +101,21 @@ module Giblish
       # top_dir:: Pathname to the top dir of the tree where the docs shall be
       # written.
       # doc_info:: an Array with hashes where each hash describe the content or
-      # metadata of one doc. The supported hash structure looks like:
+      # metadata of one doc or a String with actual, verbatim doc content.
+      # The supported hash structure looks like:
       #
       #   {hash with CreateAdocDocSrc options + a :subdir entry}
       def create_adoc_src_on_disk(top_dir, doc_info)
         result = []
         doc_info.each do |doc_config|
+          doc_src = if doc_config.is_a?(String)
+            doc_config
+          else
+            CreateAdocDocSrc.new(doc_config).source
+          end
+
           result << add_doc_from_str(
-            CreateAdocDocSrc.new(doc_config).source,
+            doc_src,
             top_dir / doc_config.fetch(:subdir, ".")
           )
         end
@@ -140,6 +147,16 @@ module Giblish
     #     text: "Some random text"
     #   }, ... ]
     # }
+    # or
+    # {
+    #   doc_src: <<~DOC_SRC
+    #   = My doc
+    #
+    #   == A paragraph
+    #
+    #   some text
+    #   DOC_SRC
+    # }
     class CreateAdocDocSrc
       attr_accessor :title, :header, :paragraphs
       attr_writer :source
@@ -151,18 +168,15 @@ module Giblish
       @@count = 1
 
       def initialize(opts = {})
-        @source = nil
+        @source = opts.fetch(:doc_src, nil)
+        return unless @source.nil?
+
         @title = opts.fetch(:title, "Document #{@@count}")
-        @header = opts.fetch(:header, DEFAULT_OPTIONS[:header])
+        @header = Array(opts.fetch(:header, DEFAULT_OPTIONS[:header]))
         @paragraphs = opts.fetch(:paragraphs, DEFAULT_OPTIONS[:paragraphs])
         @@count += 1
         @source = nil
       end
-
-      # def add_ref(ref)
-      #   Array(ref).each { |r| @first_sec_lines << "<<:docid:#{r}>>" }.join("\n")
-      #   self
-      # end
 
       def to_s
         source

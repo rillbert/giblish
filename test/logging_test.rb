@@ -2,12 +2,11 @@ require "oga"
 require "test_helper"
 require_relative "../lib/giblish/utils"
 
-
 # tests logging of giblish and asciidoc messages
 class LoggingTest < Minitest::Test
   include Giblish::TestUtils
 
-  @@doc_str = <<~EOF
+  TEST_DOC = <<~EOF
     = Test logging
     :numbered:
 
@@ -27,11 +26,11 @@ class LoggingTest < Minitest::Test
 
   def test_logging_of_info_and_warn
     TmpDocDir.open do |tmp_docs|
-      # adoc_filename = tmp_docs.add_doc_from_str @@doc_str
-      args = [tmp_docs.dir,
-        tmp_docs.dir]
-      assert(Giblish.application.run args)
-      assert(raise NotImplementedError)
+      srcdir = Pathname.new(tmp_docs.dir)
+      tmp_docs.create_adoc_src_on_disk(srcdir, [{doc_src: TEST_DOC}])
+      args = [srcdir, srcdir]
+      assert(Giblish.application.run(args))
+      # TODO: Find a good way of testing this !!
     end
   end
 end
