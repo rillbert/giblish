@@ -2,7 +2,7 @@ require "asciidoctor"
 require "test_helper"
 require_relative "../../lib/giblish/indexbuilders/digraphindex"
 require_relative "../../lib/giblish/pathtree"
-require_relative "../../lib/giblish/docid"
+
 
 module Giblish
   class DigraphTest < Minitest::Test

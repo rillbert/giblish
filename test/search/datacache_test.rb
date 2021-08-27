@@ -4,8 +4,6 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/search/searchdatacache"
 
 module Giblish
-  # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
   class TestDatacache < Minitest::Test
     include Giblish::TestUtils
 
@@ -17,10 +15,11 @@ module Giblish
       file_set = {}
       TmpDocDir.open do |tmp_doc_dir|
         root_dir = tmp_doc_dir.dir
-        paths = PathManager.new(root_dir, "#{root_dir}/dst")
+        src_root = Pathname.new(root_dir) / "src"
+        src_root.mkpath
 
         # ensure that the index is an empty fileinfos entry only
-        s1 = SearchDataCache.new(file_set: file_set, paths: paths)
+        s1 = SearchDataCache.new(file_tree: PathTree.new("dummy"))
         idx = s1.heading_index
         assert_equal(idx.keys, [:fileinfos])
         assert(idx[:fileinfos].empty?)
@@ -28,25 +27,19 @@ module Giblish
         # add some bogus data and check that it is added
         idx[:fileinfos] << {a: 1, b: 2}
         assert_equal(idx[:fileinfos].length, 1)
-
-        # clear the index by instantiating a new SearchDataCache
-        # object
-        s2 = SearchDataCache.new(file_set: file_set, paths: paths)
-        idx = s2.heading_index
-        assert_equal(idx.keys, [:fileinfos])
-        assert(idx[:fileinfos].empty?)
       end
     end
 
     def test_adding_data
       TmpDocDir.open do |tmp_doc_dir|
         root_dir = tmp_doc_dir.dir
-        paths = PathManager.new(root_dir, "#{root_dir}/dst")
+        src_root = Pathname.new(root_dir) / "src"
+        src_root.mkpath
 
         # ensure that the index is an empty fileinfos entry only
-        s1 = SearchDataCache.new(file_set: {}, paths: paths)
-        SearchDataCache.add_file_index({src_path: "mysrc", title: "My Title", sections: []})
-        SearchDataCache.add_file_index({src_path: "mysrc", title: "My Title", sections: []})
+        s1 = SearchDataCache.new(file_tree: PathTree.new("dummy"))
+        s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
+        s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
 
         idx = s1.heading_index
         assert_equal(idx.keys, [:fileinfos])
@@ -60,15 +53,14 @@ module Giblish
         src_root = Pathname.new(root_dir) / "src"
         src_root.mkpath
         dst_root = Pathname.new(root_dir) / "dst"
-        paths = PathManager.new(src_root, dst_root, nil, true)
 
         # ensure that the index is an empty fileinfos entry only
-        s1 = SearchDataCache.new(file_set: {}, paths: paths)
-        SearchDataCache.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
-        SearchDataCache.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
-
+        s1 = SearchDataCache.new(file_tree: PathTree.new("dummy"))
+        s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
+        s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
         # serialize search data cache to json file
-        s1.deploy_search_assets
+        dt = PathTree.new(Pathname.new(tmp_doc_dir.dir) / "dst")
+        s1.run(nil, dt.node(Pathname.new(tmp_doc_dir.dir) / "dst", from_root: true), nil)
 
         # ensure that relevant dirs/files exist
         assert(dst_root.directory?)
@@ -78,6 +70,4 @@ module Giblish
       end
     end
   end
-  # rubocop:enable Metrics/AbcSize
-  # rubocop:enable Metrics/MethodLength
 end

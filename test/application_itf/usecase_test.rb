@@ -6,6 +6,32 @@ module Giblish
   class HtmlLocalResourceTest < Minitest::Test
     include Giblish::TestUtils
 
+    TEST_DOCS = [
+      {title: "Doc 1", header: [":idprefix: custom", ":toc:"],
+       paragraphs: [{
+         title: "First paragraph",
+         text: "Some random text"
+       },
+         {title: "Second paragraph",
+          text: "More random text"}]},
+      {title: "Doc 2",
+       paragraphs: [{
+         title: "First paragraph",
+         text: "Some random text"
+       },
+         {title: "Second paragraph",
+          text: "More random text"}],
+       subdir: "subdir1"},
+      {title: "Doc 3",
+       paragraphs: [{
+         title: "First paragraph",
+         text: "Some random text"
+       },
+         {title: "Second paragraph",
+          text: "More random text"}],
+       subdir: "subdir1"}
+    ]
+
     def setup
       # setup logging
       Giblog.setup
@@ -166,29 +192,83 @@ module Giblish
     end
 
     def create_adoc_src_tree tmp_docs, src_topdir
-      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new({header: ":idprefix: custom"}).source, src_topdir)
-      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir / "subdir1")
-      tmp_docs.add_doc_from_str(CreateAdocDocSrc.new.source, src_topdir / "subdir1")
-      p_top = Pathname.new(tmp_docs.dir) / src_topdir
-      src_tree = PathTree.build_from_fs(p_top)
-      src_tree.node(p_top, from_root: true)
+      TEST_DOCS.each do |doc_config|
+        adoc_src = CreateAdocDocSrc.new(doc_config).source
+        puts adoc_src
+        tmp_docs.add_doc_from_str(adoc_src, src_topdir / doc_config.fetch(:subdir, "."))
+      end
+      PathTree.build_from_fs(Pathname.new(tmp_docs.dir) / src_topdir)
     end
 
     def test_generate_html_default_css
+      # generate docs with asciidoctor's default css embedded in the doc
+
       TmpDocDir.open(preserve: true) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
+        src_top = topdir / "src"
+        dst_top = topdir / "dst"
         create_resource_dir(topdir / "my/resources")
-        src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
+        src_docs = tmp_docs.create_adoc_src_on_disk(src_top, TEST_DOCS)
 
-        opts = CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
+        # src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
+
+        opts = CmdLine.new.parse(%W[-f html #{src_top} #{dst_top}])
+
+        src_tree = PathTree.build_from_fs(Pathname.new(src_top))
+        app = Configurator.new(opts, src_tree)
         app.tree_converter.run
 
-        r = PathTree.build_from_fs(topdir, prune: true)
-        puts r
+        # check that there are three generated docs and two index files
+        doc_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
+        assert_equal(3, doc_tree.leave_pathnames.count)
+        index_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.basename.to_s == "index.html" }
+        assert_equal(2, index_tree.leave_pathnames.count)
+
+        # check that the titles are correct in the generated files
+        expected_titles = TEST_DOCS.collect { |h| h[:title].dup }
+        tmp_docs.get_html_dom(doc_tree) do |node, dom|
+          next if !node.leaf? || /index.html$/ =~ node.pathname.to_s
+
+          nof_headers = 0
+          dom.xpath("//h1").each do |title|
+            nof_headers += 1
+            assert(expected_titles.reject! { |t| t == title.text })
+          end
+          assert_equal(1, nof_headers)
+        end
+        assert(expected_titles.empty?)
+
+        # assert that the css link is only the google font api
+        # used by asciidoctor by default
+        html_result = PathTree.build_from_fs(topdir / "dst")
+        expected_hrefs = [
+          "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
+              "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+        ]
+        tmp_docs.get_html_dom(html_result) do |node, document|
+          document.xpath("html/head/link").each do |csslink|
+            assert_equal "stylesheet", csslink.get("rel")
+            puts csslink.get("href").inspect
+            assert(expected_hrefs.include?(csslink.get("href")))
+          end
+        end
       end
     end
 
+    # test that the css link is a relative link to the css file in the
+    # local file system when user does not give web path
+    #
+    # giblish -r <resource_dir> --s style src dst
+    # shall yield:
+    # dst
+    # |- file.html
+    # |- subdir
+    # |    |- file.html (href ../web_assets/css/giblish.css)
+    # |...
+    # |- web_assets
+    # |    |- css
+    #          |- giblish.css
     def test_generate_html_use_resource_dir
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
@@ -200,11 +280,32 @@ module Giblish
         app.tree_converter.run
 
         # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
+        r = PathTree.build_from_fs(topdir / "dst", prune: false)
         docs = r.filter { |l, n| !(/web_assets/ =~ n.pathname.to_s) }
-        puts docs
         assert_equal(5, docs.leave_pathnames.count)
         assert_equal(2, r.match(/index.html$/).leave_pathnames.count)
+
+        # assert that the css link is only the google font api
+        # used by asciidoctor by default
+        expected_hrefs = [
+          "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
+              "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
+          "placeholder for relative path"
+        ]
+        tmp_docs.get_html_dom(docs) do |node, document|
+          nof_links = 0
+          document.xpath("html/head/link").each do |csslink|
+            # get the expected relative path from the top dst dir
+            rp = (topdir / "dst/web_assets/web/giblish.css").relative_path_from(node.pathname.dirname)
+
+            expected_hrefs[2] = rp.to_s
+            assert_equal "stylesheet", csslink.get("rel")
+            assert(expected_hrefs.include?(csslink.get("href")))
+            nof_links += 1
+          end
+          assert(nof_links > 0)
+        end
       end
     end
 
@@ -259,6 +360,5 @@ module Giblish
         assert_equal(2, r.match(/index.pdf$/).leave_pathnames.count)
       end
     end
-
   end
 end

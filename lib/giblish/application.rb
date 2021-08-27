@@ -1,7 +1,9 @@
 require_relative "cmdline"
-require_relative "pathutils"
+require_relative "config_utils"
+# require_relative "pathutils"
 require_relative "converters"
 require_relative "treeconverter"
+require_relative "docid/preprocessor"
 
 module Giblish
   # configure all parts needed to execute the options specified by
@@ -126,12 +128,20 @@ module Giblish
 
       # setup logging
       Giblog.setup
+      Giblog.logger.level = Logger::INFO
 
       # Parse cmd line
       cmdline = CmdLine.new.parse(args)
+      Giblog.logger.level = cmdline.log_level
+      
       Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
 
-      execute_conversion(cmdline)
+      # TODO: Add regex include/exclude
+      src_tree = PathTree.build_from_fs(cmdline.srcdir)
+      app = Configurator.new(cmdline, src_tree)
+      app.tree_converter.run
+
+      # execute_conversion(cmdline)
       Giblog.logger.info { "Giblish is done!" }
     end
 

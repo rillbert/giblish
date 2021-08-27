@@ -51,30 +51,6 @@ class LinkCSSTest < Minitest::Test
     Giblog.setup
   end
 
-  # this test shall generate a doc with asciidoctors default css
-  # embedded in the doc
-  #  giblish src dst
-  def test_default_styling_without_webroot
-    TmpDocDir.open do |tmp_docs|
-      # create a doc under .../src_root/subdir
-      adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
-      args = ["--log-level", "info",
-        tmp_docs.dir,
-        tmp_docs.dir]
-      Giblish.application.run args
-
-      # assert that the css link is only the google font api
-      # used by asciidoctor by default
-      tmp_docs.check_html_dom adoc_filename do |html_tree|
-        html_tree.xpath("html/head/link").each do |csslink|
-          assert_equal "stylesheet", csslink.get("rel")
-          assert_equal "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
-            "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
-            csslink.get("href")
-        end
-      end
-    end
-  end
 
   # this test shall generate a doc with asciidoctors default css
   # embedded in the docs (the given webroot will not be used)

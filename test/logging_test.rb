@@ -1,7 +1,7 @@
 require "oga"
 require "test_helper"
 require_relative "../lib/giblish/utils"
-require_relative "../lib/giblish/docid"
+
 
 # tests logging of giblish and asciidoc messages
 class LoggingTest < Minitest::Test

@@ -72,27 +72,6 @@ module Giblish
       end
     end
 
-    # # Create needed assets for the search to work. This method
-    # # 1. Serializes the 'database' with the indexed headings to a JSON
-    # #    file in the proper location in the destination
-    # # 2. Copies all source files that are included in the search space to
-    # #    a mirrored hierarchy within the destination tree.
-    # def deploy_search_assets(asset_top_dir = nil)
-    #   # get the proper dir for the search assets
-    #   assets_dir = @paths.search_assets_abs
-
-    #   # store the JSON file
-    #   serialize_section_index(assets_dir, asset_top_dir || @paths.src_root_abs)
-
-    #   # traverse the src file tree and copy all processed adoc files
-    #   # to the search_assets dir
-    #   @adoc_files.each do |p|
-    #     dst_dir = assets_dir.join(@paths.reldir_from_src_root(p))
-    #     FileUtils.mkdir_p(dst_dir)
-    #     FileUtils.cp(p.to_s, dst_dir)
-    #   end
-    # end
-
     private
 
     # write the index to a file in dst_dir and remove the base_dir

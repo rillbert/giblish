@@ -3,7 +3,6 @@
 require "fileutils"
 require "test_helper"
 require_relative "../lib/giblish/utils"
-require_relative "../lib/giblish/docid"
 
 class DepGraphTests < Minitest::Test
   include Giblish::TestUtils

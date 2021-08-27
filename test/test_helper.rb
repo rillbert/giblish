@@ -98,6 +98,23 @@ module Giblish
         adoc_file.path
       end
 
+      # top_dir:: Pathname to the top dir of the tree where the docs shall be
+      # written.
+      # doc_info:: an Array with hashes where each hash describe the content or
+      # metadata of one doc. The supported hash structure looks like:
+      #
+      #   {hash with CreateAdocDocSrc options + a :subdir entry}
+      def create_adoc_src_on_disk(top_dir, doc_info)
+        result = []
+        doc_info.each do |doc_config|
+          result << add_doc_from_str(
+            CreateAdocDocSrc.new(doc_config).source,
+            top_dir / doc_config.fetch(:subdir, ".")
+          )
+        end
+        result
+      end
+
       def get_html_dom(path_tree)
         path_tree.traverse_preorder do |l, n|
           next unless n.leaf?
@@ -111,55 +128,63 @@ module Giblish
     end
 
     # Creates a string with adoc source, either a default string
-    # or according to the user's wishes.
+    # or according to the given options.
+    #
+    # === Supported input options as an example
+    # {
+    #   title: "Doc 1",
+    #   # each item in the array will become one header row in the adoc
+    #   header: [":idprefix: custom", ":toc:"],
+    #   paragraphs: [{
+    #     title: "First paragraph",
+    #     text: "Some random text"
+    #   }, ... ]
+    # }
     class CreateAdocDocSrc
-      attr_accessor :title, :toc_str, :first_sec_lines, :tail_source_lines
+      attr_accessor :title, :header, :paragraphs
       attr_writer :source
+
+      DEFAULT_OPTIONS = {
+        header: [],
+        paragraphs: [{title: "Paragraph 1", text: "Random text."}]
+      }
       @@count = 1
 
       def initialize(opts = {})
         @source = nil
-        @title = opts.fetch(:title, "File #{@@count}")
-        @header = opts.fetch(:header, "")
-        @toc_str = opts.fetch(:toc_str, ":toc:")
-        @docid = opts.fetch(:docid, "")
-        @first_sec_lines = opts.fetch(:first_sec_lines, ["Some dummy text..."])
-        @tail_source_lines = opts.fetch(:tail_source_lines, ["Some more dummy text..."])
+        @title = opts.fetch(:title, "Document #{@@count}")
+        @header = opts.fetch(:header, DEFAULT_OPTIONS[:header])
+        @paragraphs = opts.fetch(:paragraphs, DEFAULT_OPTIONS[:paragraphs])
         @@count += 1
+        @source = nil
       end
 
-      def add_ref(ref)
-        Array(ref).each { |r| @first_sec_lines << "<<:docid:#{r}>>" }.join("\n")
-        self
-      end
+      # def add_ref(ref)
+      #   Array(ref).each { |r| @first_sec_lines << "<<:docid:#{r}>>" }.join("\n")
+      #   self
+      # end
 
       def to_s
         source
       end
 
       def source
-        return default_source if @source.nil?
-
+        @source = assemble_source if @source.nil?
         @source
       end
 
       private
 
-      def default_source
-        h = [":numbered:", @header, @toc_str, @docid].select do |i| 
-          !(i.nil? || i.empty?)
-        end.join("\n")
-        <<~EOF
+      def assemble_source
+        h_str = @header.join("\n")
+        p_str = @paragraphs.collect { |title, text| "== #{title}\n\n#{text}" }.join("\n")
+        <<~ADOC_SOURCE
           = #{@title}
-          #{h}
+          #{h_str}
           
-          == My First Section
-  
-          #{@first_sec_lines.collect { |l| l }.join("\n")}
-          
-          #{@tail_source_lines.collect { |l| l }.join("\n")}
-          
-        EOF
+          #{p_str}
+
+        ADOC_SOURCE
       end
     end
 
