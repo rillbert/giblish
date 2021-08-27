@@ -1,4 +1,10 @@
 #!/usr/bin/env ruby
+if /^2/ =~ RUBY_VERSION 
+  # suppress warnings for 'experimental' pattern matching
+  # for ruby versions < 3.x
+  require 'warning'
+  Warning.ignore(/Pattern matching/)
+end
 
 require_relative "giblish/version"
 require_relative "giblish/utils"
