@@ -187,7 +187,6 @@ module Giblish
     def create_adoc_src_tree tmp_docs, src_topdir
       TEST_DOCS.each do |doc_config|
         adoc_src = CreateAdocDocSrc.new(doc_config).source
-        puts adoc_src
         tmp_docs.add_doc_from_str(adoc_src, src_topdir / doc_config.fetch(:subdir, "."))
       end
       PathTree.build_from_fs(Pathname.new(tmp_docs.dir) / src_topdir)
@@ -242,7 +241,6 @@ module Giblish
         tmp_docs.get_html_dom(html_result) do |node, document|
           document.xpath("html/head/link").each do |csslink|
             assert_equal "stylesheet", csslink.get("rel")
-            puts csslink.get("href").inspect
             assert(expected_hrefs.include?(csslink.get("href")))
           end
         end

@@ -169,7 +169,6 @@ class PathTreeTest < Minitest::Test
     assert_equal("124563", order)
     assert_equal([0, 1, 2, 2, 2, 1], level)
     assert_equal([nil, nil, 124, 125, 126, 13], data)
-    puts root.to_s
   end
 
   def test_postorder_ok
@@ -439,7 +438,7 @@ class PathTreeTest < Minitest::Test
     }
 
     copy = root.match(/2$/)
-    puts copy
+
     assert_equal(2, copy.count)
     assert_equal(Pathname.new("1/2"), copy.node("2").pathname)
     assert_equal(12, copy.node("2").data)
@@ -456,7 +455,7 @@ class PathTreeTest < Minitest::Test
     }
 
     copy = root.filter { |l, n| /2$/ =~ n.pathname.to_s }
-    puts copy
+
     assert_equal(2, copy.count)
     assert_equal(Pathname.new("1/2"), copy.node("2").pathname)
     assert_equal(12, copy.node("2").data)
