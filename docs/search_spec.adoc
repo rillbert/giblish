@@ -1,0 +1,157 @@
+= Text search spec
+
+== File system when deployed
+
+----
+|- <top_path>
+|    |- file1.html
+|    |- subdir
+|         |- file2.html
+|    |- web_assets
+|        |- mystyle.css
+|    |- gibsearch_assets
+|         |- heading_index.json
+|         |- file1.adoc
+|              |- subdir
+|                   |file2.adoc
+----
+
+=== heading_index.json
+
+[source,json]
+----
+{
+  file_infos : [
+    {
+    filepath : "file1.adoc",
+    title : "File 1 Title",
+    sections : [{
+      id : "section_id_1",
+      title : "Purpose",
+      line_no : 10
+    },
+    {
+      id : "section_id_2",
+      ...
+    }
+    ]
+  },
+  {
+    filepath : "subdir/file2.adoc",
+    ...
+  }]
+}
+----
+
+== Information expected to be included in a search request
+
+URL endpoint for the search service::
+When a search is triggered, the correct URL for triggering the search service must be POSTed to.
+
+URI parameters::
+The search service expects a number of parameters as part of the search query, see <<uri_params>>.
+
+.URI parameters
+[[uri_params]]
+|===
+|name |status |comment 
+
+|calling-url
+|required
+|the complete URL to the file from which the search request originated
+
+
+|search-asset-top-rel
+|required
+|the relative path to the `gibsearch_assets` dir from the originating file's directory.
+
+|searchphrase
+|required
+|a string with the phrase to search for
+
+|css-path
+|optional
+a|the path to the css file to use when generating the result. 
+
+absolute::
+the path is used as-is. 
+
+relative::
+the relative path to the css file from the originating file's directory.
+
+not set::
+the styling is left to the search implementation.
+
+|usecase
+|optional
+a|
+if set::
+search case sensitive
+
+not set::
+ignore case during search
+
+|useregexp
+|optional
+a|
+if set::
+treat the search phrase as a regexp
+
+not set::
+treat the search phrase as a string
+
+|===
+
+== A possible implementation
+
+=== At document generation
+
+ . Collect all adoc docs in a search asset directory.
+ . Embed html code for a search form as part of running gibish on the source tree. During generation, the following search parameters are known for each document to be generated:
+ .. search-asset-top-rel
+ .. css-path
+ . The `calling-url` is not known but it is possible to embed javascript code as part of the search form code that will resolve the url at runtime.
+ . The URL for the search service endpoint must be given by the user or hard-coded in giblish.
+
+=== At user search query
+
+When a user submit a 'search' query, the following parameters must be filled in and submitted to the search service:
+
+ . searchphrase
+ . usecase (optional)
+ . useregexp (optional)
+
+The other required parameters must come from the generated document itself.
+
+[appendix]
+=== Search form example
+
+.A minimal search form
+[source,html]
+----
+<!DOCTYPE html>
+<html>
+
+<body>
+  <script type="text/javascript">
+    window.onload = function () {
+      document.getElementById("calingurl_input").value = window.location.href;
+    };
+  </script>
+
+  <form class="gibsearch" action="gibsearch.html">
+    <input type="search" name="searchphrase" />
+    <input type="checkbox" name="usecase" />
+    <input type="checkbox" name="useregexp" />
+
+    <input type="hidden" name="calling-url" id=calingurl_input />
+    <input type="hidden" name="search-asset-top-rel" />
+    <input type="hidden" name="css-path" />
+
+    <button type="submit">Search</button>
+  </form>
+
+</body>
+
+</html>
+----
