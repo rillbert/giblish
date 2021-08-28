@@ -92,7 +92,7 @@ module Giblish
         adoc_file = Tempfile.new(["gib_tst_", ".adoc"], dst_dir.to_s)
 
         # write doc to file and close
-        adoc_file.puts doc_str
+        adoc_file.write(doc_str)
         adoc_file.close
         @src_files << adoc_file
         adoc_file.path

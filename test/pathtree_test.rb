@@ -160,9 +160,7 @@ class PathTreeTest < Minitest::Test
     }
 
     order = ""
-    data = []
-    level = []
-    puts "===="
+    data, level = [], []
     root.traverse_preorder do |l, node|
       level << l
       order << node.segment

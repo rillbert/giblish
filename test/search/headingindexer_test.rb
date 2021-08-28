@@ -59,14 +59,14 @@ module Giblish
         args = ["-m",
           src_dir,
           dst_dir.to_s]
-        status = Giblish.application.run args
-
-        assert_equal 0, status
+        Giblish.application.run args
 
         search_root = dst_dir.join("search_assets")
         assert Dir.exist?(search_root.to_s)
+
         # assert that the searchable index has been created
         assert File.exist?(search_root.join("heading_index.json"))
+
         # assert that the adoc src files have been copied to the
         # dst
         doc_paths.each do |doc|
@@ -83,14 +83,14 @@ module Giblish
           "-a", "idseparator=:",
           src_dir,
           dst_dir.to_s]
-        status = Giblish.application.run args
-
-        assert_equal 0, status
+        Giblish.application.run args
 
         search_root = dst_dir.join("search_assets")
         assert Dir.exist?(search_root.to_s)
+
         # assert that the searchable index has been created
         assert File.exist?(search_root.join("heading_index.json"))
+
         # assert that the adoc src files have been copied to the
         # dst
         doc_paths.each do |doc|

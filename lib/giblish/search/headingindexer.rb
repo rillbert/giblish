@@ -163,13 +163,4 @@ module Giblish
       heading_id
     end
   end
-
-  class TestAttribs < Asciidoctor::Extensions::TreeProcessor
-    def process(document)
-      src_node = document.attributes["giblish-src-tree-node"]
-
-      puts "checking idprefix for #{src_node.pathname}..."
-      puts "idprefix: #{document.attributes["idprefix"]}" if document.attributes.key?("idprefix")
-    end
-  end
 end

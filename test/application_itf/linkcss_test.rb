@@ -26,25 +26,14 @@ class LinkCSSTest < Minitest::Test
     end
 
     # create fake custom css file
-    css_fake = File.open("#{resource_topdir}/css/custom.css", "w")
-    css_fake.puts "fake custom css"
-    css_fake.close
-
-    # create giblish.css file
-    gib_css = File.open("#{resource_topdir}/css/giblish.css", "w")
-    gib_css.puts "fake giblish.css"
-    gib_css.close
-
+    File.write("#{resource_topdir}/css/custom.css", "fake custom css")
+    File.write("#{resource_topdir}/css/giblish.css", "fake custom css")
     # create fake image
-    image_fake = File.open("#{resource_topdir}/images/fake_image.png", "w")
-    image_fake.puts "fake png image"
-    image_fake.close
-
+    File.write("#{resource_topdir}/images/fake_image.png", "fake png image")
     # create fake font
-    font_fake = File.open("#{resource_topdir}/fonts/fake_font.ttf", "w")
-    font_fake.puts "fake font"
-    font_fake.close
+    File.write("#{resource_topdir}/fonts/fake_font.ttf", "fake font")
   end
+
 
   def setup
     # setup logging
@@ -75,7 +64,6 @@ class LinkCSSTest < Minitest::Test
         html_dom.xpath("html/head/link").each do |csslink|
           count += 1
           assert_equal "stylesheet", csslink.get("rel")
-          puts "csslink: #{csslink.get("href")}"
           expected_hrefs.reject! { |l| l == csslink.get("href") }
         end
       end
@@ -117,7 +105,6 @@ class LinkCSSTest < Minitest::Test
         assert_equal 1, css_links.count
 
         css_links.each do |csslink|
-          puts csslink
           assert_equal "stylesheet", csslink.get("rel")
           assert_equal "../web_assets/css/giblish.css",
             csslink.get("href")

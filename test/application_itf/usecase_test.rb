@@ -45,13 +45,11 @@ module Giblish
       end
 
       # create fake custom css file
-      css_fake = File.open("#{resource_topdir}/dir1/custom.css", "w")
-      css_fake.puts "fake custom css"
-      css_fake.close
+      File.write("#{resource_topdir}/dir1/custom.css", "fake custom css")
 
       # create fake custom yml file
-      css_fake = File.open("#{resource_topdir}/dir1/custom.yml", "w")
-      css_fake.puts <<~PDF_STYLE
+      File.write("#{resource_topdir}/dir1/custom.yml",
+      <<~PDF_STYLE)
         giblish:
           color:
             blue: [0, 0, 187]
@@ -178,17 +176,12 @@ module Giblish
           h1_font_style: bold
           h2_font_style: bold
       PDF_STYLE
-      css_fake.close
 
       # create fake image
-      image_fake = File.open("#{resource_topdir}/images/fake_image.png", "w")
-      image_fake.puts "fake png image"
-      image_fake.close
+      File.write("#{resource_topdir}/images/fake_image.png", "fake png image")
 
       # create fake font
-      font_fake = File.open("#{resource_topdir}/dir1/fake_font.ttf", "w")
-      font_fake.puts "fake font"
-      font_fake.close
+      File.write("#{resource_topdir}/dir1/fake_font.ttf", "fake font")
     end
 
     def create_adoc_src_tree tmp_docs, src_topdir

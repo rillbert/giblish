@@ -62,7 +62,6 @@ module Giblish
         doc1 = Asciidoctor.load_file(adoc1_filename,safe: 'unsafe')
         docinfo_store.add_success(doc1, nil)
         d = DigraphIndex.new(docinfo_store.pathtree)
-        puts d.source
       end
     end
   end
