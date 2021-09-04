@@ -254,7 +254,7 @@ module Giblish
       if opts.web_path && opts.format != "html"
         raise OptionParser::InvalidArgument, "The '-w' flag can only be used for the 'html' format flags"
       end
-      
+
       if opts.resource_dir.nil? ^ opts.style_name.nil?
         raise OptionParser::InvalidArgument, "Either both '-s' and '-r' flags must be given or none of them."
       end

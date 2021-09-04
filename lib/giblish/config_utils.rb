@@ -56,7 +56,7 @@ module Giblish
       if d.nil?
         super
       else
-        d.send(m, *args, &block) unless d.nil?
+        d&.send(m, *args, &block)
       end
     end
 

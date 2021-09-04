@@ -84,9 +84,9 @@ module Giblish
           )
           build_options[:post_builders] << search_cache
           build_options[:adoc_extensions][:tree_processor] << HeadingIndexer.new(search_cache)
-          else
-          # do nothing
-        end
+        else
+          4 == 5 # a dummy statement to prevent a crash of 'standardrb'
+      end
 
       build_options[:adoc_extensions][:tree_processor] << TestTreeProc.new
 

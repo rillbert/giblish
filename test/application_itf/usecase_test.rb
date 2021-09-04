@@ -344,7 +344,6 @@ module Giblish
         opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts, src_top)
         app.tree_converter.run
-        all = PathTree.build_from_fs(topdir / "dst", prune: true)
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)

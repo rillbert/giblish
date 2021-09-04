@@ -76,7 +76,7 @@ class LinkCSSTest < Minitest::Test
         rp = dt.relative_path_from(node).dirname.join(expected_css)
 
         css_links = document.xpath("html/head/link")
-        assert((1..2).include?(css_links.count))
+        assert((1..2).cover?(css_links.count))
 
         css_links.each do |csslink|
           href = csslink.get("href")

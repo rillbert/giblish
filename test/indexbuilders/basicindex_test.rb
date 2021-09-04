@@ -54,7 +54,7 @@ module Giblish
         # assert that there now are 2 index files under "dst"
         assert_equal(5, dt.leave_pathnames.count)
         count = 0
-        dt.leave_pathnames.each { |p| count += 1 if "index.html" == p.basename.to_s }
+        dt.leave_pathnames.each { |p| count += 1 if p.basename.to_s == "index.html" }
         assert_equal(2, count)
       end
     end

@@ -11,7 +11,7 @@ module Giblish
       Giblog.setup
     end
 
-    def with_search_testdata      
+    def with_search_testdata
       TmpDocDir.open do |tmpdocdir|
         dstdir = Pathname.new(tmpdocdir.dir) / "dst"
         puts `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`

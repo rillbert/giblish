@@ -12,7 +12,6 @@ module Giblish
     end
 
     def test_data_cache_instantiation
-      file_set = {}
       TmpDocDir.open do |tmp_doc_dir|
         root_dir = tmp_doc_dir.dir
         src_root = Pathname.new(root_dir) / "src"
