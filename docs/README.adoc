@@ -60,24 +60,18 @@ When using giblish for generating docs the following applies:
 
 == Text search implementation
 
-The text search enables a user to search for a text string and receive matching
-sections in the documentation tree.
+The text search enables a user to search for a text string and receive matching sections in the documentation tree.
 
 giblish ties together the following three pieces to enable the text search:
 
 . the source text of all adoc files together with a JSON file that maps sections to
 their line numbers.
 ** giblish collects this 'search data' when it generates the
-html files to the destination directory. The JSON file and all adoc source files
-are copied to a well-known place in the destination tree (see below).
-. an html form somewhere on the rendered pages where the user can input search queries and
-  initiate a search.
-** giblish injects such an html form in the generated index page when the user
-specifies the '-m' switch.
-. a server side script that handles a user request to search the documents for a specific
-  text string and presents the result to the user.
-** this gem contains an implementation of such a server side script. It is intended to be
-   run as a cgi script and requires ruby and grep to be installed on the server where it runs.
+html files to the destination directory. The JSON file and all adoc source files are copied to a well-known place in the destination tree (see below).
+. an html form somewhere on the rendered pages where the user can input search queries and initiate a search.
+** giblish injects such an html form in the generated index page when the user specifies the '-m' switch.
+. a server side script that handles a user request to search the documents for a specific text string and presents the result to the user.
+** this gem contains an implementation of such a server side script. It is intended to be run as a cgi script and requires ruby and grep to be installed on the server where it runs.
 
 === Search data and html form parameters
 

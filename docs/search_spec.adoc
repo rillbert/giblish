@@ -10,36 +10,38 @@
 |    |- web_assets
 |        |- mystyle.css
 |    |- gibsearch_assets
-|         |- heading_index.json
+|         |- heading_db.json
 |         |- file1.adoc
 |              |- subdir
 |                   |file2.adoc
 ----
 
-=== heading_index.json
+=== heading_db.json
 
 [source,json]
 ----
 {
-  file_infos : [
+  fileinfos : [
     {
-    filepath : "file1.adoc",
-    title : "File 1 Title",
-    sections : [{
-      id : "section_id_1",
-      title : "Purpose",
-      line_no : 10
+      filepath : "file1.adoc",
+      title : "File 1 Title",
+      sections : [
+        {
+          id : "section_id_1",
+          title : "Purpose",
+          line_no : 10
+        },
+        {
+          id : "section_id_2",
+          ...
+        }
+      ]
     },
     {
-      id : "section_id_2",
+      filepath: "subdir/file2.adoc",
       ...
     }
-    ]
-  },
-  {
-    filepath : "subdir/file2.adoc",
-    ...
-  }]
+  ]
 }
 ----
 
