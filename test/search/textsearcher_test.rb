@@ -5,15 +5,16 @@ module Giblish
   class TestTextSearcher < Minitest::Test
     include Giblish::TestUtils
 
+    TEST_DOC_DIR = "data/testdocs/wellformed/search"
+
     def setup
       Giblog.setup
     end
 
-    def with_search_testdata
+    def with_search_testdata      
       TmpDocDir.open do |tmpdocdir|
-        # srcdir = Pathname.new(tmpdocdir.dir) / "src"
         dstdir = Pathname.new(tmpdocdir.dir) / "dst"
-        puts `lib/giblish.rb --log-level info -f html -m data/testdocs/wellformed/search #{dstdir}`
+        puts `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`
         assert_equal 0, $?.exitstatus
 
         dst_tree = PathTree.build_from_fs(dstdir, prune: false)
@@ -31,7 +32,6 @@ module Giblish
         expected_title_lines = {"file1.adoc" => 1, "subdir/file2.adoc" => 2}
         data[:fileinfos].each do |info|
           assert(["file1.adoc", "subdir/file2.adoc"].include?(info[:filepath]))
-          puts info.inspect
           assert_equal(
             expected_title_lines[info[:filepath]],
             info[:sections][0][:line_no]

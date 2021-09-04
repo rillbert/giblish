@@ -247,13 +247,20 @@ module Giblish
     def validate_options(opts)
       raise OptionParser::InvalidArgument, "Could not find source path #{opts.srcdir}" unless opts.srcdir.exist?
 
-      if opts.resource_dir && !opts.resource_dir.exist?
-        raise OptionParser::InvalidArgument, "Could not find resource path #{opts.resource_dir}"
+      if opts.web_path && (opts.resource_dir || opts.style_name)
+        raise OptionParser::InvalidArgument, "The '-w' flag can not be used with either of the '-r' or '-s' flags"
       end
 
-      if opts.resource_dir && !opts.style_name
-        raise OptionParser::InvalidArgument, "Error: A style name must be "\
-        "specified if a resource dir has been specified."
+      if opts.web_path && opts.format != "html"
+        raise OptionParser::InvalidArgument, "The '-w' flag can only be used for the 'html' format flags"
+      end
+      
+      if opts.resource_dir.nil? ^ opts.style_name.nil?
+        raise OptionParser::InvalidArgument, "Either both '-s' and '-r' flags must be given or none of them."
+      end
+
+      if opts.resource_dir && !opts.resource_dir.exist?
+        raise OptionParser::InvalidArgument, "Could not find resource path #{opts.resource_dir}"
       end
 
       if opts.make_searchable && opts.format != "html"

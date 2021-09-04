@@ -29,6 +29,25 @@ module Giblish
       assert_match(/^Giblish v/, g)
     end
 
+    def test_w_r_s_combos
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        topdir = tmp_docs.dir
+        g = `lib/giblish.rb -w my/css/sheet.css data/testdocs/wellformed #{topdir}`
+        assert_equal 0, $?.exitstatus
+
+        g = `lib/giblish.rb -f pdf -w my/css/sheet.css data/testdocs/wellformed #{topdir}`
+        assert_equal 1, $?.exitstatus
+
+        g = `lib/giblish.rb -f html -w my/css/sheet.css -s mystyle data/testdocs/wellformed #{topdir}`
+        assert_equal 1, $?.exitstatus
+
+        g = `lib/giblish.rb -f html -s mystyle data/testdocs/wellformed #{topdir}`
+        assert_equal 1, $?.exitstatus
+
+        g = `lib/giblish.rb -f html -r my/resource data/testdocs/wellformed #{topdir}`
+        assert_equal 1, $?.exitstatus
+      end
+    end
     def test_hello_world
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = tmp_docs.dir
