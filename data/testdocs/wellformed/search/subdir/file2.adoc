@@ -1,0 +1,11 @@
+:mytitle: File 2
+= {mytitle}
+:myvariable: substituted variable
+
+== File 2 Paragraph 1
+
+Some text that is of no importance.
+
+== File 2 Section 2
+
+More text. Use a {myvariable} in text

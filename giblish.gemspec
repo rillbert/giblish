@@ -4,18 +4,18 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "giblish/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "giblish"
-  spec.version       = Giblish::VERSION
-  spec.authors       = ["Anders Rillbert"]
-  spec.email         = ["anders.rillbert@kutso.se"]
+  spec.name = "giblish"
+  spec.version = Giblish::VERSION
+  spec.authors = ["Anders Rillbert"]
+  spec.email = ["anders.rillbert@kutso.se"]
 
-  spec.summary       = "A tool for publishing asciidoc docs stored in git repos"
-  spec.description   = <<~EOF
-                           giblish generates indexed and searchable documents from a tree of
-                           asciidoc files.
-                       EOF
-  spec.homepage      = "https://github.com/rillbert/giblish"
-  spec.license       = "MIT"
+  spec.summary = "A tool for publishing asciidoc docs stored in git repos"
+  spec.description = <<~EOF
+    giblish generates indexed and searchable documents from a tree of
+    asciidoc files.
+  EOF
+  spec.homepage = "https://github.com/rillbert/giblish"
+  spec.license = "MIT"
   spec.required_ruby_version = ">= 2.7"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 11.0"
   spec.add_development_dependency "oga", "~> 2.15"
   spec.add_development_dependency "standard", "~> 1.1"
-  spec.add_development_dependency 'thor', '~> 0.20.3'
+  spec.add_development_dependency "thor", "~> 0.20.3"
   spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]

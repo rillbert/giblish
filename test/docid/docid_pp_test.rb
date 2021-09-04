@@ -34,11 +34,11 @@ module Giblish
         srcdir = Pathname.new(tmp_docs.dir) / "src"
         dstdir = Pathname.new(tmp_docs.dir) / "dst"
 
-        tmp_docs.create_adoc_src_on_disk(srcdir, [
+        tmp_docs.create_adoc_src_on_disk(srcdir,
           {header: ":docid: D-001"},
           {header: ":docid: D-002"},
           {header: ":docid: D-004", subdir: "subdir"}
-        ])
+        )
         src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with a TreeConverter
@@ -65,7 +65,7 @@ module Giblish
         srcdir = Pathname.new(tmp_docs.dir) / "src"
         dstdir = Pathname.new(tmp_docs.dir) / "dst"
 
-        tmp_docs.create_adoc_src_on_disk(srcdir, [
+        tmp_docs.create_adoc_src_on_disk(srcdir,
           {header: ":docid: D-001",
            paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-002>> and <<:docid:D-003>>."]},
           {header: ":docid: D-002",
@@ -73,7 +73,7 @@ module Giblish
           {header: ":docid: D-003",
            paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-004>>."],
            subdir: "subdir"}
-        ])
+        )
         src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with all future TreeConverters

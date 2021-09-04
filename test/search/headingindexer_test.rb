@@ -1,11 +1,7 @@
-# frozen_string_literal: true
-
 require_relative "../test_helper"
 require_relative "../../lib/giblish/search/headingindexer"
 
 module Giblish
-  # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/AbcSize
   class TestHeadingIndexer < Minitest::Test
     include Giblish::TestUtils
 
@@ -43,11 +39,14 @@ module Giblish
 
     def setup_directories
       TmpDocDir.open do |tmp_doc_dir|
-        root_dir = tmp_doc_dir.dir
-        src_dir = Pathname.new(root_dir) / "src"
-        paths = [@@doc_1, @@doc_2].map { |d| tmp_doc_dir.add_doc_from_str(d, "src") }
-        dst_dir = Pathname.new(root_dir) / "dst"
+        topdir = Pathname.new(tmp_doc_dir.dir)
+        src_dir = topdir / "src"
+        dst_dir = topdir / "dst"
         dst_dir.mkpath
+
+        paths = []
+        paths += tmp_doc_dir.create_adoc_src_on_disk(src_dir, {doc_src: @@doc_1})
+        paths += tmp_doc_dir.create_adoc_src_on_disk(src_dir, {doc_src: @@doc_2, subdir: "subdir"})
 
         yield(src_dir, dst_dir, paths)
       end
@@ -65,7 +64,9 @@ module Giblish
         assert Dir.exist?(search_root.to_s)
 
         # assert that the searchable index has been created
-        assert File.exist?(search_root.join("heading_index.json"))
+        assert File.exist?(search_root.join(SearchDataCache::HEADING_DB_BASENAME))
+
+        # puts File.read(search_root.join(SearchDataCache::HEADING_DB_BASENAME))
 
         # assert that the adoc src files have been copied to the
         # dst
@@ -89,7 +90,7 @@ module Giblish
         assert Dir.exist?(search_root.to_s)
 
         # assert that the searchable index has been created
-        assert File.exist?(search_root.join("heading_index.json"))
+        assert File.exist?(search_root.join(SearchDataCache::HEADING_DB_BASENAME))
 
         # assert that the adoc src files have been copied to the
         # dst

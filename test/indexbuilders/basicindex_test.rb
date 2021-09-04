@@ -35,7 +35,7 @@ module Giblish
         dstdir = Pathname.new(tmp_docs.dir) / "dst"
 
         # create three adoc files under .../src and .../src/subdir
-        tmp_docs.create_adoc_src_on_disk(srcdir, [{}, {}, {subdir: "subdir"}])
+        tmp_docs.create_adoc_src_on_disk(srcdir, {}, {}, {subdir: "subdir"})
 
         # setup the corresponding PathTree
         src_tree = tree_from_src_dir(srcdir)
@@ -65,7 +65,7 @@ module Giblish
         dstdir = Pathname.new(tmp_docs.dir) / "dst"
 
         # create three adoc files under .../src and .../src/subdir
-        tmp_docs.create_adoc_src_on_disk(srcdir, [{}, {}, {subdir: "subdir"}])
+        tmp_docs.create_adoc_src_on_disk(srcdir, {}, {}, {subdir: "subdir"})
 
         # setup the corresponding PathTree
         src_tree = tree_from_src_dir(srcdir)
@@ -113,7 +113,7 @@ module Giblish
         dstdir = Pathname.new(tmp_docs.dir) / "dst"
 
         # create three adoc files under .../src and .../src/subdir
-        tmp_docs.create_adoc_src_on_disk(srcdir, [{}, {}, {subdir: "subdir"}])
+        tmp_docs.create_adoc_src_on_disk(srcdir, {}, {}, {subdir: "subdir"})
 
         # setup the corresponding PathTree
         src_tree = tree_from_src_dir(srcdir)

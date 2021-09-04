@@ -105,11 +105,18 @@ module Giblish
       # The supported hash structure looks like:
       #
       #   {hash with CreateAdocDocSrc options + a :subdir entry}
-      def create_adoc_src_on_disk(top_dir, doc_info)
+      #
+      # return:: Array with the created file paths
+      def create_adoc_src_on_disk(top_dir, *doc_info)
         result = []
+
+        # p doc_info
+        # p doc_info.is_a?(Hash)
+        # ary = doc_info.is_a?(Hash) ? [doc_info] : Array(*doc_info)
+        # p ary
         doc_info.each do |doc_config|
-          doc_src = if doc_config.is_a?(String)
-            doc_config
+          doc_src = if doc_config.key?(:doc_src)
+            doc_config[:doc_src]
           else
             CreateAdocDocSrc.new(doc_config).source
           end
@@ -140,7 +147,6 @@ module Giblish
     # === Supported input options as an example
     # {
     #   title: "Doc 1",
-    #   # each item in the array will become one header row in the adoc
     #   header: [":idprefix: custom", ":toc:"],
     #   paragraphs: [{
     #     title: "First paragraph",
@@ -148,7 +154,7 @@ module Giblish
     #   }, ... ]
     # }
     # or
-    # {
+    # {22
     #   doc_src: <<~DOC_SRC
     #   = My doc
     #
@@ -191,7 +197,7 @@ module Giblish
 
       def assemble_source
         h_str = @header.join("\n")
-        p_str = @paragraphs.collect { |title, text| "== #{title}\n\n#{text}" }.join("\n")
+        p_str = @paragraphs.collect { |p| "== #{p[:title]}\n\n#{p[:text]}\n" }.join("\n")
         <<~ADOC_SOURCE
           = #{@title}
           #{h_str}

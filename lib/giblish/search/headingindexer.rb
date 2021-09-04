@@ -119,13 +119,13 @@ module Giblish
           end
           state = :text
         when :heading
-          # we got a heading without an accompanying anchor, index it
+          # last line was a heading without an accompanying anchor, index it
           # by creating a new, unique id that matches the one that
           # asciidoctor will assign to this heading when generating html
           sections << {
             "id" => create_unique_id(sections, match_str, opts),
             "title" => Regexp.last_match(1).strip,
-            "line_no" => line_no
+            "line_no" => line_no - 1
           }
           state = :text
         end
@@ -161,6 +161,17 @@ module Giblish
         break unless sections.find { |s| s["id"] == heading_id }
       end
       heading_id
+    end
+  end
+
+  class TestTreeProc < Asciidoctor::Extensions::TreeProcessor
+
+    def process(document)
+      # pp document.blocks[0].class.instance_methods(false)
+      puts "----"
+      puts "title: #{document.title}"
+      puts "Sections: #{document.blocks.collect {|b| b.title }.join(',')}"
+      # document.blocks.each {|b| puts b.lines }.join("\n--\n")
     end
   end
 end

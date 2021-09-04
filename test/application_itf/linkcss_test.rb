@@ -4,72 +4,34 @@ require_relative "../../lib/giblish"
 class LinkCSSTest < Minitest::Test
   include Giblish::TestUtils
 
-  @@test_doc = <<~EOF
-    = Test css linking
-    :numbered:
-    
-    == My First Section
+  TEST_DOC = {
+    doc_src: <<~EOF,
+      = Test css linking
+      :numbered:
+      
+      == My First Section
 
-    Some dummy text....
-    
-    == My Second Section
+      Some dummy text....
+      
+      == My Second Section
 
-    Some more dummy text...
-    
-  EOF
+      Some more dummy text...
+      
+    EOF
+    subdir: "subdir_1"
+  }
 
-  def create_resource_dir resource_topdir
-    Dir.exist?(resource_topdir) || FileUtils.mkdir_p(resource_topdir)
-    %i[css fonts images].each do |dir|
-      src = "#{resource_topdir}/#{dir}"
-      Dir.exist?(src) || FileUtils.mkdir(src)
-    end
-
-    # create fake custom css file
-    File.write("#{resource_topdir}/css/custom.css", "fake custom css")
-    File.write("#{resource_topdir}/css/giblish.css", "fake custom css")
-    # create fake image
-    File.write("#{resource_topdir}/images/fake_image.png", "fake png image")
-    # create fake font
-    File.write("#{resource_topdir}/fonts/fake_font.ttf", "fake font")
+  def setup_dirs(top_dir)
+    srcdir = Pathname.new(top_dir) / "src"
+    dstdir = Pathname.new(top_dir) / "dst"
+    r_dir = Pathname.new(top_dir) / "resources"
+    copy_test_resources(r_dir)
+    [srcdir, dstdir, r_dir]
   end
-
 
   def setup
     # setup logging
     Giblog.setup
-  end
-
-  # generate a doc without embedded style info but pointing
-  # to the stylesheet given by the -w flag.
-  # TODO: Decide how to treat a set -w and unset -s!!!
-  #  giblish -w '/my/webserver/topdir' src dst
-  def test_webroot_only
-    TmpDocDir.open do |tmp_docs|
-      # create a doc under the .../subdir folder
-      adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
-      args = ["--log-level", "info",
-        "-w", "/my/webserver/topdir",
-        tmp_docs.dir,
-        tmp_docs.dir]
-      Giblish.application.run args
-
-      # assert that the css link is only the google font api
-      # used by asciidoctor by default
-      expected_hrefs = [
-        "/my/webserver/topdir"
-      ]
-      count = 0
-      tmp_docs.check_html_dom adoc_filename do |html_dom|
-        html_dom.xpath("html/head/link").each do |csslink|
-          count += 1
-          assert_equal "stylesheet", csslink.get("rel")
-          expected_hrefs.reject! { |l| l == csslink.get("href") }
-        end
-      end
-      assert_equal(1, count)
-      assert_equal(0, expected_hrefs.count)
-    end
   end
 
   # test that the css link is a relative link to the css file in the
@@ -85,65 +47,85 @@ class LinkCSSTest < Minitest::Test
   #          |- giblish.css
   def test_custom_styling_without_webroot
     TmpDocDir.open do |tmp_docs|
-      # create a resource dir
-      r_dir = "#{tmp_docs.dir}/resources"
-      create_resource_dir r_dir
+      srcdir, dstdir, r_dir = setup_dirs(tmp_docs.dir)
 
-      # act on the input data
-      adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "src/subdir")
+      # create a doc in the 'subdir' folder.
+      tmp_docs.create_adoc_src_on_disk(srcdir, TEST_DOC)
+
       args = ["--log-level", "info",
-        "-r", r_dir,
+        "-r", r_dir.to_s,
         "-s", "giblish",
-        "#{tmp_docs.dir}/src",
-        "#{tmp_docs.dir}/dst"]
+        srcdir,
+        dstdir]
       Giblish.application.run args
+
+      dt = PathTree.build_from_fs(dstdir, prune: false)
+      assert(1, dt.match(/web_assets$/).leave_pathnames.count)
+
+      # filter out only html files
+      dt = dt.match(/.html$/)
+      assert(3, dt.leave_pathnames.count)
+      expected_css = Pathname.new("web_assets/web/giblish.css")
 
       # assert that the css link is relative to the specific
       # css file (../web_assets/css/giblish.css)
-      tmp_docs.check_html_dom adoc_filename.gsub("src/", "dst/") do |html_tree|
-        css_links = html_tree.xpath("html/head/link")
-        assert_equal 1, css_links.count
+      tmp_docs.get_html_dom(dt) do |node, document|
+        next if /web_assets/.match?(node.pathname.to_s)
+
+        # get the expected relative path from the top dst dir
+        rp = dt.relative_path_from(node).dirname.join(expected_css)
+
+        css_links = document.xpath("html/head/link")
+        assert((1..2).include?(css_links.count))
 
         css_links.each do |csslink|
-          assert_equal "stylesheet", csslink.get("rel")
-          assert_equal "../web_assets/css/giblish.css",
-            csslink.get("href")
+          href = csslink.get("href")
+          next if /font-awesome/.match?(href)
+
+          assert_equal("stylesheet", csslink.get("rel"))
+          assert_equal(rp.to_s, href)
         end
       end
     end
   end
 
   # test that the css link is a relative link to the css file
-  # TODO: Decide how to treat this combo of flags
-  # giblish -w /my/web/root -r <resource_dir> -s custom src dst
+  # giblish -w /my/stylesheet/path
   def test_custom_styling_with_webroot
     TmpDocDir.open do |tmp_docs|
-      # create a resource dir
-      r_dir = "#{tmp_docs.dir}/resources"
-      create_resource_dir r_dir
+      srcdir, dstdir = setup_dirs(tmp_docs.dir)
+      web_root = Pathname("/my/css/custom.css")
 
-      web_root = Pathname("/my/web/root")
       # create a doc in the 'subdir' folder.
-      adoc_filename = tmp_docs.add_doc_from_str(@@test_doc, "subdir")
+      tmp_docs.create_adoc_src_on_disk(srcdir, TEST_DOC)
+
+      # run conversion
       args = ["--log-level", "info",
         "-w", web_root.to_s,
-        "-r", r_dir,
-        "-s", "custom",
-        tmp_docs.dir,
-        tmp_docs.dir]
+        srcdir,
+        dstdir]
       Giblish.application.run args
 
       # the link shall work when the doc is published on a web server
       # under the given web path
-      expected_csslink = Pathname.new("/my/web/root/web_assets/css/custom.css")
+      expected_csslink = web_root
 
-      tmp_docs.check_html_dom adoc_filename do |html_tree|
-        css_links = html_tree.xpath("html/head/link")
+      dt = PathTree.build_from_fs(dstdir, prune: false)
+      assert_equal(nil, dt.match(/web_asset/))
+      assert_equal(3, dt.leave_pathnames.count)
+
+      tmp_docs.get_html_dom(dt) do |node, document|
+        next if /index.html/.match?(node.pathname.to_s)
+
+        # we only expect a single link to our custom
+        # stylesheet path
+        css_links = document.xpath("html/head/link")
         assert_equal 1, css_links.count
 
         css_links.each do |csslink|
-          assert_equal "stylesheet", csslink.get("rel")
-          assert_equal expected_csslink.to_s, csslink.get("href")
+          css_path = csslink.get("href")
+          assert_equal("stylesheet", csslink.get("rel"))
+          assert_equal(expected_csslink.to_s, css_path)
         end
       end
     end

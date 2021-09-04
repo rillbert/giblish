@@ -32,6 +32,8 @@ module Giblish
     # the class-global cache of indexed section headings.
     attr_reader :heading_index
 
+    HEADING_DB_BASENAME = "heading_db.json"
+
     # clean the global data cache and set up parameters given by the
     # user
     def initialize(file_tree:, id_prefix: nil, id_separator: nil)
@@ -45,7 +47,7 @@ module Giblish
     # data cache
     def add_file_index(src_path:, title:, sections:)
       @heading_index[:fileinfos] << {
-        filepath: src_path,
+        filepath: src_path.relative_path_from(@src_tree.pathname),
         title: title,
         sections: sections
       }
@@ -79,21 +81,11 @@ module Giblish
     def serialize_section_index(dst_dir, base_dir)
       dst_dir.mkpath
 
-      remove_base_dir(base_dir)
-
-      Giblog.logger.info { "writing json to #{dst_dir.join("heading_index.json")}" }
-      File.open(dst_dir.join("heading_index.json").to_s, "w") do |f|
+      heading_db_path = dst_dir.join(HEADING_DB_BASENAME)
+      Giblog.logger.info { "writing json to #{heading_db_path}" }
+      
+      File.open(heading_db_path.to_s, "w") do |f|
         f.write(heading_index.to_json)
-      end
-    end
-
-    # remove the base_dir part of the file path
-    def remove_base_dir(base_dir)
-      return unless base_dir
-
-      heading_index[:fileinfos].each do |file_info|
-        file_info[:filepath] = Pathname.new(file_info[:filepath])
-          .relative_path_from(base_dir)
       end
     end
   end

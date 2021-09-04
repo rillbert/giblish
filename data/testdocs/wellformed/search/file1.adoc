@@ -1,0 +1,39 @@
+= File 1
+:toc:
+:numbered:
+:myvariable: Sub section 2
+
+== Paragraph 1
+
+Some text that is of no importance.
+
+.Table 1
+|===
+|name |comment
+
+|row 1 
+|comment 1
+
+|row 2
+|comment 2
+|===
+
+=== Sub section 1
+
+More random text
+
+ * a 
+ * list 
+ * of 
+ * things
+
+some _italic_, *bold* and *_both bold and italic_* text.
+
+[[custom_id_section2]]
+== Section 2
+
+More text.
+
+=== {myvariable}
+
+Even more text.

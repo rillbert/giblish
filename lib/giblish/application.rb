@@ -23,7 +23,7 @@ module Giblish
         post_builders: [],
         adoc_api_opts: {},
         # add a hash where all values are initiated as empty arrays
-        adoc_extensions: Hash.new {|hash, key| hash.key?(key) ? hash[key] : hash[key] = [] }
+        adoc_extensions: Hash.new { |hash, key| hash.key?(key) ? hash[key] : hash[key] = [] }
       }
 
       # Initiate the doc attribute repo used during 'run-time'
@@ -64,7 +64,7 @@ module Giblish
           # enable custom pdf styling
           rp = ResourcePaths.new(cmd_opts)
           doc_attr.add_doc_attr_providers(
-            PdfCustomStyle.new(rp.src_style_path_abs, *(rp.font_dirs_abs.to_a))
+            PdfCustomStyle.new(rp.src_style_path_abs, *rp.font_dirs_abs.to_a)
           )
         in format: "pdf"
           # generate pdf using asciidoctor-pdf with default styling
@@ -84,9 +84,11 @@ module Giblish
           )
           build_options[:post_builders] << search_cache
           build_options[:adoc_extensions][:tree_processor] << HeadingIndexer.new(search_cache)
-        else
+          else
           # do nothing
         end
+
+      build_options[:adoc_extensions][:tree_processor] << TestTreeProc.new
 
       # compose the attribute provider and associate it with all source
       # nodes
@@ -134,7 +136,7 @@ module Giblish
       # Parse cmd line
       cmdline = CmdLine.new.parse(args)
       Giblog.logger.level = cmdline.log_level
-      
+
       Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
 
       # TODO: Add regex include/exclude

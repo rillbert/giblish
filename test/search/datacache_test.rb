@@ -37,7 +37,7 @@ module Giblish
         src_root.mkpath
 
         # ensure that the index is an empty fileinfos entry only
-        s1 = SearchDataCache.new(file_tree: PathTree.new("dummy"))
+        s1 = SearchDataCache.new(file_tree: PathTree.new(src_root))
         s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
         s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
 
@@ -55,7 +55,7 @@ module Giblish
         dst_root = Pathname.new(root_dir) / "dst"
 
         # ensure that the index is an empty fileinfos entry only
-        s1 = SearchDataCache.new(file_tree: PathTree.new("dummy"))
+        s1 = SearchDataCache.new(file_tree: PathTree.new(src_root))
         s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
         s1.add_file_index({src_path: src_root / "mysrc", title: "My Title", sections: []})
         # serialize search data cache to json file
@@ -66,7 +66,7 @@ module Giblish
         assert(dst_root.directory?)
         asset_top = dst_root / "search_assets"
         assert(asset_top.directory?)
-        assert((asset_top / "heading_index.json").exist?)
+        assert((asset_top / SearchDataCache::HEADING_DB_BASENAME).exist?)
       end
     end
   end

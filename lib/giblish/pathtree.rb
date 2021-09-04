@@ -432,6 +432,7 @@ class PathTree
   # 
   # === Returns
   # the entry node in a new PathTree with the nodes with pathnames matching the given regex
+  # or nil if no nodes match
   def match(regex, prune: false)
     copy = nil
   
