@@ -329,7 +329,7 @@ module Giblish
       # Parse and convert docs using given args
       # by calling base class :convert
       Giblog.logger.info { "Convert docs into dir #{@paths.dst_root_abs}" }
-      FileTreeConverter.instance_method(:convert).bind(self).call
+      FileTreeConverter.instance_method(:convert).bind_call(self)
     end
     # rubocop:enable Metrics/AbcSize
   end

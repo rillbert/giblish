@@ -109,19 +109,19 @@ module Giblish
         # and above.
         # Supply callbacks that are called after each conversion
         tc = TreeConverter.new(st, p / "dst",
-        {
-          logger: Giblog.logger,
-          adoc_log_level: Logger::WARN,
-          conversion_cb: {
-            success: ->(src,dst,dst_rel_path, doc,logstr) { 
-              return unless dst.segment == "bad.html"
+          {
+            logger: Giblog.logger,
+            adoc_log_level: Logger::WARN,
+            conversion_cb: {
+              success: ->(src, dst, dst_rel_path, doc, logstr) {
+                return unless dst.segment == "bad.html"
 
-              # we know how the warning 'bad.adoc' should render.
-              assert_equal(": Line 3 - section title out of sequence: expected level 1, got level 2",
-              logstr.split("WARNING")[-1].chomp)
+                # we know how the warning 'bad.adoc' should render.
+                assert_equal(": Line 3 - section title out of sequence: expected level 1, got level 2",
+                  logstr.split("WARNING")[-1].chomp)
+              }
             }
-          }
-        })
+          })
         tc.run
       end
     end

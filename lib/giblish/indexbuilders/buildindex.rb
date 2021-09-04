@@ -196,7 +196,7 @@ module Giblish
         Giblog.logger.info { "Setting up index for #{index_dir}" }
 
         # build the index source for all nodes below dst_node
-        @adoc_source= IndexSrcFromTree.new(dst_node).adoc_source
+        @adoc_source = IndexSrcFromTree.new(dst_node).adoc_source
 
         # add a virtual 'index.adoc' node as the only node in a source tree
         # with this object as source for conversion options
@@ -207,7 +207,7 @@ module Giblish
 
         # add the destination node where the converted file will be stored
         i_node = dst_node.add_descendants("index")
-        
+
         # do the conversion
         converter.convert(src_node, i_node, dst_tree)
       end

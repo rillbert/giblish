@@ -1,15 +1,14 @@
-require 'git'
+require "git"
 
 module Giblish
-
   # acquires a handle to an existing git repo and provide the user
-  # with a iteration method 'each_checkout' where each matching branch and/or tag is 
+  # with a iteration method 'each_checkout' where each matching branch and/or tag is
   # checked out and presented to the user code.
   class GitCheckoutManager
     attr_reader :branches_and_tags
 
     # git_repo_root:: Pathname to the top dir of the local git repo to work with
-    # local_only:: if true, do not try to access any remote branches or merge with any 
+    # local_only:: if true, do not try to access any remote branches or merge with any
     # upstream changes
     # branch_regex:: the regex for the branches to include during iteration (default: none)
     # tag_regex:: the regex for the tags to include during iteration (default: none)
@@ -20,7 +19,7 @@ module Giblish
     end
 
     # present each git checkout matching the init criteria to the user's code.
-    # 
+    #
     # === Example
     #
     # gcm = GitCheckoutManager.new(my_repo_root, true, /release/, /final/)
@@ -32,8 +31,8 @@ module Giblish
         Giblog.logger.info { "Checking out #{b.name}" }
         @git_repo.checkout b.name
 
-        # merge branches with their upstream at origin unless 
-        # 'only local' 
+        # merge branches with their upstream at origin unless
+        # 'only local'
         unless (b.respond_to?(:tag?) && b.tag?) || @local_only
           # this is a branch, make sure it is up-to-date
           Giblog.logger.info { "Merging with origin/#{b.name}" }

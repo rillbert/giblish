@@ -13,15 +13,15 @@ class D3Tree
   def source
     # output tree intro
     graph = File.read("#{__dir__}/templates/tree.html.erb")
-    return <<~DOC_SRC
-    = A Graph test
+    <<~DOC_SRC
+      = A Graph test
 
-    Some text 
-    ++++
-    #{graph}
-    ++++
+      Some text 
+      ++++
+      #{graph}
+      ++++
 
-    Some more text
+      Some more text
     DOC_SRC
   end
 end

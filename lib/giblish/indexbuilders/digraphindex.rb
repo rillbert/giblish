@@ -1,5 +1,6 @@
 # frozen_string_literal: true
-require_relative '../docinfo'
+
+require_relative "../docinfo"
 
 module Giblish
   # Builds an asciidoc page with an svg image with a
@@ -13,9 +14,10 @@ module Giblish
       !Giblish.which("dot").nil?
     end
 
-    # doc_tree:: a PathTree with absolute src files and the associated 
+    # doc_tree:: a PathTree with absolute src files and the associated
     # DocInfo as data
-    def initialize(doc_tree) #, paths, deployment_info, options = {})
+    # , paths, deployment_info, options = {})
+    def initialize(doc_tree)
       # this class relies on graphwiz (dot), make sure we can access that
       raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported
 

@@ -33,11 +33,10 @@ end
 
 # Public: Contains a number of generic utility methods.
 module Giblish
-
   # This logger is customized to receive log messages via the Asciidoctor API.
   # It parses the messages and 'source_location' objects from the Asciidoctor API
   # into messages using an opinionated format.
-  # 
+  #
   # The output is written to both $stdout and an in-memory StringIO instance. The log level
   # can be set separately for each of these output channels.
   class AsciidoctorLogger < ::Logger
@@ -82,11 +81,10 @@ module Giblish
       end
     end
 
-
     # The level is one of the standard ::Logger levels
     #
     # stdout_level:: the log level to use for gating the messages to stdout
-    # string_level:: the log level to use for gating the messages to the in-memory string. 
+    # string_level:: the log level to use for gating the messages to the in-memory string.
     # defaults to 'stdout_level' if not set.
     def initialize(stdout_level, string_level = nil)
       super($stdout, progname: "(asciidoctor)", formatter: UserInfoFormatter.new, level: stdout_level)

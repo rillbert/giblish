@@ -59,7 +59,7 @@ module Giblish
 
       # store the JSON file
       serialize_section_index(search_topdir, search_topdir)
-      
+
       # copy all converted adoc files
       dst_tree.traverse_preorder do |level, dst_node|
         # only copy files that were successfully converted
@@ -83,7 +83,7 @@ module Giblish
 
       heading_db_path = dst_dir.join(HEADING_DB_BASENAME)
       Giblog.logger.info { "writing json to #{heading_db_path}" }
-      
+
       File.open(heading_db_path.to_s, "w") do |f|
         f.write(heading_index.to_json)
       end

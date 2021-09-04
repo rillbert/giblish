@@ -3,7 +3,6 @@ require "test_helper"
 require_relative "../../lib/giblish/indexbuilders/digraphindex"
 require_relative "../../lib/giblish/pathtree"
 
-
 module Giblish
   class DigraphTest < Minitest::Test
     include Giblish::TestUtils
@@ -59,7 +58,7 @@ module Giblish
 
         # build a fake doc tree with DocInfo instances as
         # node data
-        doc1 = Asciidoctor.load_file(adoc1_filename,safe: 'unsafe')
+        doc1 = Asciidoctor.load_file(adoc1_filename, safe: "unsafe")
         docinfo_store.add_success(doc1, nil)
         d = DigraphIndex.new(docinfo_store.pathtree)
       end

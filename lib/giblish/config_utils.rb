@@ -5,7 +5,7 @@ module Giblish
   #
   # If more than one added provider set the same doc attrib, the last
   # added has preference.
-  # 
+  #
   # Each added provider must conform to the itf defined in
   # the DocAttributesBase class.
   class DocAttrBuilder
@@ -43,7 +43,7 @@ module Giblish
     def initialize(*delegate_arr)
       @delegates = Array(delegate_arr)
     end
-    
+
     def add(delegate)
       @delegates << delegate
     end

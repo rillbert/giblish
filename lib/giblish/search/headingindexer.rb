@@ -57,7 +57,7 @@ module Giblish
 
       # make sure we use the correct id elements when indexing
       # sections
-      opts =       {
+      opts = {
         id_prefix: (attrs.key?("idprefix") ? attrs["idprefix"] : "_"),
         id_separator: (attrs.key?("id_separator") ? attrs["id_separator"] : "_")
       }
@@ -165,12 +165,11 @@ module Giblish
   end
 
   class TestTreeProc < Asciidoctor::Extensions::TreeProcessor
-
     def process(document)
       # pp document.blocks[0].class.instance_methods(false)
       puts "----"
       puts "title: #{document.title}"
-      puts "Sections: #{document.blocks.collect {|b| b.title }.join(',')}"
+      puts "Sections: #{document.blocks.collect { |b| b.title }.join(",")}"
       # document.blocks.each {|b| puts b.lines }.join("\n--\n")
     end
   end

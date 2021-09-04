@@ -23,12 +23,12 @@ module Giblish
       g = `lib/giblish.rb -h`
       assert_equal 0, $?.exitstatus
       assert_match(/^Usage/, g)
-  
+
       g = `lib/giblish.rb -v`
       assert_equal 0, $?.exitstatus
       assert_match(/^Giblish v/, g)
     end
-    
+
     def test_hello_world
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = tmp_docs.dir

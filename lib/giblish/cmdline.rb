@@ -63,8 +63,8 @@ module Giblish
           "whose name matches the resource type (font, theme",
           "or css). If no resource dir is specified, the asciidoctor",
           "defaults are used. (default: nil)") do |resource_dir|
-            r = Pathname.new(resource_dir)
-            @resource_dir = (r.absolute? ? r : (Pathname.new(Dir.pwd) / r)).cleanpath
+          r = Pathname.new(resource_dir)
+          @resource_dir = (r.absolute? ? r : (Pathname.new(Dir.pwd) / r)).cleanpath
         end
         parser.on("-s", "--style [NAME]",
           "The style information used when converting the documents",
@@ -204,11 +204,11 @@ module Giblish
       # a hash
       def deconstruct_keys(keys)
         h = {}
-        instance_variables.each do |v| 
+        instance_variables.each do |v|
           value = instance_variable_get(v)
           h[v[1..].to_sym] = value unless value.nil?
         end
-        h    
+        h
       end
     end
 
@@ -245,7 +245,6 @@ module Giblish
     # Raise InvalidArgument if an unsupported cmd line combo is
     # discovered
     def validate_options(opts)
-
       raise OptionParser::InvalidArgument, "Could not find source path #{opts.srcdir}" unless opts.srcdir.exist?
 
       if opts.resource_dir && !opts.resource_dir.exist?

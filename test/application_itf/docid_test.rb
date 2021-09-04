@@ -19,8 +19,7 @@ class ResolveDocidTest < Minitest::Test
         tmp_docs.src_data_top.join("wellformed/docidtest"),
         dst_top.to_s]
 
-        assert(Giblish.application.run args)
-
+      assert(Giblish.application.run(args))
     end
   end
 
@@ -34,7 +33,7 @@ class ResolveDocidTest < Minitest::Test
         tmp_docs.src_data_top.join("wellformed/docidtest"),
         dst_top]
 
-      assert(Giblish.application.run args)
+      assert(Giblish.application.run(args))
     end
   end
 end

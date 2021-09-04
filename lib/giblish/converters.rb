@@ -76,7 +76,7 @@ module Giblish
     def initialize(cmd_opts)
       @cmdline_attrs = cmd_opts.doc_attributes.dup
     end
-    
+
     def document_attributes(src_node, dst_node, dst_top)
       @cmdline_attrs
     end

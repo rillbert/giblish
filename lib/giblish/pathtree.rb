@@ -73,9 +73,9 @@ class PathTree
 
   def name=(name)
     name = Pathname.new(name)
-    
-    if !parent.nil? && @parent.children.any? {|c| c.name == name }
-      raise ArgumentError,"Can not rename to #{name}. An existing node already use that name" 
+
+    if !parent.nil? && @parent.children.any? { |c| c.name == name }
+      raise ArgumentError, "Can not rename to #{name}. An existing node already use that name"
     end
 
     @name = name
@@ -237,7 +237,7 @@ class PathTree
     traverse_postorder do |l, n|
       next unless n.leaf?
 
-      paths << (prune ? n.pathname.relative_path_from(self.pathname) : n.pathname)
+      paths << (prune ? n.pathname.relative_path_from(pathname) : n.pathname)
     end
     paths
   end
@@ -255,10 +255,10 @@ class PathTree
   end
 
   # Finds the node corresponding to the given path.
-  # 
+  #
   # path:: a String or Pathname with the path to search for
-  # from_root:: if true start the search from the root of the tree where 
-  # this node is a member. If false, start the search from this node's 
+  # from_root:: if true start the search from the root of the tree where
+  # this node is a member. If false, start the search from this node's
   # children.
   #
   # return:: the node with the given path or nil if the path
@@ -408,77 +408,77 @@ class PathTree
   end
 
   def respond_to_missing?(method_name, include_private = false)
-    return super(method_name,include_private) if data.nil?
-    
+    return super(method_name, include_private) if data.nil?
+
     data.respond_to?(method_name)
   end
 
   def to_s
     traverse_preorder do |level, n|
-       str = " "*4*level + "|-- " + n.segment.to_s
-       str += " <#{n.data}>" unless n.data.nil?
-       str
+      str = " " * 4 * level + "|-- " + n.segment.to_s
+      str += " <#{n.data}>" unless n.data.nil?
+      str
     end.join("\n")
   end
 
-  # Return a new PathTree with the nodes whith pathname matching the 
+  # Return a new PathTree with the nodes whith pathname matching the
   # given regex.
-  # 
+  #
   # The copy will point to the same node data as the original.
   #
   # regex:: a Regex matching the pathname of the nodes to be included in
   # the copy
   # prune:: remove all parents to this node in the returned copy
-  # 
+  #
   # === Returns
   # the entry node in a new PathTree with the nodes with pathnames matching the given regex
   # or nil if no nodes match
   def match(regex, prune: false)
     copy = nil
-  
+
     traverse_preorder do |level, n|
       p = n.pathname
-      next unless regex =~ p.to_s
+      next unless regex&.match?(p.to_s)
 
-      copy.nil? ? copy = PathTree.new(p,n.data) : copy.add_path(p, n.data)
+      copy.nil? ? copy = PathTree.new(p, n.data) : copy.add_path(p, n.data)
     end
     return nil if copy.nil?
 
     # always return the entry node but return a pruned version if
     # the user wishes
-    entry_node = copy.node(self.pathname, from_root: true)
+    entry_node = copy.node(pathname, from_root: true)
     (prune ? entry_node.dup : entry_node)
   end
 
   # Return a new PathTree with the nodes matching the given block
-  # 
+  #
   # The copy will point to the same node data as the original.
   #
   # prune:: prune all parents to this node from the returned copy
   #
-  # === Block 
-  # 
+  # === Block
+  #
   # The given block will receive the level (from the entry node) and
   # the node itself for each node.
-  # 
+  #
   # === Returns
   # the entry node to the new Pathtree or nil if no nodes matched the
   # given block.
   #
   # === Example
-  # 
+  #
   #   copy = original.filter { |l, n| n.data == "smurf" }
-  # 
+  #
   # The above will return a tree with nodes whose data is equal to 'smurf'
   def filter(prune: false)
     raise InvalidArgument, "No block given!" unless block_given?
 
     # build the filtered copy
-    copy = nil  
+    copy = nil
     traverse_preorder do |level, n|
-      if (yield(level,n))
+      if yield(level, n)
         p = n.pathname
-        copy.nil? ? copy = PathTree.new(p,n.data) : copy.add_path(p, n.data)
+        copy.nil? ? copy = PathTree.new(p, n.data) : copy.add_path(p, n.data)
       end
     end
 
@@ -486,7 +486,7 @@ class PathTree
 
     # always return the entry node but return a pruned version if
     # the user wishes
-    entry_node = copy.node(self.pathname, from_root: true)
+    entry_node = copy.node(pathname, from_root: true)
     (prune ? entry_node.dup : entry_node)
   end
 

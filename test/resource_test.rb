@@ -23,133 +23,133 @@ module Giblish
 
       # create fake custom yml file
       File.write("#{resource_topdir}/dir1/custom.yml",
-      <<~PDF_STYLE)
-        giblish:
-          color:
-            blue: [0, 0, 187]
-            red: [184, 0, 7]
-            lightgrey: [224, 224, 224]
+        <<~PDF_STYLE)
+          giblish:
+            color:
+              blue: [0, 0, 187]
+              red: [184, 0, 7]
+              lightgrey: [224, 224, 224]
 
-        font:
-          catalog:
-            # The default font
-            MyDefault:
-              normal: gothic.ttf
-              bold: gothicb.ttf
-              italic: gothici.ttf
-              bold_italic: gothicbi.ttf
-            Arial:
-              normal: arial.ttf
-              bold: arialbd.ttf
-              italic: ariali.ttf
-              bold_italic: arialbi.ttf
+          font:
+            catalog:
+              # The default font
+              MyDefault:
+                normal: gothic.ttf
+                bold: gothicb.ttf
+                italic: gothici.ttf
+                bold_italic: gothicbi.ttf
+              Arial:
+                normal: arial.ttf
+                bold: arialbd.ttf
+                italic: ariali.ttf
+                bold_italic: arialbi.ttf
 
-          fallbacks:
-            - Arial
-        main_font_family: MyDefault
+            fallbacks:
+              - Arial
+          main_font_family: MyDefault
 
-        page:
-          background_color: ffffff
-          layout: portrait
-          margin: 20mm
-          margin_inner: 2.0cm
-          margin_outer: 2.0cm
-          size: A4
-          numbering-start-at: 1
-        base:
-          align: left
-          font_color: $giblish_color_lightgrey
-          font_family: $main_font_family
-          font_size: 9
-          line_height_length: 10.5
-          line_height: $base_line_height_length / $base_font_size
-          font_size_large: round($base_font_size * 1.25)
-          font_size_small: round($base_font_size * 0.85)
-          font_size_min: $base_font_size * 0.75
-          font_style: normal
-          border_color: $giblish_color_lightgrey
-          border_radius: 4
-          border_width: 0.25
-        vertical_rhythm: $base_line_height_length * 2 / 3
-        horizontal_rhythm: $base_line_height_length
-        vertical_spacing: $vertical_rhythm
-        link:
-          font_color: $giblish_color_blue
-        literal:
-          font_color: 000000
-          font_family: Courier
-          font_size: 9
-        title_page:
-          align: left
-          title:
-            font_size: 30
-            font_style: bold
+          page:
+            background_color: ffffff
+            layout: portrait
+            margin: 20mm
+            margin_inner: 2.0cm
+            margin_outer: 2.0cm
+            size: A4
+            numbering-start-at: 1
+          base:
+            align: left
+            font_color: $giblish_color_lightgrey
+            font_family: $main_font_family
+            font_size: 9
+            line_height_length: 10.5
+            line_height: $base_line_height_length / $base_font_size
+            font_size_large: round($base_font_size * 1.25)
+            font_size_small: round($base_font_size * 0.85)
+            font_size_min: $base_font_size * 0.75
+            font_style: normal
+            border_color: $giblish_color_lightgrey
+            border_radius: 4
+            border_width: 0.25
+          vertical_rhythm: $base_line_height_length * 2 / 3
+          horizontal_rhythm: $base_line_height_length
+          vertical_spacing: $vertical_rhythm
+          link:
             font_color: $giblish_color_blue
-            top: 80%
-          subtitle:
-            font_size: 15
-            font_style: bold
+          literal:
+            font_color: 000000
+            font_family: Courier
+            font_size: 9
+          title_page:
+            align: left
+            title:
+              font_size: 30
+              font_style: bold
+              font_color: $giblish_color_blue
+              top: 80%
+            subtitle:
+              font_size: 15
+              font_style: bold
+              font_color: 000000
+            revision:
+              font_size: 15
+              font_style: bold
+              font_color: 000000
+            authors:
+              font_size: 15
+              font_style: bold
+              font_color: 000000
+          heading:
+            align: left
+            margin_top: $vertical_rhythm * 1.4
+            margin_bottom: $vertical_rhythm * 0.7
+            line_height: 1
+            font_color: $giblish_color_lightgrey
+            font_family: $main_font_family
+            font_style: normal
+            h1_font_size: 34
+            h1_font_color: $giblish_color_blue
+            h2_font_size: 16
+            h2_font_color: $giblish_color_blue
+            h3_font_size: 12
+            h3_font_color: $giblish_color_blue
+          authors:
+            margin_top: $base_font_size * 1.25
+            font_size: $base_font_size_large
             font_color: 000000
           revision:
-            font_size: 15
-            font_style: bold
-            font_color: 000000
-          authors:
-            font_size: 15
-            font_style: bold
-            font_color: 000000
-        heading:
-          align: left
-          margin_top: $vertical_rhythm * 1.4
-          margin_bottom: $vertical_rhythm * 0.7
-          line_height: 1
-          font_color: $giblish_color_lightgrey
-          font_family: $main_font_family
-          font_style: normal
-          h1_font_size: 34
-          h1_font_color: $giblish_color_blue
-          h2_font_size: 16
-          h2_font_color: $giblish_color_blue
-          h3_font_size: 12
-          h3_font_color: $giblish_color_blue
-        authors:
-          margin_top: $base_font_size * 1.25
-          font_size: $base_font_size_large
-          font_color: 000000
-        revision:
-          margin_top: $base_font_size * 1.25
-        admonition:
-          padding: [0, $horizontal_rhythm, 0, $horizontal_rhythm]
-          border_color: $base_border_color
-          column_rule_color: $base_border_color
-          icon:
-            warning:
-              name: fa-heartbeat
-              stroke_color: $giblish_color_blue
-              size: 20
-            caution:
-              name: fa-exclamation
-              stroke_color: $giblish_color_blue
-              size: 20
-            note:
-              name: fa-info-circle
-              stroke_color: $giblish_color_blue
-              size: 20
-            tip:
-              name: fa-lightbulb-o
-              stroke_color: $giblish_color_blue
-              size: 20
-        toc:
-          font_family: $heading_font_family
-          font_color: $giblish_color_blue
-          #dot_leader_color: ffffff
-          #dot_leader_content: ' '
-          dot_leader_levels: 1
-          indent: $horizontal_rhythm
-          line_height: 1.4
-          h1_font_style: bold
-          h2_font_style: bold
-      PDF_STYLE
+            margin_top: $base_font_size * 1.25
+          admonition:
+            padding: [0, $horizontal_rhythm, 0, $horizontal_rhythm]
+            border_color: $base_border_color
+            column_rule_color: $base_border_color
+            icon:
+              warning:
+                name: fa-heartbeat
+                stroke_color: $giblish_color_blue
+                size: 20
+              caution:
+                name: fa-exclamation
+                stroke_color: $giblish_color_blue
+                size: 20
+              note:
+                name: fa-info-circle
+                stroke_color: $giblish_color_blue
+                size: 20
+              tip:
+                name: fa-lightbulb-o
+                stroke_color: $giblish_color_blue
+                size: 20
+          toc:
+            font_family: $heading_font_family
+            font_color: $giblish_color_blue
+            #dot_leader_color: ffffff
+            #dot_leader_content: ' '
+            dot_leader_levels: 1
+            indent: $horizontal_rhythm
+            line_height: 1.4
+            h1_font_style: bold
+            h2_font_style: bold
+        PDF_STYLE
 
       # create fake image
       File.write("#{resource_topdir}/images/fake_image.png", "fake png image")

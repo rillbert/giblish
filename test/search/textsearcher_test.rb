@@ -33,8 +33,9 @@ module Giblish
           assert(["file1.adoc", "subdir/file2.adoc"].include?(info[:filepath]))
           puts info.inspect
           assert_equal(
-            expected_title_lines[info[:filepath]], 
-            info[:sections][0][:line_no])
+            expected_title_lines[info[:filepath]],
+            info[:sections][0][:line_no]
+          )
         end
       end
     end

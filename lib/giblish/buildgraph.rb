@@ -37,7 +37,7 @@ module Giblish
 
     # get the asciidoc source for the document.
     def source(make_searchable: false)
-      s = <<~DOC_STR
+      <<~DOC_STR
         #{generate_header}
         #{add_search_box if make_searchable}
         #{generate_graph_header}
@@ -45,7 +45,6 @@ module Giblish
         #{generate_deps}
         #{generate_footer}
       DOC_STR
-      s
     end
 
     def cleanup

@@ -46,7 +46,7 @@ module Giblish
       title << "#{doc_info.doc_id} - " unless doc_info.doc_id.nil?
       title << doc_info.title
 
-      [title, "<<#{doc_info.rel_path }#,#{title}>>",
+      [title, "<<#{doc_info.rel_path}#,#{title}>>",
         "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"]
     end
 

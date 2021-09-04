@@ -37,8 +37,7 @@ module Giblish
         tmp_docs.create_adoc_src_on_disk(srcdir,
           {header: ":docid: D-001"},
           {header: ":docid: D-002"},
-          {header: ":docid: D-004", subdir: "subdir"}
-        )
+          {header: ":docid: D-004", subdir: "subdir"})
         src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with a TreeConverter
@@ -72,15 +71,14 @@ module Giblish
            paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-001>>."]},
           {header: ":docid: D-003",
            paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-004>>."],
-           subdir: "subdir"}
-        )
+           subdir: "subdir"})
         src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with all future TreeConverters
         d_pp = DocIdExtension::DocIdCacheBuilder.new
         tc = TreeConverter.new(src_tree, dstdir,
           {
-            pre_builders: d_pp,
+            pre_builders: d_pp
           })
 
         # must register explicitly since we don't call tc.run
@@ -94,7 +92,7 @@ module Giblish
 
         # assert that all the docs' docids have been cached
         assert_equal(3, d_pp.cache.keys.count)
-        ["D-001", "D-002","D-003"].each { |id| assert(d_pp.cache.key?(id)) }
+        ["D-001", "D-002", "D-003"].each { |id| assert(d_pp.cache.key?(id)) }
 
         # run the build step -> will replace the :docid: with resolved :xref:
         # references before generating html

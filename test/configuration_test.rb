@@ -35,7 +35,7 @@ module Giblish
           "linkcss" => true,
           "copycss" => nil,
           "source-highlighter" => "rouge",
-          "xrefstyle" => "short"  
+          "xrefstyle" => "short"
         },
         builder.document_attributes(nil, nil, nil)
       )
@@ -48,13 +48,13 @@ module Giblish
     def test_doc_attr_config
       # start with default attributes
       ab = DocAttrBuilder.new(GiblishDefaultDocAttribs.new)
-      attrs = ab.document_attributes(nil,nil,nil)
+      attrs = ab.document_attributes(nil, nil, nil)
       assert_equal("short", attrs["xrefstyle"])
 
       # override with cmd line opts
       cmd_opts = CmdLine.new.parse(%W[-a xrefstyle=custom -a attr1=value1 -a attr2=value2 #{__dir__} #{__dir__}])
       ab.add_doc_attr_providers(CmdLineDocAttribs.new(cmd_opts))
-      attrs = ab.document_attributes(nil,nil,nil)
+      attrs = ab.document_attributes(nil, nil, nil)
       assert_equal("custom", attrs["xrefstyle"])
       assert_equal("value1", attrs["attr1"])
     end

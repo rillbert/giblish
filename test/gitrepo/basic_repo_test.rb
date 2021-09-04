@@ -145,7 +145,7 @@ module Giblish
                   TreeConverter.on_success(src, dst, dst_rel_path, doc, logstr)
 
                   p = src.pathname.relative_path_from(repo)
-                  
+
                   # a bit hackish... These callbacks are also called when converting the index.adoc
                   # files and they do not reside in the git repo since they're generated, thus we
                   # skip those when getting the gitlog
@@ -163,7 +163,7 @@ module Giblish
           tc.run
 
           # assert that there now are 3 html files under "dst/<branch_name>"
-          it = tc.dst_tree.match(/index.html$/).node(branch_dst,from_root: true)
+          it = tc.dst_tree.match(/index.html$/).node(branch_dst, from_root: true)
           assert_equal(3, it.leave_pathnames.count)
         end
       end

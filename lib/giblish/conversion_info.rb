@@ -28,7 +28,7 @@ module Giblish
     end
 
     def initialize(adoc: nil, src_node: nil, dst_node: nil, dst_top: nil, adoc_stderr: "")
-      @src_file = src_node.nil? ? nil : src_node.pathname.to_s 
+      @src_file = src_node.nil? ? nil : src_node.pathname.to_s
       @history = []
       @converted = true
       @stderr = adoc_stderr
