@@ -54,7 +54,7 @@ module Giblish
       sp = SearchParameters.new(calling_uri: uri, uri_mappings: mapping)
       assert_equal(
         Pathname.new("#{__dir__}/repo1/subdir1"),
-        sp.uri_to_fs("/my/docs/repo1/subdir1")
+        sp.send(:uri_to_fs, "/my/docs/repo1/subdir1")
       )
 
       # use two mappings
@@ -65,15 +65,15 @@ module Giblish
       sp = SearchParameters.new(calling_uri: uri, uri_mappings: mapping)
       assert_equal(
         Pathname.new("#{__dir__}/newdir"),
-        sp.uri_to_fs("/my/docs/newdir")
+        sp.send(:uri_to_fs, "/my/docs/newdir")
       )
       assert_equal(
         Pathname.new("/subdir1"),
-        sp.uri_to_fs("/my/docs/repo1/subdir1")
+        sp.send(:uri_to_fs, "/my/docs/repo1/subdir1")
       )
       assert_equal(
         Pathname.new("/no/matching/mapping"),
-        sp.uri_to_fs("/no/matching/mapping")
+        sp.send(:uri_to_fs, "/no/matching/mapping")
       )
     end
 
@@ -140,6 +140,7 @@ module Giblish
     end
 
     def test_search_repo
+      raise NotImplementedError
       # with_search_testdata do |dsttree|
 
       #   repos = SearchRepoCache.new

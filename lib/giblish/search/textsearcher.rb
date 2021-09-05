@@ -40,7 +40,7 @@ module Giblish
       @uri = URI(calling_uri)
 
       # convert keys and values to Pathnames
-      @uri_mappings = uri_mappings.map { |k, v| [Pathname.new(k), Pathname.new(v)] }.to_h
+      @uri_mappings = uri_mappings.map { |k, v| [Pathname.new(k).cleanpath, Pathname.new(v).cleanpath] }.to_h
 
       @parameters = URI.decode_www_form(@uri.query).to_h
 
@@ -103,7 +103,10 @@ module Giblish
 
       @uri_mappings.each do |key, value|
         key_length = key.to_s.length
-        tmp = up.sub(key.cleanpath.to_s, value.cleanpath.to_s + "/")
+        # we must treat '/' specially since its the only case where
+        # the key ends with a '/'
+        s = key.root? ? "" : key
+        tmp = up.sub(s.to_s, value.to_s).cleanpath
         matches[key_length] = tmp if tmp != up
       end
       return up if matches.empty?

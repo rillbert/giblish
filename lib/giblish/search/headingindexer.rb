@@ -69,23 +69,35 @@ module Giblish
       @data_cache.add_file_index(
         src_path: src_path,
         title: attrs.key?("doctitle") ? attrs["doctitle"] : "No title found!",
-        sections: index_sections(document.reader.source_lines, opts)
+        sections: index_sections(document, opts)
       )
       nil
     end
 
     private
 
+    # replace {a_doc_attr} with the value of the attribute
+    def replace_attrs(attrs, line)
+      # find all '{...}' occurrences
+      m_arr = line.scan(/\{\w+\}/)
+      # replace each found occurence with its doc attr if exists
+      m_arr.inject(line) do |memo, match|
+        memo.gsub(match.to_s, attrs[match[1..-2]])
+      end
+    end
+
     # index all section headings found in the current file
     # @return an array of {:id, :title, :line_no} dicts, one for each
     #         indexed heading
-    def index_sections(lines, opts)
+    def index_sections(document, opts)
+      lines = document.reader.source_lines
       sections = []
       line_no = 0
       match_str = ""
       state = :text
       lines.each do |line|
         line_no += 1
+        line = replace_attrs(document.attributes, line)
         # implement a state machine that supports both custom
         # anchors for a heading and the default heading ids generated
         # by asciidoctor
