@@ -1,8 +1,8 @@
 require "pathname"
 require "json"
+require "uri"
 
 module Giblish
-  SEARCH_DB_BASENAME = "heading_db.json"
   # reads all lines in the given file at instantiation and
   # washes the text from some adoc formatting sequences.
   class LoadAdocSrcFromFile
@@ -23,39 +23,91 @@ module Giblish
     end
   end
 
+  class SearchParameters
+    # a hash with { param => value } of all query parameters from the URI.
+    attr_reader :parameters
+    attr_reader :uri
+
+    # Search input:
+    #
+    # calling_uri:: the full URI of the originating search request
+    #
+    # ex URI = www.example.com/my/doc/repo/subdir/file1.html?search-assets-top-rel=../my/docs&searchphrase=hejsan
+    def initialize(calling_uri:)
+      @uri = URI(calling_uri)
+      @parameters = URI.decode_www_form(@uri.query).to_h
+
+      validate_parameters
+    end
+
+    def assets_uri_path
+      @assets_uri_path ||= Pathname.new(@uri.path).dirname.join(assets_top_rel).cleanpath
+      @assets_uri_path
+    end
+
+    # returns:: a Pathname with the relative dir to asset top
+    def assets_top_rel
+      Pathname.new(parameters["search-assets-top-rel"])
+    end
+
+    def searchphrase
+      parameters["searchphrase"]
+    end
+
+    def css_path
+      parameters["css-path"]
+    end
+
+    def consider_case?
+      parameters.key?("consider-case")
+    end
+
+    def as_regexp?
+      parameters.key?("as-regexp")
+    end
+
+    private
+
+    # Require that:
+    #
+    # - a relative asset path is included
+    # - a search phrase is included
+    def validate_parameters
+      # asset_top_rel
+      raise ArgumentError, "Missing relative asset path!" if assets_top_rel.nil?
+      raise ArgumentError, "Asset top must be relative, found '#{assets_top_rel}'" if assets_top_rel.absolute?
+
+      # search phrase
+      raise ArgumentError, "No search phrase found!" if searchphrase.nil?
+    end
+  end
+
+  class SearchRepoCache
+    def initialize
+      @repos = {
+        asset_path: "", data: {
+          repo: SearchDataRepo.new,
+          db_mod_time: time
+        }
+      }
+    end
+
+    def repo(asset_path)
+      @repos[ap] ||= {asset_path: asset_path, data: {repo: SearchDataRepo.new, db_mod_time: nil}}
+      # TODO: Add time mod check here for reload of repo
+    end
+  end
+
   # Provides access to all search related info for one tree
   # of adoc src docs.
-  SearchDataRepo = Struct.new(:url_top, :uri_path, :search_asset_topdir) do
-    def src_tree
-      return src_tree unless src_tree.nil?
+  class SearchDataRepo
+    SEARCH_DB_BASENAME = "heading_db.json"
 
-      # setup the tree of source files and pro-actively read in all text
-      # into memory
-      # TODO: Add a mechanism that triggers re-read when the file time-stamp
-      # has changed
-      src_tree = PathTree.build_from_fs(asset_path, prune: true) do |p|
-        p.extname.downcase == ".adoc"
-      end
-      src_tree.traverse_preorder do |level, node|
-        node.data = LoadAdocSrcFromFile.new(node.pathname)
-      end
-    end
-
-    def asset_path
-      return asset_path unless asset_path.nil?
-
-      self.asset_path = (Pathname.new(uri_path) / search_asset_topdir).cleanpath
-    end
-
-    def search_db
-      return search_db unless search_db.nil?
-
-      # read the heading_db from file
-      json = File.read((search_asset_topdir / join(SEARCH_DB_BASENAME)).to_s)
-      self.search_db = JSON.parse(json)
-    end
-
-    def url(filepath, section)
+    # asset_path:: a Pathname to the top dir of the search asset folder
+    def initialize(asset_path)
+      @asset_path = asset_path
+      @search_db = cache_search_db
+      @src_tree = cache_src_tree
     end
 
     # find section with closest lower line_no to line_info
@@ -63,16 +115,36 @@ module Giblish
       sections = search_db[filepath]
       sections.reverse.find { |section| match_data[:line_no] >= Integer(section[:line_no]) }
     end
+
+    private
+
+    def cache_src_tree
+      # setup the tree of source files and pro-actively read in all text
+      # into memory
+      # TODO: Add a mechanism that triggers re-read when the file time-stamp
+      # has changed
+      src_tree = PathTree.build_from_fs(@asset_path, prune: true) do |p|
+        p.extname.downcase == ".adoc"
+      end
+      src_tree.traverse_preorder do |level, node|
+        node.data = LoadAdocSrcFromFile.new(node.pathname)
+      end
+    end
+
+    def cache_search_db
+      # read the heading_db from file
+      json = File.read((@asset_path / join(SEARCH_DB_BASENAME)).to_s)
+      self.search_db = JSON.parse(json)
+    end
   end
 
   # Provides text search capability for the given source repository.
   class TextSearcher
-    def initialize(search_data_repo)
-      @data_repo = search_data_repo
+    def initialize(repo_cache)
+      @repo_cache = repo_cache
     end
 
-    def search(search_phrase, opts)
-      # TODO: Handle search options!
+    def search(search_parameters)
       search_result(grep_tree(search_phrase))
     end
 

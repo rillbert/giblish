@@ -63,7 +63,7 @@ The search service expects a number of parameters as part of the search query, s
 |the complete URL to the file from which the search request originated
 
 
-|search-asset-top-rel
+|search-assets-top-rel
 |required
 |the relative path to the `gibsearch_assets` dir from the originating file's directory.
 
@@ -84,7 +84,7 @@ the relative path to the css file from the originating file's directory.
 not set::
 the styling is left to the search implementation.
 
-|usecase
+|consider-case
 |optional
 a|
 if set::
@@ -93,7 +93,7 @@ search case sensitive
 not set::
 ignore case during search
 
-|useregexp
+|as-regexp
 |optional
 a|
 if set::

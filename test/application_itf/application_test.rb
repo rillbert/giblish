@@ -20,11 +20,11 @@ module Giblish
     end
 
     def test_get_help_and_version_msg
-      `lib/giblish.rb -h`
+      g = `lib/giblish.rb -h`
       assert_equal 0, $?.exitstatus
       assert_match(/^Usage/, g)
 
-      `lib/giblish.rb -v`
+      g = `lib/giblish.rb -v`
       assert_equal 0, $?.exitstatus
       assert_match(/^Giblish v/, g)
     end

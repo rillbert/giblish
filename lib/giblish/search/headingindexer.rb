@@ -164,13 +164,15 @@ module Giblish
     end
   end
 
-  class TestTreeProc < Asciidoctor::Extensions::TreeProcessor
-    def process(document)
-      # pp document.blocks[0].class.instance_methods(false)
-      puts "----"
-      puts "title: #{document.title}"
-      puts "Sections: #{document.blocks.collect { |b| b.title }.join(",")}"
-      # document.blocks.each {|b| puts b.lines }.join("\n--\n")
-    end
-  end
+  # class TestTreeProc < Asciidoctor::Extensions::TreeProcessor
+  #   def process(document)
+  #     # pp document.blocks[0].class.instance_methods(false)
+  #     attrs = document.attributes
+  #     puts "----"
+  #     puts "title: #{document.title}"
+  #     puts "title old: ", attrs.key?("doctitle") ? attrs["doctitle"] : "No title found!"
+  #     puts "Sections: #{document.blocks.collect { |b| b.title }.join(",")}"
+  #     # document.blocks.each {|b| puts b.lines }.join("\n--\n")
+  #   end
+  # end
 end

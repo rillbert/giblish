@@ -88,7 +88,7 @@ module Giblish
           4 == 5 # a dummy statement to prevent a crash of 'standardrb'
       end
 
-      build_options[:adoc_extensions][:tree_processor] << TestTreeProc.new
+      # build_options[:adoc_extensions][:tree_processor] << TestTreeProc.new
 
       # compose the attribute provider and associate it with all source
       # nodes
