@@ -10,7 +10,7 @@ module Giblish
 
     def initialize(filepath)
       @src_lines = []
-      File.readlines do |line|
+      File.readlines(filepath.to_s) do |line|
         @src_lines << wash_line(line)
       end
     end
@@ -31,23 +31,48 @@ module Giblish
     # Search input:
     #
     # calling_uri:: the full URI of the originating search request
+    # uri_mappings:: mappings between uri.path prefix and an absolute path in the local
+    #             file system. Ex {"/my/doc" => "/var/www/html/doc/repos"}. The default
+    #             is { "/" => "/var/www/html" }
     #
     # ex URI = www.example.com/my/doc/repo/subdir/file1.html?search-assets-top-rel=../my/docs&searchphrase=hejsan
-    def initialize(calling_uri:)
+    def initialize(calling_uri:, uri_mappings: {"/" => "/var/www/html"})
       @uri = URI(calling_uri)
+
+      # convert keys and values to Pathnames
+      @uri_mappings = uri_mappings.map { |k, v| [Pathname.new(k), Pathname.new(v)] }.to_h
+
       @parameters = URI.decode_www_form(@uri.query).to_h
 
       validate_parameters
     end
 
+    # return::
     def assets_uri_path
       @assets_uri_path ||= Pathname.new(@uri.path).dirname.join(assets_top_rel).cleanpath
       @assets_uri_path
     end
 
-    # returns:: a Pathname with the relative dir to asset top
+    # return:: the uri path pointing to the doc repo top dir
+    def uri_path_repo_top
+      Pathname.new(@uri.path).join(assets_top_rel.dirname).dirname
+    end
+
+    # return:: the absolute Pathname of the file system path to the
+    # search assets top dir.
+    def assets_fs_path
+      uri_to_fs(assets_uri_path)
+    end
+
+    # return:: a Pathname with the relative dir from the file in the
+    # given url to the asset top
     def assets_top_rel
       Pathname.new(parameters["search-assets-top-rel"])
+    end
+
+    # return:: the relative path from the doc top dir to the file
+    def repo_file_path
+      Pathname.new(uri.path).relative_path_from(uri_path_repo_top)
     end
 
     def searchphrase
@@ -68,10 +93,31 @@ module Giblish
 
     private
 
+    # return:: a Pathname where the prefix of an uri path has been replaced with the
+    #          corresponding fs mapping, if one exists. Returns the original pathname
+    #          if no corresponding mapping exists.
+    #          if more than one mapping match, the longest is used.
+    def uri_to_fs(uri_path)
+      up = Pathname.new(uri_path).cleanpath
+      matches = {}
+
+      @uri_mappings.each do |key, value|
+        key_length = key.to_s.length
+        tmp = up.sub(key.cleanpath.to_s, value.cleanpath.to_s + "/")
+        matches[key_length] = tmp if tmp != up
+      end
+      return up if matches.empty?
+
+      # return longest matching key
+      matches.max { |item| item[0] }[1]
+    end
+
     # Require that:
     #
     # - a relative asset path is included
     # - a search phrase is included
+    # - the uri_mappings map an absolute uri path to an absolute, and existing file
+    #   system path.
     def validate_parameters
       # asset_top_rel
       raise ArgumentError, "Missing relative asset path!" if assets_top_rel.nil?
@@ -79,21 +125,29 @@ module Giblish
 
       # search phrase
       raise ArgumentError, "No search phrase found!" if searchphrase.nil?
+
+      # uri_mapping
+      @uri_mappings.each do |k, v|
+        raise ArgumentError, "The uri path in the uri_mapping must be absolute, found: '#{k}'" unless k.absolute?
+        raise ArgumentError, "The file system directory path must be absolute, found: '#{v}'" unless v.absolute?
+        raise ArgumentError, "The file system diretory does not exist, found: '#{v}'" unless v.exist?
+        raise ArgumentError, "The uri_mapping must be a directory, found file: '#{v}'" unless v.directory?
+      end
     end
   end
 
   class SearchRepoCache
     def initialize
       @repos = {
-        asset_path: "", data: {
+        assets_uri_path: "", data: {
           repo: SearchDataRepo.new,
           db_mod_time: time
         }
       }
     end
 
-    def repo(asset_path)
-      @repos[ap] ||= {asset_path: asset_path, data: {repo: SearchDataRepo.new, db_mod_time: nil}}
+    def repo(assets_uri_path)
+      @repos[ap] ||= {assets_uri_path: assets_uri_path, data: {repo: SearchDataRepo.new, db_mod_time: nil}}
       # TODO: Add time mod check here for reload of repo
     end
   end
@@ -101,40 +155,52 @@ module Giblish
   # Provides access to all search related info for one tree
   # of adoc src docs.
   class SearchDataRepo
+    attr_reader :search_db
+
     SEARCH_DB_BASENAME = "heading_db.json"
 
-    # asset_path:: a Pathname to the top dir of the search asset folder
-    def initialize(asset_path)
-      @asset_path = asset_path
+    # assets_uri_path:: a Pathname to the top dir of the search asset folder
+    def initialize(assets_uri_path)
+      @assets_uri_path = assets_uri_path
       @search_db = cache_search_db
+      @db_fileinfos = @search_db[:fileinfos]
       @src_tree = cache_src_tree
     end
 
     # find section with closest lower line_no to line_info
-    def in_section(filepath, match_data)
-      sections = search_db[filepath]
-      sections.reverse.find { |section| match_data[:line_no] >= Integer(section[:line_no]) }
+    # NOTE: line_no in is 1-based
+    def in_section(filepath, line_no)
+      i = info(filepath)
+      i[:sections].reverse.find { |section| line_no >= section[:line_no] }
     end
 
     private
+
+    # return:: the info from the repo for the given filepath or nil if no info
+    #          exists
+    def info(filepath)
+      @search_db[:fileinfos].find { |info| info[:filepath] == filepath }
+    end
 
     def cache_src_tree
       # setup the tree of source files and pro-actively read in all text
       # into memory
       # TODO: Add a mechanism that triggers re-read when the file time-stamp
       # has changed
-      src_tree = PathTree.build_from_fs(@asset_path, prune: true) do |p|
+      src_tree = PathTree.build_from_fs(@assets_uri_path, prune: false) do |p|
         p.extname.downcase == ".adoc"
       end
       src_tree.traverse_preorder do |level, node|
+        next unless node.leaf?
+
         node.data = LoadAdocSrcFromFile.new(node.pathname)
       end
     end
 
     def cache_search_db
       # read the heading_db from file
-      json = File.read((@asset_path / join(SEARCH_DB_BASENAME)).to_s)
-      self.search_db = JSON.parse(json)
+      json = File.read(@assets_uri_path.join(SEARCH_DB_BASENAME).to_s)
+      @search_db = JSON.parse(json, symbolize_names: true)
     end
   end
 
@@ -166,7 +232,7 @@ module Giblish
           line_no += 1
           next if line.empty? || !r.match?(line)
 
-          relative_path = node.relative_path_from(@data_repo.asset_path)
+          relative_path = node.relative_path_from(@data_repo.assets_uri_path)
           result[relative_path] << {
             line_no: line_no,
             # replace match with an embedded rule that can

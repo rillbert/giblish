@@ -60,7 +60,7 @@ module Giblish
           dst_dir.to_s]
         Giblish.application.run args
 
-        search_root = dst_dir.join("search_assets")
+        search_root = dst_dir.join(SearchDataCache::SEARCH_ASSET_DIRNAME)
         assert Dir.exist?(search_root.to_s)
 
         # assert that the searchable index has been created
@@ -86,7 +86,7 @@ module Giblish
           dst_dir.to_s]
         Giblish.application.run args
 
-        search_root = dst_dir.join("search_assets")
+        search_root = dst_dir.join(SearchDataCache::SEARCH_ASSET_DIRNAME)
         assert Dir.exist?(search_root.to_s)
 
         # assert that the searchable index has been created

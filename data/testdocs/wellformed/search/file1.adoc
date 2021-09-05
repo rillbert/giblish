@@ -1,7 +1,7 @@
 = File 1
 :toc:
 :numbered:
-:myvariable: Sub section 2
+:myvariable: Sub section
 
 == Paragraph 1
 
@@ -34,6 +34,6 @@ some _italic_, *bold* and *_both bold and italic_* text.
 
 More text.
 
-=== {myvariable}
+=== {myvariable} 2
 
 Even more text.

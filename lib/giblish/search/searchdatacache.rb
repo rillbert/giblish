@@ -15,7 +15,7 @@ module Giblish
   # |     |- file1.html
   # |     |- dir_1
   # |     |   |- file2.html
-  # |- search_assets
+  # |- gibsearch_assets
   # |     |- branch_1
   # |           |- heading_index.json
   # |           |- file1.adoc
@@ -33,6 +33,7 @@ module Giblish
     attr_reader :heading_index
 
     HEADING_DB_BASENAME = "heading_db.json"
+    SEARCH_ASSET_DIRNAME = "gibsearch_assets"
 
     # clean the global data cache and set up parameters given by the
     # user
@@ -55,7 +56,7 @@ module Giblish
 
     # called by the TreeConverter during the post_build phase
     def run(src_tree, dst_tree, converter)
-      search_topdir = dst_tree.pathname / "search_assets"
+      search_topdir = dst_tree.pathname / SEARCH_ASSET_DIRNAME
 
       # store the JSON file
       serialize_section_index(search_topdir, search_topdir)

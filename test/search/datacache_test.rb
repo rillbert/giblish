@@ -63,7 +63,7 @@ module Giblish
 
         # ensure that relevant dirs/files exist
         assert(dst_root.directory?)
-        asset_top = dst_root / "search_assets"
+        asset_top = dst_root / SearchDataCache::SEARCH_ASSET_DIRNAME
         assert(asset_top.directory?)
         assert((asset_top / SearchDataCache::HEADING_DB_BASENAME).exist?)
       end
