@@ -139,22 +139,6 @@ module Giblish
     end
   end
 
-  class SearchRepoCache
-    def initialize
-      @repos = {
-        assets_uri_path: "", data: {
-          repo: SearchDataRepo.new,
-          db_mod_time: time
-        }
-      }
-    end
-
-    def repo(assets_uri_path)
-      @repos[ap] ||= {assets_uri_path: assets_uri_path, data: {repo: SearchDataRepo.new, db_mod_time: nil}}
-      # TODO: Add time mod check here for reload of repo
-    end
-  end
-
   # Provides access to all search related info for one tree
   # of adoc src docs.
   class SearchDataRepo
@@ -207,14 +191,37 @@ module Giblish
     end
   end
 
-  # Provides text search capability for the given source repository.
+  class SearchRepoCache
+    def initialize
+      @repos = {
+        "assets/uri/path" => {
+          repo: SearchDataRepo.new,
+          db_mod_time: nil
+        }
+      }
+    end
+
+    # returns:: the SearchDataRepo corresponding to the given search parameters 
+    def repo(search_parameters)
+      ap = search_parameters.assets_uri_path
+      @repos[ap] ||= {repo: SearchDataRepo.new(ap), db_mod_time: nil}
+      # TODO: Add time mod check here for reload of repo
+      @repos[ap][:repo]
+    end
+  end
+
+ö  # Provides text search capability for the given source repository.
   class TextSearcher
     def initialize(repo_cache)
       @repo_cache = repo_cache
     end
 
-    def search(search_parameters)
-      search_result(grep_tree(search_phrase))
+    # params:: a SearchParameters instance
+    def search(params)
+      repo = @repo_cache.repo(params)
+
+      grep_results = grep_tree(repo, params)
+      search_result()
     end
 
     # result = {
@@ -223,10 +230,10 @@ module Giblish
     #     line: ""
     #   }]
     # }
-    def grep_tree(search_phrase)
+    def grep_tree(repo, params)
       # TODO: Add ignore case and use regex options
       result = Hash.new { |h, k| h[k] = [] }
-      r = Regexp.new(search_phrase)
+      r = Regexp.new(params.searchphrase)
 
       # find all matching lines in the src tree
       data_repo.src_tree.traverse_preorder do |level, node|

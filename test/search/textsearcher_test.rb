@@ -140,14 +140,20 @@ module Giblish
     end
 
     def test_search_repo
-      raise NotImplementedError
-      # with_search_testdata do |dsttree|
+      # raise NotImplementedError
+      with_search_testdata do |dsttree|
+        searcher = TextSearcher.new(SearchRepoCache.new)
 
-      #   repos = SearchRepoCache.new
-      #   ts = TextSearcher.new(repos)
+        # fake minimal search request from file1 deployed to /my/docs/repo1
+        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&searchphrase=hejsan"
+        sp = SearchParameters.new(
+          calling_uri: uri,
+          uri_mappings: {"/" => dsttree.pathname}
+        )
 
-      #   results = ts.search(sp)
-      # end
+        results = searcher.search(sp)
+        p results
+      end
     end
   end
 end
