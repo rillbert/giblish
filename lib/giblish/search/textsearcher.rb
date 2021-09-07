@@ -10,15 +10,17 @@ module Giblish
 
     def initialize(filepath)
       @src_lines = []
-      File.readlines(filepath.to_s) do |line|
+      File.readlines(filepath.to_s).each do |line|
         @src_lines << wash_line(line)
       end
     end
 
+    private
+
     def wash_line(line)
       # remove some asciidoctor format sequences
       # '::', '^|===', '^==', '^--, ':myvar: ...'
-      r = Regexp.new(/(::+|^[=|]+|^--+|^:\w:.*$)/)
+      r = Regexp.new(/(::+|^[=|]+|^--+|^:\w+:.*$)/)
       line.gsub(r, "")
     end
   end
@@ -91,6 +93,20 @@ module Giblish
       parameters.key?("as-regexp")
     end
 
+    # repo_filepath:: the filepath from the repo top to a given file
+    # fragment:: the fragment id or nil
+    #
+    # return:: the access url for a given section in a given src file
+    def url(repo_filepath, fragment = nil)
+      # create result by replacing relevant parts of the original uri
+      res = @uri.dup
+      res.query = nil
+      res.fragment = fragment
+      res.path = uri_path_repo_top.join(repo_filepath).cleanpath.to_s
+      res
+    end
+
+
     private
 
     # return:: a Pathname where the prefix of an uri path has been replaced with the
@@ -142,16 +158,15 @@ module Giblish
   # Provides access to all search related info for one tree
   # of adoc src docs.
   class SearchDataRepo
-    attr_reader :search_db
+    attr_reader :search_db, :src_tree
 
     SEARCH_DB_BASENAME = "heading_db.json"
 
     # assets_uri_path:: a Pathname to the top dir of the search asset folder
-    def initialize(assets_uri_path)
-      @assets_uri_path = assets_uri_path
+    def initialize(assets_fs_path)
+      @assets_fs_path = assets_fs_path
       @search_db = cache_search_db
-      @db_fileinfos = @search_db[:fileinfos]
-      @src_tree = cache_src_tree
+      @src_tree = build_src_tree
     end
 
     # find section with closest lower line_no to line_info
@@ -161,20 +176,20 @@ module Giblish
       i[:sections].reverse.find { |section| line_no >= section[:line_no] }
     end
 
-    private
-
     # return:: the info from the repo for the given filepath or nil if no info
     #          exists
     def info(filepath)
-      @search_db[:fileinfos].find { |info| info[:filepath] == filepath }
+      @search_db[:fileinfos].find { |info| info[:filepath] == filepath.to_s }
     end
 
-    def cache_src_tree
+    private
+
+    def build_src_tree
       # setup the tree of source files and pro-actively read in all text
       # into memory
       # TODO: Add a mechanism that triggers re-read when the file time-stamp
       # has changed
-      src_tree = PathTree.build_from_fs(@assets_uri_path, prune: false) do |p|
+      src_tree = PathTree.build_from_fs(@assets_fs_path, prune: false) do |p|
         p.extname.downcase == ".adoc"
       end
       src_tree.traverse_preorder do |level, node|
@@ -182,35 +197,31 @@ module Giblish
 
         node.data = LoadAdocSrcFromFile.new(node.pathname)
       end
+      src_tree
     end
 
     def cache_search_db
       # read the heading_db from file
-      json = File.read(@assets_uri_path.join(SEARCH_DB_BASENAME).to_s)
-      @search_db = JSON.parse(json, symbolize_names: true)
+      json = File.read(@assets_fs_path.join(SEARCH_DB_BASENAME).to_s)
+      JSON.parse(json, symbolize_names: true)
     end
   end
 
   class SearchRepoCache
     def initialize
-      @repos = {
-        "assets/uri/path" => {
-          repo: SearchDataRepo.new,
-          db_mod_time: nil
-        }
-      }
+      @repos = {}
     end
 
-    # returns:: the SearchDataRepo corresponding to the given search parameters 
+    # returns:: the SearchDataRepo corresponding to the given search parameters
     def repo(search_parameters)
-      ap = search_parameters.assets_uri_path
+      ap = search_parameters.assets_fs_path
       @repos[ap] ||= {repo: SearchDataRepo.new(ap), db_mod_time: nil}
       # TODO: Add time mod check here for reload of repo
       @repos[ap][:repo]
     end
   end
 
-ö  # Provides text search capability for the given source repository.
+  # Provides text search capability for the given source repository.
   class TextSearcher
     def initialize(repo_cache)
       @repo_cache = repo_cache
@@ -221,7 +232,8 @@ module Giblish
       repo = @repo_cache.repo(params)
 
       grep_results = grep_tree(repo, params)
-      search_result()
+
+      search_result(repo, grep_results, params)
     end
 
     # result = {
@@ -236,13 +248,16 @@ module Giblish
       r = Regexp.new(params.searchphrase)
 
       # find all matching lines in the src tree
-      data_repo.src_tree.traverse_preorder do |level, node|
+      repo.src_tree.traverse_preorder do |level, node|
+        next unless node.leaf?
+
         line_no = 0
-        node.data.src_lines do |line|
+        node.data.src_lines.each do |line|
           line_no += 1
           next if line.empty? || !r.match?(line)
 
-          relative_path = node.relative_path_from(@data_repo.assets_uri_path)
+          p line
+          relative_path = node.relative_path_from(repo.src_tree)
           result[relative_path] << {
             line_no: line_no,
             # replace match with an embedded rule that can
@@ -266,25 +281,25 @@ module Giblish
     #     ]
     #   }]
     # }}
-    def search_result(grep_result)
-      db = @data_repo.search_db
+    def search_result(repo, grep_result, params)
       result = Hash.new { |h, k| h[k] = [] }
 
       grep_result.each do |filepath, matches|
-        db = @data_repo.search_db[filepath]
+        db = repo.info(filepath)
         next if db.nil?
 
         sect_to_match = Hash.new { |h, k| h[k] = [] }
         matches.each do |match|
-          s = @data_repo.in_section(filepath, match)
+          p "match: #{match}, filepath: #{filepath}"
+          s = repo.in_section(filepath, match[:line_no])
           sect_to_match[s] << match
         end
 
-        sections = s.collect do |section, matches|
+        sections = sect_to_match.collect do |section, matches|
           {
-            url: @data_repo.url(filepath, section),
+            url: params.url(filepath, section[:id]),
             title: section[:title],
-            lines: matches.collect { |match| m.line }
+            lines: matches.collect { |match| match[:line].chomp }
           }
         end
 

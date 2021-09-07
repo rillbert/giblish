@@ -110,6 +110,20 @@ module Giblish
       assert_equal(true, sp.consider_case?)
     end
 
+    def test_url_builder
+      # use an ok prefix
+      mapping = {"/my/docs" => Pathname.new(__FILE__).dirname}
+
+      # use give the bare minima
+      uri = "http://www.example.com:8000/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&searchphrase=hejsan"
+      sp = SearchParameters.new(calling_uri: uri, uri_mappings: mapping)
+
+      assert_equal(
+        "http://www.example.com:8000/my/docs/repo1/file1.adoc#_my_id",
+        sp.url("file1.adoc", "_my_id").to_s
+      )
+    end
+
     # script under url: <url>/scripts/gibsearch
     # __FILE__ in script /var/www/myscripts/gibsearch.rb
     #
@@ -139,20 +153,20 @@ module Giblish
       end
     end
 
-    def test_search_repo
+    def test_text_searcher
       # raise NotImplementedError
       with_search_testdata do |dsttree|
         searcher = TextSearcher.new(SearchRepoCache.new)
 
         # fake minimal search request from file1 deployed to /my/docs/repo1
-        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&searchphrase=hejsan"
+        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&searchphrase=text"
         sp = SearchParameters.new(
           calling_uri: uri,
           uri_mappings: {"/" => dsttree.pathname}
         )
 
         results = searcher.search(sp)
-        p results
+        pp results
       end
     end
   end
