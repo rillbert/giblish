@@ -169,5 +169,11 @@ module Giblish
         pp results
       end
     end
+
+    def test_repo_caching
+      # TODO: Add re-reading of the repo from disc when a file time stamp
+      # changes.
+      raise NotImplementedError
+    end
   end
 end

@@ -25,6 +25,8 @@ module Giblish
     end
   end
 
+  # Encapsulates raw data and information deducable from one 
+  # search query
   class SearchParameters
     # a hash with { param => value } of all query parameters from the URI.
     attr_reader :parameters
@@ -165,7 +167,7 @@ module Giblish
     # assets_uri_path:: a Pathname to the top dir of the search asset folder
     def initialize(assets_fs_path)
       @assets_fs_path = assets_fs_path
-      @search_db = cache_search_db
+      @search_db = read_search_db
       @src_tree = build_src_tree
     end
 
@@ -200,13 +202,15 @@ module Giblish
       src_tree
     end
 
-    def cache_search_db
+    def read_search_db
       # read the heading_db from file
       json = File.read(@assets_fs_path.join(SEARCH_DB_BASENAME).to_s)
       JSON.parse(json, symbolize_names: true)
     end
   end
 
+  # Caches a number of SearchDataRepo instances in memory and returns the 
+  # one corresponding to the given SearchParameters instance.
   class SearchRepoCache
     def initialize
       @repos = {}
@@ -270,10 +274,10 @@ module Giblish
     end
 
     # transform the output from grep_tree to an Array of hashes according to:
-    # {"subdir/file1.adoc" => {
+    # {Pathname("subdir/file1.adoc") => {
     #   doc_title: "My doc!!",
     #   sections: [{
-    #     url: "http://my.site.com/docs/repo1/file1.html#section_id_1",
+    #     url: URI("http://my.site.com/docs/repo1/file1.html#section_id_1"),
     #     title: "Purpose",
     #     lines: [
     #       "this is the line with matching text",
