@@ -268,7 +268,7 @@ module Giblish
 
     # Get the branches/tags the user wants to parse
     def select_user_branches(checkout_regexp)
-      return unless @options[:gitBranchRegexp]
+      return [] unless @options[:gitBranchRegexp]
 
       regexp = Regexp.new checkout_regexp
       user_checkouts = @git_repo.branches.remote.select do |b|
