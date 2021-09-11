@@ -40,7 +40,7 @@ module Giblish
       src_dir = adoc.base_dir
 
       d_attr = adoc.attributes
-      self.src_file = (d_attr["docfile"])
+      self.src_basename = (d_attr["docfile"])
       @doc_id = d_attr["docid"]
       return if dst_root_abs.nil?
 
@@ -128,7 +128,7 @@ module Giblish
 
       # the only info we have is the source file name
       info.converted = false
-      info.src_file = filepath.to_s
+      info.src_basename = filepath.to_s
       info.error_msg = exception.message
 
       @doc_infos << info

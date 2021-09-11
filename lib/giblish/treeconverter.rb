@@ -124,21 +124,21 @@ module Giblish
       end
     end
 
+    # the default callback will tie a 'SuccessfulConversion' instance
+    # to the destination node as its data
     def self.on_success(src_node, dst_node, dst_tree, doc, adoc_log_str)
-      dst_node.data = ConversionInfo.new(
-        adoc: doc, src_node: src_node, dst_node: dst_node, dst_top: dst_tree, adoc_stderr: adoc_log_str
+      dst_node.data = SuccessfulConversion.new(
+        src_node: src_node, dst_node: dst_node, dst_top: dst_tree, adoc: doc, adoc_stderr: adoc_log_str
       )
     end
 
+    # the default callback will tie a 'FailedConversion' instance
+    # to the destination node as its data
     def self.on_failure(src_node, dst_node, dst_tree, ex, adoc_log_str)
       @logger&.error { ex.message }
-      # the only info we have is the source file name
-      info = ConversionInfo.new
-      info.converted = false
-      info.src_file = src_node.pathname.to_s
-      info.error_msg = ex.message
-
-      dst_node.data = info unless dst_node.nil?
+      dst_node.data = FailedConversion.new(
+        src_node: src_node, dst_node: dst_node, dst_top: dst_tree, error_msg: ex.message
+      )
     end
   end
 

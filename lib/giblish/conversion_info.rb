@@ -5,54 +5,86 @@ require "pathname"
 require_relative "pathutils"
 
 module Giblish
-  # Container class for bundling together the data we cache for
-  # each asciidoc file we come across
+  # Base class for bundling together data we always cache for
+  # each asciidoc file we come across. 
+  # 
+  # Users are expected to use the derived classes.
   class ConversionInfo
-    # History info from git
-    DocHistory = Struct.new(:date, :author, :message)
+    attr_reader :converted, :src_node, :dst_node, :dst_top
 
-    attr_accessor :converted, :doc_id, :purpose_str, :status, :history, :error_msg, :stderr
-    attr_reader :title, :rel_path, :src_file
+    # The relative Pathname from the root dir to the src doc
+    # Ex Pathname("my/subdir/file1.adoc")
+    attr_reader :src_rel_path
+
+    # History info from git
+    # DocHistory = Struct.new(:date, :author, :message)
 
     # these members can have encoding issues when
     # running in a mixed Windows/Linux setting.
     # that is why we explicitly encode them when
     # writing to them
 
-    def title=(rhs)
-      @title = rhs.nil? ? nil : rhs.encode("utf-8")
+    # def title=(rhs)
+    #   @title = rhs.nil? ? nil : rhs.encode("utf-8")
+    # end
+
+    # def src_file=(rhs)
+    #   @src_file = rhs.nil? ? nil : rhs.encode("utf-8")
+    # end
+
+    def initialize(converted:, src_node:, dst_node:, dst_top:)
+      @converted = converted
+      @src_node = src_node
+      @dst_node = dst_node
+      @dst_top = dst_top
+
+      @src_rel_path = dst_node.relative_path_from(dst_top).dirname / src_node.pathname.basename
     end
 
-    def src_file=(rhs)
-      @src_file = rhs.nil? ? nil : rhs.encode("utf-8")
-    end
-
-    def initialize(adoc: nil, src_node: nil, dst_node: nil, dst_top: nil, adoc_stderr: "")
-      @src_file = src_node.nil? ? nil : src_node.pathname.to_s
-      @history = []
-      @converted = true
-      @stderr = adoc_stderr
-      return unless adoc
-
-      # Get the purpose info if it exists
-      @purpose_str = get_purpose_info adoc
-
-      # fill in doc meta data
-      d_attr = adoc.attributes
-      self.title = (adoc.doctitle)
-      @doc_id = d_attr["docid"]
-      return if dst_node.nil?
-
-      # Get the relative path beneath the root dir to the src doc
-      @rel_path = dst_node.relative_path_from(dst_top).dirname / src_node.pathname.basename
+    # return:: a String with the basename of the source file
+    def src_basename
+      @src_node.pathname.basename.to_s
     end
 
     def to_s
-      "DocInfo: title: #{@title} src_file: #{@src_file}"
+      "Conversion #{@converted ? "succeeded" : "failed"} - src: #{@src_node.pathname} dst: #{@dst_node.pathname}"
+    end
+  end
+
+  # Provide data and access methods available when a conversion has
+  # succeeded
+  class SuccessfulConversion < ConversionInfo
+    attr_reader :stderr
+
+    # The relative Pathname from the root dir to the dst file
+    # Ex Pathname("my/subdir/file1.html")
+    attr_reader :dst_rel_path
+    
+    attr_reader :purpose_str
+
+    def initialize(src_node:, dst_node:, dst_top:, adoc:, adoc_stderr: "")
+      super(converted: true, src_node: src_node, dst_node: dst_node, dst_top: dst_top)
+
+      @adoc = adoc
+      @stderr = adoc_stderr
+
+      @dst_rel_path = dst_node.relative_path_from(dst_top)
+
+      # Cach the purpose info if it exists
+      @purpose_str = get_purpose_info adoc
+    end
+
+    def title
+      @adoc.doctitle
+    end
+
+    def docid
+      @adoc.attributes["docid"]
     end
 
     private
 
+    # TODO: Move this somewhere else
     def get_purpose_info(adoc)
       # Get the 'Purpose' section if it exists
       purpose_str = +""
@@ -69,6 +101,18 @@ module Giblish
         end
       end
       purpose_str
+    end
+  end
+
+  # Provide data and access methods available when a conversion has
+  # failed
+  class FailedConversion < ConversionInfo
+    attr_reader :error_msg
+
+    def initialize(src_node:, dst_node:, dst_top:, error_msg: nil)
+      super(converted: false, src_node: src_node, dst_node: dst_node, dst_top: dst_top)
+
+      @error_msg = error_msg
     end
   end
 end

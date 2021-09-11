@@ -83,10 +83,10 @@ module Giblish
     end
 
     # return the adoc string for displaying the source file
-    def display_source_file(doc_info)
+    def display_source_file(conv_info)
       <<~SRC_FILE_TXT
         Source file::
-        #{doc_info.src_file}
+        #{conv_info.src_node.pathname}
       SRC_FILE_TXT
     end
 
@@ -94,11 +94,11 @@ module Giblish
 
     # return info about any conversion issues during the
     # asciidoctor conversion
-    def conversion_issues(doc_info)
-      return "" if doc_info.stderr.empty?
+    def conversion_issues(conv_info)
+      return "" if conv_info.stderr.empty?
 
       # extract conversion warnings from asciddoctor std err
-      conv_warnings = doc_info.stderr.gsub(/^/, " * ")
+      conv_warnings = conv_info.stderr.gsub(/^/, " * ")
 
       # assemble info to index page
       <<~CONV_INFO
@@ -108,13 +108,13 @@ module Giblish
       CONV_INFO
     end
 
-    def history_info(doc_info)
-      return "" unless defined?(doc_info.history) && !doc_info.history.empty?
+    def history_info(conv_info)
+      return "" unless defined?(conv_info.history) && !conv_info.history.empty?
 
       str = +HISTORY_TABLE_HEADING
 
       # Generate table rows of history information
-      doc_info.history.each do |h|
+      conv_info.history.each do |h|
         str << <<~HISTORY_ROW
           |#{h.date.strftime("%Y-%m-%d")}
           |#{h.author}
@@ -125,14 +125,14 @@ module Giblish
       str << "|===\n\n"
     end
 
-    def document_detail_fail(doc_info)
+    def document_detail_fail(conv_info)
       <<~FAIL_INFO
-        === #{doc_info.src_file}
+        === #{conv_info.src_basename}
 
-        #{display_source_file(doc_info)}
+        #{display_source_file(conv_info)}
 
         Error detail::
-        #{doc_info.stderr}
+        #{conv_info.error_msg}
 
         ''''
 
@@ -140,20 +140,20 @@ module Giblish
     end
 
     # Show some details about file content
-    def document_detail(doc_info)
+    def document_detail(conv_info)
       <<~DETAIL_SRC
-        [[#{Giblish.to_valid_id(doc_info.title.encode("utf-8"))}]]
-        === #{doc_info.title.encode("utf-8")}
+        [[#{Giblish.to_valid_id(conv_info.title.encode("utf-8"))}]]
+        === #{conv_info.title.encode("utf-8")}
 
-        #{"Doc id::\n_#{doc_info.doc_id}_" unless doc_info.doc_id.nil?}
+        #{"Doc id::\n_#{conv_info.docid}_" unless conv_info.docid.nil?}
 
-        #{"Purpose::\n#{doc_info.purpose_str}" unless doc_info.purpose_str.to_s.empty?}
+        #{"Purpose::\n#{conv_info.purpose_str}" unless conv_info.purpose_str.to_s.empty?}
 
-        #{conversion_issues doc_info}
+        #{conversion_issues conv_info}
 
-        #{display_source_file(doc_info)}
+        #{display_source_file(conv_info)}
 
-        #{history_info(doc_info)}
+        #{history_info(conv_info)}
 
         '''
 

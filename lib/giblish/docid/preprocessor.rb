@@ -67,9 +67,13 @@ module Giblish
     # A preprocessor extension to the Asciidoctor engine that transforms all
     # <<:docid:>> references found in the adoc source into the matching
     # file reference.
-    # It is dependent on that its 'docid_cache' has been filled before it is
-    # invoked via Asciidoctor.
+    #
+    # It requiers a populated 'docid_cache' with {docid => src_node} before
+    # the first invokation of the 'process' method via Asciidoctor.
     class DocidResolver < Asciidoctor::Extensions::Preprocessor
+      # {src_node => [referenced doc_id's]}
+      attr_reader :docid_refs
+
       def initialize(opts)
         super(opts)
         @docid_cache = opts[:docid_cache].cache

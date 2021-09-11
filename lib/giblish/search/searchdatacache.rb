@@ -63,15 +63,18 @@ module Giblish
 
       # copy all converted adoc files
       dst_tree.traverse_preorder do |level, dst_node|
+        conv_info = dst_node.data
+
         # only copy files that were successfully converted
-        next if !dst_node.leaf? || dst_node.data.nil?
+        next unless dst_node.leaf? && conv_info&.converted
         # do not copy index files, they are generated
+        # TODO: Maybe use the 'virtual' dir instead
         next if dst_node.pathname.basename.sub_ext("").to_s == "index"
 
         # copy all other files
         dst_path = search_topdir / dst_node.relative_path_from(dst_tree)
         FileUtils.mkdir_p(dst_path.dirname.to_s)
-        FileUtils.cp(dst_node.data.src_file, dst_path.dirname)
+        FileUtils.cp(conv_info.src_node.pathname.to_s, dst_path.dirname)
       end
     end
 

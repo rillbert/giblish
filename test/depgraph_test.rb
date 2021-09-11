@@ -20,8 +20,7 @@ class DepGraphTests < Minitest::Test
         "--resolve-docid",
         tmp_docs.src_data_top.join("wellformed/docidtest"),
         dst_top]
-      status = Giblish.application.run args
-      assert_equal 0, status
+      Giblish.application.run args
 
       if Giblish.which("dot")
         assert(File.exist?("#{dst_top}/graph.html"))

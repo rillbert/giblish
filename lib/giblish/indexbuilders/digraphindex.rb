@@ -109,13 +109,13 @@ module Giblish
       title = lines.select { |l| l.length.positive? }.map { |l| l }.join("\n")
 
       # create the label used to display the node in the graph
-      dot_entry = if info.doc_id.nil?
+      dot_entry = if info.docid.nil?
         doc_id = next_fake_id
         @noid_docs[info] = doc_id
         "\"#{doc_id}\"[label=\"-\\n#{title}\""
       else
-        doc_id = info.doc_id
-        "\"#{info.doc_id}\"[label=\"#{info.doc_id}\\n#{title}\""
+        doc_id = info.docid
+        "\"#{info.docid}\"[label=\"#{info.docid}\\n#{title}\""
       end
       # add clickable links in the case of html output (this is not supported
       # out-of-the-box for pdf).
@@ -150,10 +150,10 @@ module Giblish
       dep_str = ""
       @dep_graph.each do |info, targets|
         # set either the real or the generated id as source
-        src_part = if info.doc_id.nil?
+        src_part = if info.docid.nil?
           "\"#{@noid_docs[info]}\""
         else
-          "\"#{info.doc_id}\""
+          "\"#{info.docid}\""
         end
 
         if targets.length.zero?

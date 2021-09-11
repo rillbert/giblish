@@ -238,7 +238,7 @@ module Giblish
       info = super(adoc, adoc_stderr)
 
       # Redefine the srcFile to mean the relative path to the git repo root
-      src_file = Pathname.new(info.src_file).relative_path_from(@git_repo_root).to_s
+      src_file = Pathname.new(info.src_basename).relative_path_from(@git_repo_root).to_s
       # Get the commit history of the doc
       # (use a homegrown git log to get 'follow' flag)
       gi = Giblish::GitItf.new(@git_repo_root)

@@ -38,26 +38,26 @@ module Giblish
     # and a 'details' ref that points to a section that uses the title as an id.
     #
     # Returns [ title, clickableTitleStr, clickableDetailsStr ]
-    def format_title_and_ref(doc_info)
-      doc_info.title = "NO TITLE FOUND (#{@nof_missing_titles += 1}) !" unless doc_info.title
+    def format_title_and_ref(conv_info)
+      conv_info.title = "NO TITLE FOUND (#{@nof_missing_titles += 1}) !" unless conv_info.title
 
       # Manipulate the doc title if we have a doc id
       title = +""
-      title << "#{doc_info.doc_id} - " unless doc_info.doc_id.nil?
-      title << doc_info.title
+      title << "#{conv_info.docid} - " unless conv_info.docid.nil?
+      title << conv_info.title
 
-      [title, "<<#{doc_info.rel_path}#,#{title}>>",
-        "<<#{Giblish.to_valid_id(doc_info.title)},details>>\n"]
+      [title, "<<#{conv_info.src_rel_path}#,#{title}>>",
+        "<<#{Giblish.to_valid_id(conv_info.title)},details>>\n"]
     end
 
     # Generate an adoc string that will display as
     # DocTitle         (conv issues)  details
     # Where the DocTitle and details are links to the doc itself and a section
     # identified with the doc's title respectively.
-    def tree_entry_converted(prefix_str, doc_info)
+    def tree_entry_converted(prefix_str, conv_info)
       # Get the elements of the entry
-      doc_title, doc_link, doc_details = format_title_and_ref doc_info
-      warning_label = doc_info.stderr.empty? ? "" : "(conv issues)"
+      doc_title, doc_link, doc_details = format_title_and_ref conv_info
+      warning_label = conv_info.stderr.empty? ? "" : "(conv issues)"
 
       # Calculate padding to get (conv issues) and details aligned between entries
       padding = 70
@@ -85,7 +85,7 @@ module Giblish
         tree_entry_converted prefix_str, d
       else
         # no converted file exists, show what we know
-        "#{prefix_str} FAIL: #{d.src_file}      <<#{d.src_file},details>>\n"
+        "#{prefix_str} FAIL: #{d.src_basename}      <<#{d.src_basename},details>>\n"
       end
     end
   end
@@ -131,12 +131,12 @@ module Giblish
 
     # return the (lexically) largest doc_id found
     def largest_docid
-      @processed_docs.max_by(&:doc_id).doc_id
+      @processed_docs.max_by(&:doc_id).docid
     end
 
     # find the duplicate doc ids (if any)
     def duplicate_docids
-      docs = @processed_docs.select { |doc| @processed_docs.count { |d2| d2.doc_id == doc.doc_id } > 1 }
+      docs = @processed_docs.select { |doc| @processed_docs.count { |d2| d2.docid == doc.docid } > 1 }
       docs.map(&:doc_id).sort.uniq
     end
   end
