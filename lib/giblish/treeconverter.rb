@@ -90,7 +90,7 @@ module Giblish
       TreeConverter.unregister_adoc_extenstions
     end
 
-    def pre_build(abort_on_exc)
+    def pre_build(abort_on_exc: true)
       @pre_builders.each do |pb|
         pb.run(@src_top, @dst_tree, @converter)
       rescue => ex

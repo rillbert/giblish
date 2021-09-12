@@ -27,13 +27,22 @@ module Giblish
   # }
   # ....
   class DotDigraphAdoc
-    # {DocInfo => [doc id refs]}
-    # DocInfo:
+    # info_2_ids:: A {ConversionInfo => [doc id refs]} hash.
+    # 
+    # The following properties are expected from the ConversionInfo:
     # title:: String
     # doc_id:: String
     # dst_rel_path:: String - the relative path from a the repo top to a doc
     #                in the dst tree
-    def initialize(info_2_ids, output_basename = "gibgraph", format = "svg", opts = {"svg-type" => "inline"})
+    #
+    # target:: 
+    # format::
+    # opts:: additional options {"opt" => "value"}. Currently supported:
+    #
+    # cachedir:: the directory to use for storing files produced during diagram generation.
+    # svg-type:: how to embed svg images
+    # 
+    def initialize(info_2_ids:, target: "gibgraph", format: "svg", opts: {"svg-type" => "inline"})
       # this class relies on graphwiz (dot), make sure we can access that
       raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported
 
@@ -41,7 +50,7 @@ module Giblish
       require "asciidoctor-diagram/graphviz"
 
       @info_2_ids = info_2_ids
-      @output_basename = output_basename
+      @target = target
       @format = format
       @opts = opts
 
@@ -63,7 +72,7 @@ module Giblish
     def graph_header
       opt_str = @opts.collect { |key, value| "#{key}=\"#{value}\"" }.join(",")
       <<~DOC_STR
-        [graphviz,target="#{@output_basename}",format="#{@format}",#{opt_str}]
+        [graphviz,target="#{@target}",format="#{@format}",#{opt_str}]
         ....
         digraph document_deps {
           bgcolor="#33333310"

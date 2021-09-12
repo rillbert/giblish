@@ -3,7 +3,7 @@ require_relative "config_utils"
 require_relative "resourcepaths"
 require_relative "converters"
 require_relative "treeconverter"
-require_relative "docid/preprocessor"
+require_relative "docid/docid"
 
 module Giblish
   # configure all parts needed to execute the options specified by
@@ -114,12 +114,16 @@ module Giblish
       # always resolve docid
       d = DocIdExtension::DocidPreBuilder.new
       build_options[:pre_builders] << d
-      r = DocIdExtension::DocidProcessor.new({id_2_node: d.id_2_node})
-      build_options[:adoc_extensions][:preprocessor] << r
+      docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: d.id_2_node})
+      build_options[:adoc_extensions][:preprocessor] << docid_pp
 
       # always generate index
       idx = IndexTreeBuilder.new(doc_attr)
       build_options[:post_builders] << idx
+
+      # always generate dep graph if graphviz is available
+      dg = DepGraphDot.new(docid_pp)
+      build_options[:post_builders] << dg
     end
   end
 

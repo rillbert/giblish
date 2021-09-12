@@ -1,13 +1,14 @@
 require "fileutils"
 require "test_helper"
 require_relative "../lib/giblish/indexbuilders/dotdigraphadoc"
+require_relative "../lib/giblish/indexbuilders/depgraphviz"
 
 module Giblish
   class DepGraphVizTest < Minitest::Test
     include Giblish::TestUtils
 
     TEST_STR_BASIC = <<~DOT_STR
-      [graphviz,target="gibgraph",format="svg",svg-type="inline"]
+      [graphviz,target="gibgraph",format="svg",svg-type="inline",cachedir="/my/temp/dir"]
       ....
       digraph document_deps {
         bgcolor="#33333310"
@@ -43,7 +44,7 @@ module Giblish
       Giblog.setup
     end
 
-    # mockup for a ConversionInfo instance 
+    # mockup for a ConversionInfo instance
     FakeConvInfo = Struct.new(:title, :docid, :dst_rel_path)
 
     def test_create_dot_digraph
@@ -52,8 +53,54 @@ module Giblish
         FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html")) => ["D-1"],
         FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html")) => []
       }
-      dg = DotDigraphAdoc.new(info_2_ids)
+      dg = DotDigraphAdoc.new(info_2_ids: info_2_ids,
+        opts: {"svg-type" => "inline", "cachedir" => "/my/temp/dir"})
       assert_equal(TEST_STR_BASIC, dg.source)
+    end
+
+    def test_create_digraph_page
+      TmpDocDir.open(preserve: true) do |tmp_docs|
+        srcdir = Pathname.new(tmp_docs.dir) / "src"
+        dstdir = Pathname.new(tmp_docs.dir) / "dst"
+
+        tmp_docs.create_adoc_src_on_disk(srcdir,
+          {header: ":docid: D-001",
+           paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-002>> and <<:docid:D-003>>."]},
+          {header: ":docid: D-002",
+           paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-001>>."]},
+          {header: ":docid: D-003",
+           paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-004>>."],
+           subdir: "subdir"})
+        src_tree = PathTree.build_from_fs(srcdir, prune: false)
+
+        src_tree.traverse_preorder do |level, n|
+          next unless n.leaf?
+
+          n.data = SrcFromFile.new
+        end
+
+        # Instantiate docid and graph processors
+        pb = DocIdExtension::DocidPreBuilder.new
+        docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: pb.id_2_node})
+        dg = DepGraphDot.new(docid_pp.node_2_ids)
+
+        tc = TreeConverter.new(src_tree, dstdir,
+          {
+            pre_builders: pb,
+            post_builders: dg
+          })
+
+        # must register explicitly since we don't call tc.run
+        TreeConverter.register_adoc_extensions(
+          {preprocessor: docid_pp}
+        )
+
+        # run the tree converter prebuild step that will populate
+        # the docid cache
+        tc.pre_build(abort_on_exc: true)
+        tc.build(abort_on_exc: true)
+        tc.post_build(abort_on_exc: true)
+      end
     end
   end
 end
