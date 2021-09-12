@@ -1,6 +1,6 @@
 require "fileutils"
 require "test_helper"
-require_relative "../lib/giblish/indexbuilders/depgraphviz"
+require_relative "../lib/giblish/indexbuilders/dotdigraphadoc"
 
 module Giblish
   class DepGraphVizTest < Minitest::Test
@@ -46,13 +46,13 @@ module Giblish
     # mockup for a ConversionInfo instance 
     FakeConvInfo = Struct.new(:title, :docid, :dst_rel_path)
 
-    def test_create_graph_source
+    def test_create_dot_digraph
       info_2_ids = {
         FakeConvInfo.new("Doc 1", "D-1", Pathname.new("my/subdir/file1.html")) => ["D-2", "D-3"],
         FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html")) => ["D-1"],
         FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html")) => []
       }
-      dg = DotGraphAdoc.new(info_2_ids)
+      dg = DotDigraphAdoc.new(info_2_ids)
       assert_equal(TEST_STR_BASIC, dg.source)
     end
   end

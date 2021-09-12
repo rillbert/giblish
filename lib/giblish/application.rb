@@ -112,9 +112,10 @@ module Giblish
 
     def setup_common_stuff(cmd_opts, build_options, doc_attr)
       # always resolve docid
-      d = DocIdExtension::DocIdCacheBuilder.new
+      d = DocIdExtension::DocidPreBuilder.new
       build_options[:pre_builders] << d
-      build_options[:adoc_extensions][:preprocessor] << DocIdExtension::DocidResolver.new({docid_cache: d})
+      r = DocIdExtension::DocidProcessor.new({id_2_node: d.id_2_node})
+      build_options[:adoc_extensions][:preprocessor] << r
 
       # always generate index
       idx = IndexTreeBuilder.new(doc_attr)

@@ -4,8 +4,8 @@ module Giblish
   module DocIdExtension
     # Build a hash of {docid => src_node} that can be used to resolve
     # doc id references to valid dst paths
-    class DocIdCacheBuilder
-      attr_accessor :cache
+    class DocidPreBuilder
+      attr_accessor :id_2_node
 
       # The minimum number of characters required for a valid doc id
       ID_MIN_LENGTH = 2
@@ -17,7 +17,7 @@ module Giblish
       DOCID_REGEX = /^:docid: +(.*)$/.freeze
 
       def initialize
-        @cache = {}
+        @id_2_node = {}
       end
 
       def run(src_tree, dst_tree, converter)
@@ -47,7 +47,7 @@ module Giblish
           id = Regexp.last_match(1).strip
           Giblog.logger.debug { "found possible docid: #{id}" }
           if doc_id_ok?(id)
-            @cache[id] = node
+            @id_2_node[id] = node
           else
             Giblog.logger.error { "Invalid docid: #{id} in file #{path}, this will be ignored!" }
           end
@@ -57,8 +57,8 @@ module Giblish
       # make sure the id is within the designated length and
       # does not contain a '#' symbol
       def doc_id_ok?(doc_id)
-        if @cache.key? doc_id
-          Giblog.logger.warn { "Found same doc id twice: (#{doc_id}). Associates this id with #{pathname} and _not_ to file #{@docid_cache[id]}." }
+        if @id_2_node.key? doc_id
+          Giblog.logger.warn { "Found same doc id twice: (#{doc_id}). This id will be associated with '#{pathname}' and _not_ with '#{@id_2_node[id]}'." }
         end
         (doc_id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) && !doc_id.include?("#"))
       end
@@ -68,16 +68,25 @@ module Giblish
     # <<:docid:>> references found in the adoc source into the matching
     # file reference.
     #
-    # It requiers a populated 'docid_cache' with {docid => src_node} before
+    # It requiers a populated 'id_2_node' with {docid => src_node} before
     # the first invokation of the 'process' method via Asciidoctor.
-    class DocidResolver < Asciidoctor::Extensions::Preprocessor
+    # 
+    # When running, it builds a publicly available 'node_2_ids' map.
+    class DocidProcessor < Asciidoctor::Extensions::Preprocessor
       # {src_node => [referenced doc_id's]}
-      attr_reader :docid_refs
+      attr_reader :node_2_ids
 
+      # required options:
+      #
+      # id_2_node:: {docid => src_node }
       def initialize(opts)
-        super(opts)
-        @docid_cache = opts[:docid_cache].cache
-        @docid_refs = {}
+        raise ArgumentError, "Missing required option: :id_2_node!" unless opts.key?(:id_2_node)
+
+        super(opts)        
+        @id_2_node = opts[:id_2_node]
+
+        # init new keys in the hash with an empty array
+        @node_2_ids = Hash.new { |h, k| h[k] = [] }
       end
 
       # The regex that matches docid references in files
@@ -92,16 +101,13 @@ module Giblish
         # Add doc as a source dependency for doc ids
         src_node = document.attributes["giblish-src-tree-node"]
 
-        # add this file as a source for dependencies
-        @docid_refs[src_node] ||= []
-
         # Convert all docid refs to valid relative refs
         reader.lines.each do |line|
-          @docid_refs[src_node] += parse_line(line, src_node)
+          @node_2_ids[src_node] += parse_line(line, src_node)
         end
 
         # we only care for one ref to a specific target, remove duplicates
-        @docid_refs[src_node] = @docid_refs[src_node].uniq
+        @node_2_ids[src_node] = @node_2_ids[src_node].uniq
 
         # the asciidoctor engine wants the reader back
         reader
@@ -109,7 +115,10 @@ module Giblish
 
       private
 
-      # parse one line for valid docid references
+      # substitutes docid references with the corresponding relative path
+      # references.
+      # 
+      # returns:: Array of found docid references 
       def parse_line(line, src_node)
         refs = []
         line.gsub!(DOCID_REF_REGEX) do |_m|
@@ -118,7 +127,7 @@ module Giblish
           Giblog.logger.debug { "Found docid ref to #{target_id} in file: #{src_node.pathname}..." }
 
           # make sure it exists in the cache
-          unless @docid_cache.key?(target_id)
+          unless @id_2_node.key?(target_id)
             Giblog.logger.warn { "Could not resolve ref to #{target_id} from file: #{src_node.pathname}..." }
             break "<<UNKNOWN_DOC, Could not resolve doc id reference !!!>>"
           end
@@ -127,7 +136,7 @@ module Giblish
           refs << target_id
 
           # get the relative path from this file to the target file
-          target_node = @docid_cache[target_id]
+          target_node = @id_2_node[target_id]
           rel_path = target_node.pathname.relative_path_from(src_node.pathname.dirname)
 
           # return the resolved reference

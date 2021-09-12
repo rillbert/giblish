@@ -1,6 +1,6 @@
 require_relative "../test_helper"
 require_relative "../../lib/giblish/treeconverter"
-require_relative "../../lib/giblish/docid/preprocessor"
+require_relative "../../lib/giblish/docid/docid"
 require_relative "../../lib/giblish/pathtree"
 
 module Giblish
@@ -41,12 +41,12 @@ module Giblish
         src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with a TreeConverter
-        d_pp = DocIdExtension::DocIdCacheBuilder.new
+        d_pp = DocIdExtension::DocidPreBuilder.new
         tc = TreeConverter.new(src_tree, dstdir,
           {
             pre_builders: d_pp,
             adoc_extensions: {
-              preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})
+              preprocessor: DocIdExtension::DocidProcessor.new({docid_cache: d_pp})
             }
           })
 
@@ -75,7 +75,7 @@ module Giblish
         src_tree = PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with all future TreeConverters
-        d_pp = DocIdExtension::DocIdCacheBuilder.new
+        d_pp = DocIdExtension::DocidPreBuilder.new
         tc = TreeConverter.new(src_tree, dstdir,
           {
             pre_builders: d_pp
@@ -83,7 +83,7 @@ module Giblish
 
         # must register explicitly since we don't call tc.run
         TreeConverter.register_adoc_extensions(
-          {preprocessor: DocIdExtension::DocidResolver.new({docid_cache: d_pp})}
+          {preprocessor: DocIdExtension::DocidProcessor.new({docid_cache: d_pp})}
         )
 
         # run the tree converter prebuild step that will populate
