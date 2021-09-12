@@ -5,19 +5,21 @@ require "pathname"
 require "asciidoctor"
 require "asciidoctor/extensions"
 require_relative "../utils"
-require_relative "searchdatacache"
 
-# put the indexing in the giblish namespace
 module Giblish
-  # This hook is called by Asciidoctor once for each document _before_
-  # Asciidoctor processes the adoc content.
-  #
-  # It indexes all headings found in all documents in the tree.
-  # The resulting index can be serialized to a JSON file
-  # with the following format:
-  #
+  # Implements both an Asciidoctor TreeProcessor hook and a giblish post-build
+  # hook.
+  # 
+  # The TreeProcessor hook indexes all headings found in all 
+  # documents in the tree and copies a 'washed' version of the source lines
+  # to a search asset folder in the destination tree.
+  # 
+  # The post build hook copies the completed heading index to the search
+  # assets folder.
+  # 
+  # Format of the heading index database:
   # {
-  #   file_infos : [{
+  #   fileinfos : [{
   #     filepath : filepath_1,
   #     title : Title,
   #     sections : [{
@@ -34,7 +36,7 @@ module Giblish
   #     ]
   #   },
   #   {
-  #     filepath : filepath_1,
+  #     filepath : filepath_2,
   #     ...
   #   }]
   # }
