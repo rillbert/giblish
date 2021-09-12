@@ -92,7 +92,7 @@ module Giblish
 
     def pre_build(abort_on_exc: true)
       @pre_builders.each do |pb|
-        pb.run(@src_top, @dst_tree, @converter)
+        pb.on_prebuild(@src_top, @dst_tree, @converter)
       rescue => ex
         @logger&.error { ex.message.to_s }
         raise ex if abort_on_exc
@@ -117,7 +117,7 @@ module Giblish
 
     def post_build(abort_on_exc: true)
       @post_builders.each do |pb|
-        pb.run(@src_top, @dst_tree, @converter)
+        pb.on_postbuild(@src_top, @dst_tree, @converter)
       rescue => exc
         @logger&.error { exc.message.to_s }
         raise exc if abort_on_exc
@@ -235,8 +235,12 @@ module Giblish
         ))
 
         # piggy-back our own info on the doc attributes hash so that
-        # asciidoctor extensions can use this info
-        doc.attributes["giblish-src-tree-node"] = src_node
+        # asciidoctor extensions can use this info later on
+        doc.attributes["giblish-info"] = {
+          src_node: src_node,
+          dst_node: dst_node,
+          dst_top: dst_top
+        }
 
         # update the destination node with the correct file suffix. This is dependent
         # on the type of conversion performed

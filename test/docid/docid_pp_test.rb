@@ -52,10 +52,10 @@ module Giblish
 
         # run the tree converter prebuild step that will populate
         # the docid cache
-        tc.pre_build(false)
+        tc.pre_build(abort_on_exc: false)
 
-        assert_equal(3, d_pp.cache.keys.count)
-        ["D-001", "D-002", "D-004"].each { |id| assert(d_pp.cache.key?(id)) }
+        assert_equal(3, d_pp.id_2_node.keys.count)
+        ["D-001", "D-002", "D-004"].each { |id| assert(d_pp.id_2_node.key?(id)) }
       end
     end
 
@@ -88,11 +88,11 @@ module Giblish
 
         # run the tree converter prebuild step that will populate
         # the docid cache
-        tc.pre_build(false)
+        tc.pre_build(abort_on_exc: false)
 
         # assert that all the docs' docids have been cached
-        assert_equal(3, d_pp.cache.keys.count)
-        ["D-001", "D-002", "D-003"].each { |id| assert(d_pp.cache.key?(id)) }
+        assert_equal(3, d_pp.id_2_node.keys.count)
+        ["D-001", "D-002", "D-003"].each { |id| assert(d_pp.id_2_node.key?(id)) }
 
         # run the build step -> will replace the :docid: with resolved :xref:
         # references before generating html

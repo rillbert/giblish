@@ -90,7 +90,7 @@ module Giblish
       @paths = ResourcePaths.new(cmd_opts)
     end
 
-    def run(src_tree, dst_tree, converter)
+    def on_prebuild(src_tree, dst_tree, converter)
       copy_resource_area(@opts)
     end
 

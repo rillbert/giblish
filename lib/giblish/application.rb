@@ -76,14 +76,15 @@ module Giblish
       case cmd_opts
         in format: "html", make_searchable: true
           # enabling text search
-          attr = cmd_opts.doc_attributes
-          search_cache = SearchDataCache.new(
-            file_tree: src_tree,
-            id_prefix: (attr.nil? ? nil : attr.fetch("idprefix", nil)),
-            id_separator: (attr.nil? ? nil : attr.fetch("idseparator", nil))
-          )
-          build_options[:post_builders] << search_cache
-          build_options[:adoc_extensions][:tree_processor] << HeadingIndexer.new(search_cache)
+          # attr = cmd_opts.doc_attributes
+          # search_cache = SearchDataCache.new(
+          #   file_tree: src_tree,
+          #   id_prefix: (attr.nil? ? nil : attr.fetch("idprefix", nil)),
+          #   id_separator: (attr.nil? ? nil : attr.fetch("idseparator", nil))
+          # )
+          search_provider = HeadingIndexer.new(src_tree)
+          build_options[:adoc_extensions][:tree_processor] << search_provider
+          build_options[:post_builders] << search_provider
         else
           4 == 5 # a dummy statement to prevent a crash of 'standardrb'
       end

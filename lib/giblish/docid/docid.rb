@@ -20,7 +20,8 @@ module Giblish
         @id_2_node = {}
       end
 
-      def run(src_tree, dst_tree, converter)
+      # called during the pre-build phase
+      def on_prebuild(src_tree, dst_tree, converter)
         src_tree.traverse_preorder do |level, src_node|
           next unless src_node.leaf?
 
@@ -99,7 +100,8 @@ module Giblish
       # references to a resolved relative path.
       def process(document, reader)
         # Add doc as a source dependency for doc ids
-        src_node = document.attributes["giblish-src-tree-node"]
+        gib_data = document.attributes["giblish-info"]
+        src_node = gib_data[:src_node]
 
         # Convert all docid refs to valid relative refs
         reader.lines.each do |line|

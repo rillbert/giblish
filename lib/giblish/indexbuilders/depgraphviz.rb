@@ -28,7 +28,7 @@ module Giblish
     end
 
     # Called from TreeConverter during post build phase
-    def run(src_tree, dst_tree, converter)
+    def on_postbuild(src_tree, dst_tree, converter)
       return unless DepGraphDot.dot_supported
 
       # convert {src_node => [doc ids]} to {conv_info => [doc ids]}

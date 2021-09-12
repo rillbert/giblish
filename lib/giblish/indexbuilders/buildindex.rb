@@ -187,7 +187,7 @@ module Giblish
     # adds a 'index' node for each directory in the source tree
     # and convert that index using the options from the provider
     # objects given at instantiation of this object
-    def run(src_tree, dst_tree, converter)
+    def on_postbuild(src_tree, dst_tree, converter)
       dst_tree.traverse_preorder do |level, dst_node|
         next if dst_node.leaf?
 

@@ -60,13 +60,13 @@ module Giblish
           dst_dir.to_s]
         Giblish.application.run args
 
-        search_root = dst_dir.join(SearchDataCache::SEARCH_ASSET_DIRNAME)
+        search_root = dst_dir.join(HeadingIndexer::SEARCH_ASSET_DIRNAME)
         assert Dir.exist?(search_root.to_s)
 
         # assert that the searchable index has been created
-        assert File.exist?(search_root.join(SearchDataCache::HEADING_DB_BASENAME))
+        assert File.exist?(search_root.join(HeadingIndexer::HEADING_DB_BASENAME))
 
-        # puts File.read(search_root.join(SearchDataCache::HEADING_DB_BASENAME))
+        # puts File.read(search_root.join(HeadingIndexer::HEADING_DB_BASENAME))
 
         # assert that the adoc src files have been copied to the
         # dst
@@ -86,11 +86,11 @@ module Giblish
           dst_dir.to_s]
         Giblish.application.run args
 
-        search_root = dst_dir.join(SearchDataCache::SEARCH_ASSET_DIRNAME)
+        search_root = dst_dir.join(HeadingIndexer::SEARCH_ASSET_DIRNAME)
         assert Dir.exist?(search_root.to_s)
 
         # assert that the searchable index has been created
-        assert File.exist?(search_root.join(SearchDataCache::HEADING_DB_BASENAME))
+        assert File.exist?(search_root.join(HeadingIndexer::HEADING_DB_BASENAME))
 
         # assert that the adoc src files have been copied to the
         # dst

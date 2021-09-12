@@ -166,7 +166,7 @@ module Giblish
         opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s custom #{topdir} #{topdir / "dst"}])
 
         pb = CopyResourcesPreBuild.new(opts)
-        pb.run(nil, nil, nil)
+        pb.on_prebuild(nil, nil, nil)
 
         r = PathTree.build_from_fs(topdir, prune: true)
         assert(r.node("dst/web_assets/dir1"))
@@ -182,7 +182,7 @@ module Giblish
         Dir.chdir(topdir.to_s) do
           opts = CmdLine.new.parse(%W[-f html -r my/resources -s custom #{topdir} dst])
 
-          CopyResourcesPreBuild.new(opts).run(nil, nil, nil)
+          CopyResourcesPreBuild.new(opts).on_prebuild(nil, nil, nil)
 
           r = PathTree.build_from_fs(topdir, prune: true)
           assert(r.node("dst/web_assets/dir1"))
