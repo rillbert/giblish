@@ -46,7 +46,7 @@ module Giblish
           {
             pre_builders: d_pp,
             adoc_extensions: {
-              preprocessor: DocIdExtension::DocidProcessor.new({docid_cache: d_pp})
+              preprocessor: DocIdExtension::DocidProcessor.new({id_2_node: d_pp.id_2_node})
             }
           })
 
@@ -83,7 +83,7 @@ module Giblish
 
         # must register explicitly since we don't call tc.run
         TreeConverter.register_adoc_extensions(
-          {preprocessor: DocIdExtension::DocidProcessor.new({docid_cache: d_pp})}
+          {preprocessor: DocIdExtension::DocidProcessor.new({id_2_node: d_pp.id_2_node})}
         )
 
         # run the tree converter prebuild step that will populate

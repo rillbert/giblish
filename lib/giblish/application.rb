@@ -122,7 +122,7 @@ module Giblish
       build_options[:post_builders] << idx
 
       # always generate dep graph if graphviz is available
-      dg = DepGraphDot.new(docid_pp)
+      dg = DepGraphDot.new(docid_pp.node_2_ids)
       build_options[:post_builders] << dg
     end
   end
