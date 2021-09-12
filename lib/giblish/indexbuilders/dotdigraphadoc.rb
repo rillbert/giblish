@@ -28,20 +28,20 @@ module Giblish
   # ....
   class DotDigraphAdoc
     # info_2_ids:: A {ConversionInfo => [doc id refs]} hash.
-    # 
+    #
     # The following properties are expected from the ConversionInfo:
     # title:: String
     # doc_id:: String
     # dst_rel_path:: String - the relative path from a the repo top to a doc
     #                in the dst tree
     #
-    # target:: 
+    # target::
     # format::
     # opts:: additional options {"opt" => "value"}. Currently supported:
     #
     # cachedir:: the directory to use for storing files produced during diagram generation.
     # svg-type:: how to embed svg images
-    # 
+    #
     def initialize(info_2_ids:, target: "gibgraph", format: "svg", opts: {"svg-type" => "inline"})
       # this class relies on graphwiz (dot), make sure we can access that
       raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported

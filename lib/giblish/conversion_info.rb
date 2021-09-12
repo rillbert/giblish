@@ -6,8 +6,8 @@ require_relative "pathutils"
 
 module Giblish
   # Base class for bundling together data we always cache for
-  # each asciidoc file we come across. 
-  # 
+  # each asciidoc file we come across.
+  #
   # Users are expected to use the derived classes.
   class ConversionInfo
     attr_reader :converted, :src_node, :dst_node, :dst_top
@@ -59,7 +59,7 @@ module Giblish
     # The relative Pathname from the root dir to the dst file
     # Ex Pathname("my/subdir/file1.html")
     attr_reader :dst_rel_path
-    
+
     attr_reader :purpose_str
 
     def initialize(src_node:, dst_node:, dst_top:, adoc:, adoc_stderr: "")

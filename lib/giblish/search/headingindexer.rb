@@ -9,14 +9,14 @@ require_relative "../utils"
 module Giblish
   # Implements both an Asciidoctor TreeProcessor hook and a giblish post-build
   # hook.
-  # 
-  # The TreeProcessor hook indexes all headings found in all 
+  #
+  # The TreeProcessor hook indexes all headings found in all
   # documents in the tree and copies a 'washed' version of the source lines
   # to a search asset folder in the destination tree.
-  # 
+  #
   # The post build hook copies the completed heading index to the search
   # assets folder.
-  # 
+  #
   # Format of the heading index database:
   # {
   #   fileinfos : [{
@@ -72,7 +72,7 @@ module Giblish
       # Copy the washed document to the search asset folder
       dst_top = attrs["giblish-info"][:dst_top]
       write_washed_doc(
-        parse_document(document, src_node, opts), 
+        parse_document(document, src_node, opts),
         dst_top.pathname / SEARCH_ASSET_DIRNAME / src_node.relative_path_from(@src_tree)
       )
       nil
@@ -93,7 +93,7 @@ module Giblish
       Giblog.logger.debug "index headings in #{src_node.pathname} using prefix '#{opts[:id_prefix]}' and separator '#{opts[:id_separator]}'"
       attrs = document.attributes
       doc_info = index_sections(document, opts)
-      
+
       rel_src_path = src_node.relative_path_from(@src_tree)
       @heading_index[:fileinfos] << {
         filepath: rel_src_path,
@@ -106,9 +106,9 @@ module Giblish
     # lines:: [lines]
     # dst_path:: Pathname to destination file
     def write_washed_doc(lines, dst_path)
-      Giblog.logger.debug {"Copy searchable text to #{dst_path}"}
+      Giblog.logger.debug { "Copy searchable text to #{dst_path}" }
       dst_path.dirname.mkpath
-      File.write(dst_path.to_s,lines.join('\n'))
+      File.write(dst_path.to_s, lines.join('\n'))
     end
 
     # replace {a_doc_attr} with the value of the attribute

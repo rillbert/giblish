@@ -25,7 +25,7 @@ module Giblish
     end
   end
 
-  # Encapsulates raw data and information deducable from one 
+  # Encapsulates raw data and information deducable from one
   # search query
   class SearchParameters
     # a hash with { param => value } of all query parameters from the URI.
@@ -107,7 +107,6 @@ module Giblish
       res.path = uri_path_repo_top.join(repo_filepath).cleanpath.to_s
       res
     end
-
 
     private
 
@@ -209,7 +208,7 @@ module Giblish
     end
   end
 
-  # Caches a number of SearchDataRepo instances in memory and returns the 
+  # Caches a number of SearchDataRepo instances in memory and returns the
   # one corresponding to the given SearchParameters instance.
   class SearchRepoCache
     def initialize

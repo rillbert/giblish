@@ -71,7 +71,7 @@ module Giblish
     #
     # It requiers a populated 'id_2_node' with {docid => src_node} before
     # the first invokation of the 'process' method via Asciidoctor.
-    # 
+    #
     # When running, it builds a publicly available 'node_2_ids' map.
     class DocidProcessor < Asciidoctor::Extensions::Preprocessor
       # {src_node => [referenced doc_id's]}
@@ -83,7 +83,7 @@ module Giblish
       def initialize(opts)
         raise ArgumentError, "Missing required option: :id_2_node!" unless opts.key?(:id_2_node)
 
-        super(opts)        
+        super(opts)
         @id_2_node = opts[:id_2_node]
 
         # init new keys in the hash with an empty array
@@ -119,8 +119,8 @@ module Giblish
 
       # substitutes docid references with the corresponding relative path
       # references.
-      # 
-      # returns:: Array of found docid references 
+      #
+      # returns:: Array of found docid references
       def parse_line(line, src_node)
         refs = []
         line.gsub!(DOCID_REF_REGEX) do |_m|
