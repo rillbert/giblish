@@ -164,9 +164,12 @@ module Giblish
   class IndexTreeBuilder
     attr_accessor :da_provider
 
-    def initialize(da_provider = nil, api_opt_provider = nil)
+    DEFAULT_BASENAME = "index"
+
+    def initialize(da_provider = nil, api_opt_provider = nil, basename = DEFAULT_BASENAME)
       @da_provider = da_provider
       @api_opt_provider = api_opt_provider
+      @basename = basename
       @adoc_source = nil
     end
 
@@ -201,12 +204,12 @@ module Giblish
         # add a virtual 'index.adoc' node as the only node in a source tree
         # with this object as source for conversion options
         # and adoc_source
-        v_path = Pathname.new("/virtual") / index_dir / "index.adoc"
+        v_path = Pathname.new("/virtual") / index_dir / "#{@basename}.adoc"
         v_tree = PathTree.new(v_path, self)
         src_node = v_tree.node(v_path, from_root: true)
 
         # add the destination node where the converted file will be stored
-        i_node = dst_node.add_descendants("index")
+        i_node = dst_node.add_descendants(@basename)
 
         # do the conversion
         converter.convert(src_node, i_node, dst_tree)

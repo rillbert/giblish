@@ -23,7 +23,7 @@ module Giblish
         post_builders: [],
         adoc_api_opts: {},
         # add a hash where all values are initiated as empty arrays
-        adoc_extensions: Hash.new { |hash, key| hash.key?(key) ? hash[key] : hash[key] = [] }
+        adoc_extensions: Hash.new { |h, k| h[k] = [] }
       }
 
       # Initiate the doc attribute repo used during 'run-time'
@@ -31,8 +31,10 @@ module Giblish
         GiblishDefaultDocAttribs.new
       )
 
-      setup_common_stuff(cmd_opts, build_options, doc_attr)
+      setup_docid(cmd_opts, build_options, doc_attr)
+      setup_index_generation(cmd_opts, build_options, doc_attr)
 
+      # generic format (html/pdf/...) options
       case cmd_opts
         in format: "html", resource_dir:
           # copy local resources to dst and link the generated html with
@@ -73,23 +75,16 @@ module Giblish
           raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{cmd_opts.inspect}"
       end
 
+      # handle search data options
       case cmd_opts
         in format: "html", make_searchable: true
           # enabling text search
-          # attr = cmd_opts.doc_attributes
-          # search_cache = SearchDataCache.new(
-          #   file_tree: src_tree,
-          #   id_prefix: (attr.nil? ? nil : attr.fetch("idprefix", nil)),
-          #   id_separator: (attr.nil? ? nil : attr.fetch("idseparator", nil))
-          # )
           search_provider = HeadingIndexer.new(src_tree)
           build_options[:adoc_extensions][:tree_processor] << search_provider
           build_options[:post_builders] << search_provider
         else
           4 == 5 # a dummy statement to prevent a crash of 'standardrb'
       end
-
-      # build_options[:adoc_extensions][:tree_processor] << TestTreeProc.new
 
       # compose the attribute provider and associate it with all source
       # nodes
@@ -111,18 +106,24 @@ module Giblish
       )
     end
 
-    def setup_common_stuff(cmd_opts, build_options, doc_attr)
-      # always resolve docid
+    def setup_index_generation(cmd_opts, build_options, doc_attr)
+      return if cmd_opts.no_index
+
+      # setup index generation
+      idx = IndexTreeBuilder.new(doc_attr, nil, cmd_opts.index_basename)
+      build_options[:post_builders] << idx
+    end
+
+    def setup_docid(cmd_opts, build_options, doc_attr)
+      return unless cmd_opts.resolve_docid
+
+      # setup docid resolution
       d = DocIdExtension::DocidPreBuilder.new
       build_options[:pre_builders] << d
       docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: d.id_2_node})
       build_options[:adoc_extensions][:preprocessor] << docid_pp
 
-      # always generate index
-      idx = IndexTreeBuilder.new(doc_attr)
-      build_options[:post_builders] << idx
-
-      # always generate dep graph if graphviz is available
+      # generate dep graph if graphviz is available
       dg = DepGraphDot.new(docid_pp.node_2_ids)
       build_options[:post_builders] << dg
     end
@@ -145,8 +146,11 @@ module Giblish
 
       Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
 
-      # TODO: Add regex include/exclude
-      src_tree = PathTree.build_from_fs(cmdline.srcdir)
+      # build a tree of included files
+      src_tree = PathTree.build_from_fs(cmdline.srcdir) do |p|
+        cmdline.exclude_regex.nil? ? false : cmdline.include_regex =~ p.to_s
+      end
+
       app = Configurator.new(cmdline, src_tree)
       app.tree_converter.run
 

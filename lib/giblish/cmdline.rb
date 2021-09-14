@@ -49,7 +49,8 @@ module Giblish
           "Supported formats are: #{OUTPUT_FORMATS}") do |fmt|
           @format = fmt
         end
-        parser.on("-n", "--no-build-ref ", "Suppress index generation") do |n|
+        parser.on("-n", "--no-build-ref ", "Suppress generation of indices and",
+          "dependency graphs.") do |n|
           @no_index = n
         end
         parser.on("--index-basename ", "Set the basename for generated index files",
