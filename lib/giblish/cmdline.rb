@@ -51,7 +51,7 @@ module Giblish
         end
         parser.on("-n", "--no-build-ref ", "Suppress generation of indices and",
           "dependency graphs.") do |n|
-          @no_index = n
+          @no_index = true
         end
         parser.on("--index-basename ", "Set the basename for generated index files",
           "(default #{@index_basename})") do |name|
@@ -85,14 +85,14 @@ module Giblish
           "files ending in .adoc case-insensitive). The matching is made",
           "on the full path (i.e. the regex '^.*my.*' matches the path",
           "/my/file.adoc).") do |regex_str|
-          @include_regex = Regex.new(regex_str)
+          @include_regex = Regexp.new(regex_str)
         end
         parser.on("-j", "--exclude [REGEX]",
           "exclude files with a path that matches the supplied",
           "regexp (no files are excluded by default). The matching is made",
           "on the full path (i.e. the regex '^.*my.*' matches the path",
           "/my/file.adoc).") do |regex_str|
-          @exclude_regex = Regex.new(regex_str)
+          @exclude_regex = Regexp.new(regex_str)
         end
         parser.on("-w", "--web-path [PATH]",
           "Specifies the URL path to where the generated html documents",

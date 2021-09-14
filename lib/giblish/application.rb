@@ -4,6 +4,7 @@ require_relative "resourcepaths"
 require_relative "converters"
 require_relative "treeconverter"
 require_relative "docid/docid"
+require_relative "indexbuilders/depgraphviz"
 
 module Giblish
   # configure all parts needed to execute the options specified by
@@ -123,6 +124,8 @@ module Giblish
       docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: d.id_2_node})
       build_options[:adoc_extensions][:preprocessor] << docid_pp
 
+      return if cmd_opts.no_index
+      
       # generate dep graph if graphviz is available
       dg = DepGraphDot.new(docid_pp.node_2_ids)
       build_options[:post_builders] << dg
@@ -146,9 +149,17 @@ module Giblish
 
       Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
 
-      # build a tree of included files
-      src_tree = PathTree.build_from_fs(cmdline.srcdir) do |p|
-        cmdline.exclude_regex.nil? ? false : cmdline.include_regex =~ p.to_s
+      # build a tree of files matching user's regexp selection
+      src_tree = PathTree.build_from_fs(cmdline.srcdir) do |p|        
+        if cmdline.exclude_regex&.match(p.to_s)
+          false
+        else
+          cmdline.include_regex =~ p.to_s
+        end
+      end
+      if src_tree.nil?
+        Giblog.logger.warn { "Did not find any files to convert"}
+        return 
       end
 
       app = Configurator.new(cmdline, src_tree)
@@ -165,6 +176,7 @@ module Giblish
         exit_code = 0
       rescue => exc
         Giblog.logger.error { exc.message }
+        Giblog.logger.error { exc.backtrace }
         exit_code = 1
       end
       exit(exit_code)
