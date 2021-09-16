@@ -125,7 +125,7 @@ module Giblish
       build_options[:adoc_extensions][:preprocessor] << docid_pp
 
       return if cmd_opts.no_index
-      
+
       # generate dep graph if graphviz is available
       dg = DepGraphDot.new(docid_pp.node_2_ids)
       build_options[:post_builders] << dg
@@ -150,7 +150,7 @@ module Giblish
       Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
 
       # build a tree of files matching user's regexp selection
-      src_tree = PathTree.build_from_fs(cmdline.srcdir) do |p|        
+      src_tree = PathTree.build_from_fs(cmdline.srcdir) do |p|
         if cmdline.exclude_regex&.match(p.to_s)
           false
         else
@@ -158,14 +158,13 @@ module Giblish
         end
       end
       if src_tree.nil?
-        Giblog.logger.warn { "Did not find any files to convert"}
-        return 
+        Giblog.logger.warn { "Did not find any files to convert" }
+        return
       end
 
       app = Configurator.new(cmdline, src_tree)
       app.tree_converter.run
 
-      # execute_conversion(cmdline)
       Giblog.logger.info { "Giblish is done!" }
     end
 
@@ -181,54 +180,190 @@ module Giblish
       end
       exit(exit_code)
     end
+  end
 
-    private
+  class DirTreeConvert
+    def initialize(user_opts)
+    end
 
-    def convert_git_repo(cmdline, conv_options)
-      # Create a handle to our git interface
-      git_itf = Giblish::GitItf.new(repo)
+    # returns on success, raises otherwise
+    def run
+      # build a tree of files matching user's regexp selection
+      src_tree = PathTree.build_from_fs(@user_opts.srcdir) do |p|
+        if @user_opts.exclude_regex&.match(p.to_s)
+          false
+        else
+          @user_opts.include_regex =~ p.to_s
+        end
+      end
+      if src_tree.nil?
+        Giblog.logger.warn { "Did not find any files to convert" }
+        return
+      end
 
+      # setup and execute the conversion
+      app = Configurator.new(@user_opts, src_tree)
+      app.tree_converter.run
+    end
+  end
+
+  class GitRepoConvert
+    def initialize(user_opts)
+      raise ArgumentError, "No selection for git branches or tags were found!" unless user_opts.branch_regex || user_opts.tag_regex
+
+      @repo_root = find_gitrepo_root(user_opts.srcdir)
+      raise ArgumentError("The path: #{user_opts.srcdir} is not within a git repo!") if @repo_root.nil?
+
+      # cache the root dir
+      @dst_topdir = user_opts.dstdir
+
+      # TODO: parametrize this
+      @abort_on_error = true
+    end
+
+    def run
       # convert all docs found in the branches/tags that the user asked to parse
       GitCheckoutManager.new(
-        git_repo_root: cmdline.srcdir,
+        git_repo_root: @repo_root,
         local_only: cmdline.local_only,
         branch_regex: cmdline.branch_regex,
         tag_regex: cmdline.tag_regex
       ).each_checkout do |name|
-        Giblog.logger.info { "Working on #{name}" }
+        begin
+          Giblog.logger.info { "Working on #{name}" }
 
-        # sanitize the top-dir name for each branch
-        branch_dst = cmdline.dstdir / name.sub("/", "_")
+          # tweak the destination dir to a subdir per branch/tag
+          cmdline.dstdir = @dst_topdir / name.sub("/", "_")
 
-        # get an instance of each index_builder the user asked for
-        index_builders = create_index_builder(cmdline)
+          DirTreeConvert.new(cmdline).run
+        rescue => e
+          if @abort_on_error
+            raise e
+          else
+            Giblog.logger.error {"Conversion of #{name} failed!"}
+            Giblog.logger.error {e.message}
+          end
+        end
+      end
+    end
 
-        # setup conversion opts
-        conversion_opts = {}
-        conversion_opts[:post_builders] = index_builders unless index_builders.nil?
-        conversion_opts[:conversion_cb] = {
-          success: ->(src, dst, dst_rel_path, doc, logstr) do
-            TreeConverter.on_success(src, dst, dst_rel_path, doc, logstr)
+    private
 
-            p = src.pathname.relative_path_from(repo)
+    # Get the log history of the supplied file as an array of
+    # hashes, each entry has keys:
+    # sha
+    # date
+    # author
+    # email
+    # parent
+    # message
+    def file_log(filename)
+      o, e, s = exec_cmd("log", %w[--follow --date=iso --], "'#{filename}'")
+      raise "Failed to get git log for #{filename}!!\n#{e}" if s.exitstatus != 0
 
-            # a bit hackish... These callbacks are also called when converting post-build
-            # files. Those files do not reside in the git repo since they're generated and thus we
-            # skip those when getting the gitlog
-            next if p.to_s.start_with?("..")
+      process_log_output(o)
+    end
 
-            # Get the commit history of the doc
-            # (use a homegrown git log to get 'follow' flag)
-            git_itf.file_log(p.to_s).each do |i|
-              dst.data.history << DocInfo::DocHistory.new(i["date"], i["author"], i["message"])
-            end
-          end,
-          failure: ->(src, dst, dst_rel_path, ex, logstr) { TreeConverter.on_failure(src, dst, dst_rel_path, ex, logstr) }
-        }
+    # Process the log output from git
+    # (This is copied to 90% from the ruby-git gem)
+    def process_log_output(output)
+      in_message = false
+      hsh_array = []
+      hsh = nil
 
-        # run the conversion of the tree
-        tc = TreeConverter.new(st, branch_dst, conversion_opts)
-        tc.run
+      output.each_line do |line|
+        line = line.chomp
+
+        if line[0].nil?
+          in_message = !in_message
+          next
+        end
+
+        if in_message
+          hsh["message"] << "#{line[4..]}\n"
+          next
+        end
+
+        key, *value = line.split
+        key = key.sub(":", "").downcase
+        value = value.join(" ")
+
+        case key
+        when "commit"
+          hsh_array << hsh if hsh
+          hsh = {"sha" => value, "message" => +"", "parent" => []}
+        when "parent"
+          hsh["parent"] << value
+        when "author"
+          tmp = value.split("<")
+          hsh["author"] = tmp[0].strip
+          hsh["email"] = tmp[1].sub(">", "").strip
+        when "date"
+          hsh["date"] = DateTime.parse(value)
+        else
+          hsh[key] = value
+        end
+      end
+      hsh_array << hsh if hsh
+      hsh_array
+    end
+
+    # Execute engine for git commands,
+    # Returns same as capture3 (stdout, stderr, Process.Status)
+    def exec_cmd(cmd, flags, args)
+      # always add the git dir to the cmd to ensure that git is executed
+      # within the expected repo
+      gd_flag = "--git-dir=\"#{@git_dir}\""
+      wt_flag = "--work-tree=\"#{@repo_root}\""
+      flag_str = flags.join(" ")
+      git_cmd = "git #{gd_flag} #{wt_flag} #{cmd} #{flag_str} #{args}"
+      Giblog.logger.debug { "running: #{git_cmd}" }
+      Open3.capture3(git_cmd.to_s)
+    end
+
+    # Public: Find the root directory of the git repo in which the
+    #         given dirpath resides.
+    #
+    # dirpath - an absolute path to a directory that resides
+    #           within a git repo.
+    #
+    # Returns: the root direcotry of the git repo or nil if the input path
+    #          does not reside within a git repo.
+    def find_gitrepo_root(dirpath)
+      Pathname.new(dirpath).realpath.ascend do |p|
+        git_dir = p.join(".git")
+        return p if git_dir.directory?
+      end
+    end
+  end
+
+  class EntryPoint
+    def initialize(args)
+      # force immediate output
+      $stdout.sync = true
+
+      # setup logging
+      Giblog.setup
+      Giblog.logger.level = Logger::INFO
+
+      # Parse cmd line
+      user_opts = CmdLine.new.parse(args)
+      Giblog.logger.level = user_opts.log_level
+      Giblog.logger.debug { "cmd line args: #{user_opts.inspect}" }
+
+      # Do the conversion
+      select_conversion(user_opts).run
+
+      # exit
+      Giblog.logger.info { "Giblish is done!" }
+    end
+
+    def select_conversion(user_opts)
+      case user_opts
+        in branch_regex:, tag_regex:
+          GitRepoConvert.new(user_opts)
+        else
+          DirTreeConvert.new(user_opts)
       end
     end
   end
