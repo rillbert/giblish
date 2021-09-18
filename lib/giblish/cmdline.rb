@@ -7,7 +7,7 @@ module Giblish
     # accessible via the cmd line.
     class Options
       attr_accessor :format, :no_index, :index_basename, :include_regex, :exclude_regex,
-        :resource_dir, :style_name, :web_path, :branch_regex, :tag_regex, :doc_attributes,
+        :resource_dir, :style_name, :web_path, :branch_regex, :tag_regex, :local_only, :doc_attributes,
         :resolve_docid, :make_searchable, :search_assets_deploy, :log_level, :srcdir, :dstdir
 
       OUTPUT_FORMATS = ["html", "pdf"]
@@ -29,6 +29,7 @@ module Giblish
         @style_name = nil
         @web_path = nil
         @branch_regex, @tag_regex = nil, nil
+        @local_only = false,
         @doc_attributes = {}
         @resolve_docid = false
         @make_searchable = false
@@ -117,19 +118,19 @@ module Giblish
           "NOTE 2: In bash, use double quotes around your regexp if",
           "you need to quote it. Single quotes are treated as part",
           "of the regexp itself.") do |regex_str|
-            @branch_regex = Regex.new(regex_str)
+            @branch_regex = Regexp.new(regex_str)
           end
         parser.on("-t", "--git-tags [REGEX]",
           "if the source_dir_top is located within a git repo,",
           "generate docs for all tags that matches the given",
           "regular expression. Each tag will be generated to",
           "a separate subdir under the destination root dir.") do |regex_str|
-            @tag_regex = Regex.new(regex_str)
+            @tag_regex = Regexp.new(regex_str)
           end
         parser.on("-c", "--local-only",
           "do not try to fetch git info from any remotes of",
           "the repo before generating documents.") do |local_only|
-            @local_only = local_only
+            @local_only = true
           end
         parser.on("-a", "--attribute [KEY=VALUE]",
           "set a document or asciidoctor attribute.",
@@ -186,7 +187,7 @@ module Giblish
           "this is what you shall set the path to.") do |p|
           @search_assets_deploy = Pathname.new(p)
         end
-        parser.on("--log-level LEVEL", LOG_LEVELS,
+        parser.on("-l","--log-level LEVEL", LOG_LEVELS,
           "set the log level explicitly. Must be one of",
           LOG_LEVELS.keys.join(",").to_s, "(default 'info')") do |level|
           @log_level = level

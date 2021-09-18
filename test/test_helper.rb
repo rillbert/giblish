@@ -210,7 +210,7 @@ module Giblish
 
     # copies .../data/resources/* to dst_dir/.
     def copy_test_resources(dst_dir)
-      r_top = (Pathname.new(__FILE__) / "../../data/resources").cleanpath
+      r_top = (Pathname.new(__FILE__).join("../../data/resources")).cleanpath
       d = Pathname.new(dst_dir)
       d.mkpath
       FileUtils.cp_r(
@@ -218,5 +218,45 @@ module Giblish
         dst_dir
       )
     end
+
+    def setup_repo(tmp_docs, repo_root)
+      # init new repo
+      g = Git.init(repo_root.to_s) # , {log: Giblog.logger})
+      g.config("user.name", "Test Robot")
+      g.config("user.email", "robot@giblishtest.com")
+
+      # create the main branch
+      g.checkout(g.branch("main"), {b: true})
+      g.commit("dummy commit", {allow_empty: true})
+
+      # add some files to the "product_1" branch
+      g.checkout(g.branch("product_1"), {b: true})
+      [".", ".", "subdir"].each do |d|
+        d = (repo_root / d).cleanpath.to_s
+        tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d)
+      end
+      g.add(all: true)
+      g.commit("add three files to product_1 branch")
+
+      # checkout the main branch again
+      g.checkout(g.branch("main"))
+
+      # draw a new product branch from the main branch and
+      # add some files
+      g.checkout(g.branch("product_2"), {b: true})
+      ["subdir", "subdir/level_2", "."].each do |d|
+        d = (repo_root / d).to_s
+        tmp_docs.add_doc_from_str(CreateAdocDocSrc.new, d)
+      end
+      g.add(all: true)
+      g.commit("add three files to product_2 branch")
+
+      # checkout the main branch
+      g.checkout(g.branch("main"))
+
+      # return repo instance
+      g
+    end
+
   end
 end

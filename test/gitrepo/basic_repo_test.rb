@@ -62,6 +62,27 @@ module Giblish
       g.checkout(g.branch("main"))
     end
 
+    def test_checkout_return_to_origin
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        root = Pathname.new(tmp_docs.dir)
+        dst_root = root / "dst"
+
+        # setup repo with two branches
+        repo = root / "tstrepo"
+        setup_repo(tmp_docs, repo)
+
+        expected_branches = %w(product_1 product_2)
+        GitCheckoutManager.new(
+          git_repo_root: repo, 
+          local_only: true, 
+          branch_regex: /.*product.*/
+        ).each_checkout do |treeish, |
+          assert(!expected_branches.delete(treeish).nil?)
+        end
+        assert_equal(0, expected_branches.count)
+      end
+    end
+
     def test_generate_html_two_branches
       TmpDocDir.open(preserve: false) do |tmp_docs|
         root = Pathname.new(tmp_docs.dir)
@@ -93,7 +114,7 @@ module Giblish
           tc.run
 
           # assert that there now are 3 html files under "dst/<branch_name>"
-          dt = tc.dst_tree.node(dst_root, from_root: true)
+          dt = tc.dst_tree.parent
           assert_equal(3, dt.leave_pathnames.count)
           assert_equal(
             st.leave_pathnames.collect { |p| branch_dst.basename / p.sub_ext(".html").relative_path_from(st.pathname) },
@@ -104,7 +125,7 @@ module Giblish
     end
 
     def test_generate_html_two_branches_with_index
-      TmpDocDir.open(preserve: false) do |tmp_docs|
+      TmpDocDir.open(preserve: true) do |tmp_docs|
         root = Pathname.new(tmp_docs.dir)
         dst_root = root / "dst"
 
@@ -130,7 +151,6 @@ module Giblish
           # css path
           css_path = "web_assets/hejsan/hopp.css"
           index_builder = IndexTreeBuilder.new(
-            branch_dst,
             RelativeCssDocAttr.new(dst_root / css_path)
           )
 

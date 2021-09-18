@@ -154,9 +154,10 @@ module Giblish
         if cmdline.exclude_regex&.match(p.to_s)
           false
         else
-          cmdline.include_regex =~ p.to_s
+          (cmdline.include_regex =~ p.to_s)
         end
       end
+      puts src_tree.to_s
       if src_tree.nil?
         Giblog.logger.warn { "Did not find any files to convert" }
         return
@@ -184,6 +185,7 @@ module Giblish
 
   class DirTreeConvert
     def initialize(user_opts)
+      @user_opts = user_opts
     end
 
     # returns on success, raises otherwise
@@ -211,8 +213,14 @@ module Giblish
     def initialize(user_opts)
       raise ArgumentError, "No selection for git branches or tags were found!" unless user_opts.branch_regex || user_opts.tag_regex
 
-      @repo_root = find_gitrepo_root(user_opts.srcdir)
-      raise ArgumentError("The path: #{user_opts.srcdir} is not within a git repo!") if @repo_root.nil?
+      @user_opts = user_opts
+
+      @gm = GitCheckoutManager.new(
+        srcdir: user_opts.srcdir,
+        local_only: user_opts.local_only,
+        branch_regex: user_opts.branch_regex,
+        tag_regex: user_opts.tag_regex
+      )
 
       # cache the root dir
       @dst_topdir = user_opts.dstdir
@@ -223,116 +231,19 @@ module Giblish
 
     def run
       # convert all docs found in the branches/tags that the user asked to parse
-      GitCheckoutManager.new(
-        git_repo_root: @repo_root,
-        local_only: cmdline.local_only,
-        branch_regex: cmdline.branch_regex,
-        tag_regex: cmdline.tag_regex
-      ).each_checkout do |name|
-        begin
-          Giblog.logger.info { "Working on #{name}" }
+      @gm.each_checkout do |name|
+        # tweak the destination dir to a subdir per branch/tag
+        @user_opts.dstdir = @dst_topdir / name.sub("/", "_")
 
-          # tweak the destination dir to a subdir per branch/tag
-          cmdline.dstdir = @dst_topdir / name.sub("/", "_")
-
-          DirTreeConvert.new(cmdline).run
-        rescue => e
-          if @abort_on_error
-            raise e
-          else
-            Giblog.logger.error {"Conversion of #{name} failed!"}
-            Giblog.logger.error {e.message}
-          end
-        end
-      end
-    end
-
-    private
-
-    # Get the log history of the supplied file as an array of
-    # hashes, each entry has keys:
-    # sha
-    # date
-    # author
-    # email
-    # parent
-    # message
-    def file_log(filename)
-      o, e, s = exec_cmd("log", %w[--follow --date=iso --], "'#{filename}'")
-      raise "Failed to get git log for #{filename}!!\n#{e}" if s.exitstatus != 0
-
-      process_log_output(o)
-    end
-
-    # Process the log output from git
-    # (This is copied to 90% from the ruby-git gem)
-    def process_log_output(output)
-      in_message = false
-      hsh_array = []
-      hsh = nil
-
-      output.each_line do |line|
-        line = line.chomp
-
-        if line[0].nil?
-          in_message = !in_message
-          next
-        end
-
-        if in_message
-          hsh["message"] << "#{line[4..]}\n"
-          next
-        end
-
-        key, *value = line.split
-        key = key.sub(":", "").downcase
-        value = value.join(" ")
-
-        case key
-        when "commit"
-          hsh_array << hsh if hsh
-          hsh = {"sha" => value, "message" => +"", "parent" => []}
-        when "parent"
-          hsh["parent"] << value
-        when "author"
-          tmp = value.split("<")
-          hsh["author"] = tmp[0].strip
-          hsh["email"] = tmp[1].sub(">", "").strip
-        when "date"
-          hsh["date"] = DateTime.parse(value)
+        Giblog.logger.debug { "cmdline: #{@user_opts.inspect}" }
+        DirTreeConvert.new(@user_opts).run
+      rescue => e
+        if @abort_on_error
+          raise e
         else
-          hsh[key] = value
+          Giblog.logger.error { "Conversion of #{name} failed!" }
+          Giblog.logger.error { e.message }
         end
-      end
-      hsh_array << hsh if hsh
-      hsh_array
-    end
-
-    # Execute engine for git commands,
-    # Returns same as capture3 (stdout, stderr, Process.Status)
-    def exec_cmd(cmd, flags, args)
-      # always add the git dir to the cmd to ensure that git is executed
-      # within the expected repo
-      gd_flag = "--git-dir=\"#{@git_dir}\""
-      wt_flag = "--work-tree=\"#{@repo_root}\""
-      flag_str = flags.join(" ")
-      git_cmd = "git #{gd_flag} #{wt_flag} #{cmd} #{flag_str} #{args}"
-      Giblog.logger.debug { "running: #{git_cmd}" }
-      Open3.capture3(git_cmd.to_s)
-    end
-
-    # Public: Find the root directory of the git repo in which the
-    #         given dirpath resides.
-    #
-    # dirpath - an absolute path to a directory that resides
-    #           within a git repo.
-    #
-    # Returns: the root direcotry of the git repo or nil if the input path
-    #          does not reside within a git repo.
-    def find_gitrepo_root(dirpath)
-      Pathname.new(dirpath).realpath.ascend do |p|
-        git_dir = p.join(".git")
-        return p if git_dir.directory?
       end
     end
   end
@@ -360,7 +271,7 @@ module Giblish
 
     def select_conversion(user_opts)
       case user_opts
-        in branch_regex:, tag_regex:
+        in {branch_regex: _} | {tag_regex: _}
           GitRepoConvert.new(user_opts)
         else
           DirTreeConvert.new(user_opts)
