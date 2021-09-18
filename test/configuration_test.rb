@@ -1,9 +1,8 @@
 require_relative "test_helper"
 require_relative "../lib/giblish/config_utils"
-require_relative "../lib/giblish/converters"
+require_relative "../lib/giblish/docattr_providers"
 
 module Giblish
-  # tests the basic functionality of the Application class
   class ConfigurationTest < Minitest::Test
     include Giblish::TestUtils
 

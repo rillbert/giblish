@@ -37,7 +37,7 @@ module Giblish
     end
   end
 
-  # delegates all method calls to the first supplied delegate the
+  # delegates all method calls to the first supplied delegate that
   # implements it.
   class DataDelegator
     def initialize(*delegate_arr)
@@ -49,15 +49,8 @@ module Giblish
     end
 
     def method_missing(m, *args, &block)
-      d = @delegates.find do |d|
-        d.respond_to?(m)
-      end
-
-      if d.nil?
-        super
-      else
-        d&.send(m, *args, &block)
-      end
+      d = @delegates.find { |d| d.respond_to?(m) }
+      d.nil? ? super : d&.send(m, *args, &block)
     end
 
     def respond_to_missing?(method_name, include_private = false)

@@ -1,4 +1,5 @@
 require "optparse"
+require "logger"
 
 module Giblish
   # parse the cmd line

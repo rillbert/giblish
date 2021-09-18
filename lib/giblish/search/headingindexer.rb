@@ -46,10 +46,11 @@ module Giblish
     HEADING_DB_BASENAME = "heading_db.json"
     SEARCH_ASSET_DIRNAME = "gibsearch_assets"
 
-    def initialize(src_tree)
+    # src_topdir:: a Pathname to the top dir of the src files
+    def initialize(src_topdir)
       super({})
 
-      @src_tree = src_tree
+      @src_topdir = src_topdir
       @heading_index = {fileinfos: []}
     end
 
@@ -73,13 +74,13 @@ module Giblish
       dst_top = attrs["giblish-info"][:dst_top]
       write_washed_doc(
         parse_document(document, src_node, opts),
-        dst_top.pathname / SEARCH_ASSET_DIRNAME / src_node.relative_path_from(@src_tree)
+        dst_top.pathname / SEARCH_ASSET_DIRNAME / rel_src_path(src_node)
       )
       nil
     end
 
     # called by the TreeConverter during the post_build phase
-    def on_postbuild(src_tree, dst_tree, converter)
+    def on_postbuild(src_topdir, dst_tree, converter)
       search_topdir = dst_tree.pathname / SEARCH_ASSET_DIRNAME
 
       # store the JSON file
@@ -88,15 +89,21 @@ module Giblish
 
     private
 
+    # get the relative path from the src_topdirdir to the source node
+    # 
+    # returns:: a Pathname with the relative path
+    def rel_src_path(src_node)
+      src_node.pathname.relative_path_from(@src_topdir)
+    end
+
     # returns:: the source lines after substituting attributes
     def parse_document(document, src_node, opts)
       Giblog.logger.debug "index headings in #{src_node.pathname} using prefix '#{opts[:id_prefix]}' and separator '#{opts[:id_separator]}'"
       attrs = document.attributes
       doc_info = index_sections(document, opts)
 
-      rel_src_path = src_node.relative_path_from(@src_tree)
       @heading_index[:fileinfos] << {
-        filepath: rel_src_path,
+        filepath: rel_src_path(src_node),
         title: attrs.key?("doctitle") ? attrs["doctitle"] : "No title found!",
         sections: doc_info[:sections]
       }
@@ -231,16 +238,4 @@ module Giblish
       end
     end
   end
-
-  # class TestTreeProc < Asciidoctor::Extensions::TreeProcessor
-  #   def process(document)
-  #     # pp document.blocks[0].class.instance_methods(false)
-  #     attrs = document.attributes
-  #     puts "----"
-  #     puts "title: #{document.title}"
-  #     puts "title old: ", attrs.key?("doctitle") ? attrs["doctitle"] : "No title found!"
-  #     puts "Sections: #{document.blocks.collect { |b| b.title }.join(",")}"
-  #     # document.blocks.each {|b| puts b.lines }.join("\n--\n")
-  #   end
-  # end
 end

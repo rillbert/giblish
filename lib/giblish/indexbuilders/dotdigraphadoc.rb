@@ -43,12 +43,6 @@ module Giblish
     # svg-type:: how to embed svg images
     #
     def initialize(info_2_ids:, target: "gibgraph", format: "svg", opts: {"svg-type" => "inline"})
-      # this class relies on graphwiz (dot), make sure we can access that
-      raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported
-
-      # require asciidoctor module needed for generating diagrams
-      require "asciidoctor-diagram/graphviz"
-
       @info_2_ids = info_2_ids
       @target = target
       @format = format

@@ -1,3 +1,4 @@
+require "asciidoctor"
 require_relative "../pathtree"
 
 module Giblish

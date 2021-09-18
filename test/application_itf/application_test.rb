@@ -2,7 +2,7 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish"
 
 module Giblish
-  # tests the basic functionality of the Application class
+  # tests the basic functionality of giblish as run via a terminal
   class ApplicationTest < Minitest::Test
     include Giblish::TestUtils
 

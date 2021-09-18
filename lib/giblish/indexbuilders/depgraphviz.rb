@@ -14,7 +14,7 @@ module Giblish
     #              build phase
     def initialize(node_2_ids)
       # this class relies on graphwiz (dot), make sure we can access it
-      raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless GraphBuilderGraphviz.supported
+      raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless DepGraphDot.dot_supported
 
       # require asciidoctor module needed for generating diagrams
       require "asciidoctor-diagram/graphviz"

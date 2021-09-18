@@ -149,8 +149,8 @@ class PathTree
   # A new array containing the values returned by the block
   #
   # === Examples
-  # Print the name of each node together with the level of the node
-  #    traverse_preorder{ |level, n| puts "#{level} #{n.segment}" }
+  # Get an array with name of each node together with the level of the node
+  #    traverse_preorder{ |level, n| "#{level} #{n.segment}" }
   #
   def traverse_preorder(level = 0, &block)
     result = Array[yield(level, self)]
@@ -167,10 +167,13 @@ class PathTree
   #
   # the level and node are given as block parameters
   #
-  # === Examples
-  # Print the name of each node together with the level of the node
-  #    traverse_postorder{ |level, n| puts "#{level} #{n.segment}" }
+  # === Returns
+  # A new array containing the values returned by the block
   #
+  # === Examples
+  #
+  # Get an array of each node together with the level of the node
+  #    traverse_postorder{ |level, n| "#{level} #{n.segment}" }
   def traverse_postorder(level = 0, &block)
     result = []
     @children.each do |c|
@@ -186,10 +189,12 @@ class PathTree
   #
   # the level and node are given as block parameters
   #
-  # === Examples
-  # Print the name of each node together with the level of the node
-  #    traverse_levelorder { |level, n| puts "#{level} #{n.segment}" }
+  # === Returns
+  # A new array containing the values returned by the block
   #
+  # === Examples
+  # Get an array with the name of each node together with the level of the node
+  #    traverse_levelorder { |level, n| "#{level} #{n.segment}" }
   def traverse_levelorder(level = 0, &block)
     result = []
     # the node of the original call

@@ -1,3 +1,5 @@
+require "pathname"
+
 module Giblish
   # Provides relevant paths for layout resources based on the given options
   class ResourcePaths

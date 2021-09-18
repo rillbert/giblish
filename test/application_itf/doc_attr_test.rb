@@ -70,8 +70,8 @@ module Giblish
           tmp_docs.dir,
           tmp_docs.dir]
         opts = CmdLine.new.parse(args)
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_tree).run
 
         result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
@@ -100,8 +100,8 @@ module Giblish
           tmp_docs.dir,
           tmp_docs.dir]
         opts = CmdLine.new.parse(args)
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_tree).run
 
         result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
@@ -135,8 +135,8 @@ module Giblish
           tmp_docs.dir,
           tmp_docs.dir]
         opts = CmdLine.new.parse(args)
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_tree).run
 
         result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
@@ -177,8 +177,8 @@ module Giblish
         src_top = src_tree.node(p_top, from_root: true)
 
         opts = CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_tree).run
 
         # check that the idprefix is as expected
         expected_ids = {
@@ -205,8 +205,8 @@ module Giblish
 
         # now re-do the html generation using a hard-coded idprefix
         opts = CmdLine.new.parse(%W[-f html -a idprefix=idefix #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_tree).run
 
         expected_ids = {
           Pathname.new(file1).basename.sub_ext(".html") => ["idefixparagraph_1", "my_id"],

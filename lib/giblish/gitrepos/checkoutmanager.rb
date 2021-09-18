@@ -7,7 +7,7 @@ module Giblish
   class GitCheckoutManager
     attr_reader :branches_and_tags
 
-    # git_repo_root:: Pathname to the top dir of the local git repo to work with
+    # srcdir:: Pathname to the top dir of the local git repo to work with
     # local_only:: if true, do not try to access any remote branches or merge with any
     # upstream changes
     # branch_regex:: the regex for the branches to include during iteration (default: none)
@@ -114,7 +114,7 @@ module Giblish
         # match branches but remove eventual HEAD -> ... entry
         regexp.match b.name unless /^HEAD/.match?(b.name)
       end
-      Giblog.logger.debug { "selected git branches: #{user_checkouts}" }
+      Giblog.logger.debug { "selected git branches: #{user_checkouts.collect{|b| b.name}.join(", ")}" }
       user_checkouts
     end
 

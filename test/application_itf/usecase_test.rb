@@ -2,8 +2,7 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/resourcepaths"
 
 module Giblish
-  # tests the basic functionality of the Application class
-  class HtmlLocalResourceTest < Minitest::Test
+  class UseCaseTests < Minitest::Test
     include Giblish::TestUtils
 
     TEST_DOCS = [
@@ -207,8 +206,8 @@ module Giblish
         opts = CmdLine.new.parse(%W[-f html #{src_top} #{dst_top}])
 
         src_tree = PathTree.build_from_fs(Pathname.new(src_top))
-        app = Configurator.new(opts, src_tree)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_tree).run
 
         # check that there are three generated docs and two index files
         doc_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
@@ -267,8 +266,8 @@ module Giblish
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
         opts = CmdLine.new.parse(%W[-f html -r #{topdir / "resources"} -s giblish #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_top).run
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: false)
@@ -307,8 +306,8 @@ module Giblish
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
         opts = CmdLine.new.parse(%W[-f html -w my/style/giblish.css #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_top).run
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)
@@ -325,8 +324,8 @@ module Giblish
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
         opts = CmdLine.new.parse(%W[-f pdf #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_top).run
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)
@@ -342,8 +341,8 @@ module Giblish
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
         opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts, src_top)
-        app.tree_converter.run
+        app = Configurator.new(opts)
+        app.setup_converter(src_top).run
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)
@@ -367,10 +366,10 @@ module Giblish
 
         # repo_tree = PathTree.build_from_fs(repo_top, prune:  true)
         # puts repo_tree.to_s
-        app = EntryPoint.new(%W[-f html -g .* #{src_top} #{dst_top}])
+        EntryPoint.run(%W[-f html -g .* #{src_top} #{dst_top}])
 
         dsttree = PathTree.build_from_fs(dst_top, prune:  true)
-        puts dsttree.to_s
+        # puts dsttree.to_s
         assert(dsttree.leave_pathnames.count > 0)
 
         # check that there are three generated docs and two index files

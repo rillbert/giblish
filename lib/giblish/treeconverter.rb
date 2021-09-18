@@ -2,6 +2,7 @@ require "asciidoctor"
 require "asciidoctor-pdf"
 require_relative "pathtree"
 require_relative "conversion_info"
+require_relative "utils"
 
 module Giblish
   # Converts all nodes in the supplied src PathTree from adoc to the format

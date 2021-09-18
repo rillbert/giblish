@@ -12,6 +12,7 @@ module Giblish
     def setup
       # setup logging
       Giblog.setup
+      Giblog.logger.level = Logger::INFO
     end
 
     def tree_from_src_dir(top_dir)
@@ -65,18 +66,17 @@ module Giblish
     def test_checkout_return_to_origin
       TmpDocDir.open(preserve: false) do |tmp_docs|
         root = Pathname.new(tmp_docs.dir)
-        dst_root = root / "dst"
 
         # setup repo with two branches
         repo = root / "tstrepo"
         setup_repo(tmp_docs, repo)
 
-        expected_branches = %w(product_1 product_2)
+        expected_branches = %w[product_1 product_2]
         GitCheckoutManager.new(
-          git_repo_root: repo, 
-          local_only: true, 
+          srcdir: repo,
+          local_only: true,
           branch_regex: /.*product.*/
-        ).each_checkout do |treeish, |
+        ).each_checkout do |treeish,|
           assert(!expected_branches.delete(treeish).nil?)
         end
         assert_equal(0, expected_branches.count)
@@ -96,7 +96,7 @@ module Giblish
         # 2. Convert and add index, ...
         # 3. Redo from 1.
         tc = nil
-        r = GitCheckoutManager.new(git_repo_root: repo, local_only: true, branch_regex: /.*product.*/)
+        r = GitCheckoutManager.new(srcdir: repo, local_only: true, branch_regex: /.*product.*/)
         r.each_checkout do |name|
           Giblog.logger.info { "Working on #{name}" }
 
@@ -136,7 +136,7 @@ module Giblish
         # 1. Get the src dir
         # 2. Convert and add index, ...
         # 3. Redo from 1.
-        r = GitCheckoutManager.new(git_repo_root: repo, local_only: true, branch_regex: /.*product.*/)
+        r = GitCheckoutManager.new(srcdir: repo, local_only: true, branch_regex: /.*product.*/)
         r.each_checkout do |name|
           Giblog.logger.info { "Working on #{name}" }
 
@@ -180,6 +180,7 @@ module Giblish
                 failure: ->(src, dst, dst_rel_path, ex, logstr) { TreeConverter.on_failure(src, dst, dst_rel_path, ex, logstr) }
               }
             })
+          raise NotImplementedError, "Stale code!!!"
           tc.run
 
           # assert that there now are 3 html files under "dst/<branch_name>"

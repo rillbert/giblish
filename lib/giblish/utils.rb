@@ -114,7 +114,7 @@ module Giblish
   # ex:
   # process_header_lines(file_path) do |line|
   #   if line == "Quack!"
-  #      puts "Donald!"
+  #      myvar = "Donald!"
   #      1
   #   else
   #      nil
@@ -139,7 +139,7 @@ module Giblish
   # ex:
   # process_header_lines_from_file(file_path) do |line|
   #   if line == "Quack!"
-  #      puts "Donald!"
+  #      myvar = "Donald!"
   #      1
   #   else
   #      nil

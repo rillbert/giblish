@@ -2,7 +2,6 @@ require_relative "test_helper"
 require_relative "../lib/giblish/resourcepaths"
 
 module Giblish
-  # tests the basic functionality of the Application class
   class ResourceTests < Minitest::Test
     include Giblish::TestUtils
 
