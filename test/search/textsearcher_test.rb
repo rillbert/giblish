@@ -91,7 +91,7 @@ module Giblish
       assert_equal("../gibsearch_assets", sp.assets_top_rel.to_s)
       assert_equal("subdir1/file_1.html", sp.repo_file_path.to_s)
       assert_equal("hejsan", sp.searchphrase)
-      assert_equal(nil, sp.css_path)
+      assert_nil(sp.css_path)
       assert_equal(false, sp.as_regexp?)
       assert_equal(false, sp.consider_case?)
 
@@ -166,7 +166,8 @@ module Giblish
         )
 
         results = searcher.search(sp)
-        pp results
+        raise "Complete this test!"
+        # pp results
       end
     end
 

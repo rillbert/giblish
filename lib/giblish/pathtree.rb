@@ -46,6 +46,7 @@ class PathTree
 
     @name = head
     @children = []
+    @data = nil
     @parent = parent
 
     tail = p.relative_path_from(head)

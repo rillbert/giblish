@@ -136,7 +136,7 @@ module Giblish
     # the default callback will tie a 'FailedConversion' instance
     # to the destination node as its data
     def self.on_failure(src_node, dst_node, dst_tree, ex, adoc_log_str)
-      @logger&.error { ex.message }
+      Giblog.logger.error { ex.message }
       dst_node.data = DataDelegator.new(FailedConversion.new(
         src_node: src_node, dst_node: dst_node, dst_top: dst_tree, error_msg: ex.message
       ))

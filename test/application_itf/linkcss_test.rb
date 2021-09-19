@@ -111,7 +111,7 @@ class LinkCSSTest < Minitest::Test
       expected_csslink = web_root
 
       dt = PathTree.build_from_fs(dstdir, prune: false)
-      assert_equal(nil, dt.match(/web_asset/))
+      assert_nil(dt.match(/web_asset/))
       assert_equal(3, dt.leave_pathnames.count)
 
       tmp_docs.get_html_dom(dt) do |node, document|

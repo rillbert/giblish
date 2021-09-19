@@ -259,7 +259,6 @@ module Giblish
           line_no += 1
           next if line.empty? || !r.match?(line)
 
-          p line
           relative_path = node.relative_path_from(repo.src_tree)
           result[relative_path] << {
             line_no: line_no,
@@ -293,7 +292,6 @@ module Giblish
 
         sect_to_match = Hash.new { |h, k| h[k] = [] }
         matches.each do |match|
-          p "match: #{match}, filepath: #{filepath}"
           s = repo.in_section(filepath, match[:line_no])
           sect_to_match[s] << match
         end

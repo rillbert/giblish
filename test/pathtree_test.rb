@@ -120,6 +120,11 @@ class PathTreeTest < Minitest::Test
     assert_equal(origin.count, copy.count)
 
     copy.traverse_preorder do |l, n|
+      unless n.leaf?
+        assert_nil(n.data)
+        next
+      end
+
       origin_node = origin.node(n.pathname, from_root: true)
 
       assert(origin_node.object_id != n.object_id)
@@ -141,6 +146,11 @@ class PathTreeTest < Minitest::Test
     assert(copy.object_id != origin.object_id)
 
     copy.traverse_preorder do |l, n|
+      unless n.leaf?
+        assert_nil(n.data)
+        next
+      end
+
       origin_node = origin.node(n.pathname, from_root: true)
 
       assert(origin_node.object_id != n.object_id)

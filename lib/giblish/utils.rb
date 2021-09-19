@@ -121,6 +121,8 @@ module Giblish
   #   end
   # end
   def process_header_lines(lines)
+    return unless block_given?
+    
     state = "before_header"
     lines.each do |line|
       case state
@@ -146,8 +148,10 @@ module Giblish
   #   end
   # end
   def process_header_lines_from_file(path)
+    return unless block_given?
+
     lines = File.readlines(path)
-    process_header_lines(lines, &Proc.new)
+    process_header_lines(lines)
   end
   module_function :process_header_lines_from_file
 

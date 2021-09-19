@@ -1,8 +1,4 @@
-# frozen_string_literal: true
-
 require "pathname"
-
-require_relative "pathutils"
 
 module Giblish
   class FileHistory
