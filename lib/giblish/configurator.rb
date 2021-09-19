@@ -2,7 +2,7 @@ require_relative "config_utils"
 require_relative "resourcepaths"
 require_relative "docid/docid"
 require_relative "search/headingindexer"
-require_relative "indexbuilders/buildindex"
+require_relative "subtreeinfobuilder"
 require_relative "indexbuilders/depgraphviz"
 require_relative "docattr_providers"
 require_relative "adocsrc_providers"
@@ -126,7 +126,7 @@ module Giblish
 
       if config_opts.tag_regex || config_opts.branch_regex
         # setup index generation
-        idx = IndexTreeBuilder.new(doc_attr, nil, config_opts.index_basename)
+        idx = SubtreeInfoBuilder.new(doc_attr, nil, nil, config_opts.index_basename)
         @build_options[:post_builders] << idx
 
       end
@@ -136,7 +136,7 @@ module Giblish
       return if config_opts.no_index
 
       # setup index generation
-      idx = IndexTreeBuilder.new(doc_attr, nil, config_opts.index_basename)
+      idx = SubtreeInfoBuilder.new(doc_attr, nil, nil, config_opts.index_basename)
       @build_options[:post_builders] << idx
     end
 

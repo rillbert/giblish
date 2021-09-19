@@ -12,7 +12,7 @@ module Giblish
     attr_accessor :history
 
     def initialize
-      @entries = []
+      @history = []
     end
   end
 

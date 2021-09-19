@@ -2,7 +2,8 @@ require "git"
 require_relative "../test_helper"
 require_relative "../../lib/giblish/treeconverter"
 require_relative "../../lib/giblish/pathtree"
-require_relative "../../lib/giblish/gititf"
+require_relative "../../lib/giblish/gitrepos/gititf"
+require_relative "../../lib/giblish/gitrepos/history_pb"
 require_relative "../../lib/giblish/gitrepos/checkoutmanager"
 
 module Giblish
@@ -150,37 +151,21 @@ module Giblish
           # setup a post-builder to build index pages in each dir using a relative
           # css path
           css_path = "web_assets/hejsan/hopp.css"
-          index_builder = IndexTreeBuilder.new(
-            RelativeCssDocAttr.new(dst_root / css_path)
-          )
 
-          git_itf = Giblish::GitItf.new(repo)
-
-          # setup a tree converter, using the index_builder
+          # setup a tree converter with postbuilders for getting git history
+          # and showing that in index
           tc = TreeConverter.new(st, branch_dst,
             {
-              post_builders: index_builder,
-              conversion_cb: {
-                success: ->(src, dst, dst_rel_path, doc, logstr) do
-                  TreeConverter.on_success(src, dst, dst_rel_path, doc, logstr)
-
-                  p = src.pathname.relative_path_from(repo)
-
-                  # a bit hackish... These callbacks are also called when converting the index.adoc
-                  # files and they do not reside in the git repo since they're generated, thus we
-                  # skip those when getting the gitlog
-                  next if p.to_s.start_with?("..")
-
-                  # Get the commit history of the doc
-                  # (use a homegrown git log to get 'follow' flag)
-                  git_itf.file_log(p.to_s).each do |i|
-                    dst.data.history << DocInfo::DocHistory.new(i["date"], i["author"], i["message"])
-                  end
-                end,
-                failure: ->(src, dst, dst_rel_path, ex, logstr) { TreeConverter.on_failure(src, dst, dst_rel_path, ex, logstr) }
-              }
+              post_builders: [
+                AddHistoryPostBuilder.new(repo), 
+                SubtreeInfoBuilder.new(
+                  RelativeCssDocAttr.new(dst_root / css_path),
+                  nil,
+                  SubtreeIndexGit,
+                  "myindex"
+                )
+              ]
             })
-          raise NotImplementedError, "Stale code!!!"
           tc.run
 
           # assert that there now are 3 html files under "dst/<branch_name>"

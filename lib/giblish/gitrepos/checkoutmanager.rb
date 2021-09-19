@@ -1,4 +1,5 @@
 require "git"
+require_relative "gititf"
 
 module Giblish
   # acquires a handle to an existing git repo and provide the user
@@ -13,7 +14,7 @@ module Giblish
     # branch_regex:: the regex for the branches to include during iteration (default: none)
     # tag_regex:: the regex for the tags to include during iteration (default: none)
     def initialize(srcdir: , local_only: false, branch_regex: nil, tag_regex: nil)
-      repo_root = find_gitrepo_root(srcdir)
+      repo_root = GitItf::find_gitrepo_root(srcdir)
       raise ArgumentError("The path: #{srcdir} is not within a git repo!") if repo_root.nil?
 
       @local_only = local_only
@@ -40,36 +41,6 @@ module Giblish
       ensure
         Giblog.logger.info { "Checking out #{current_branch}" }
         @git_repo.checkout current_branch
-      end
-    end
-
-    # Get the log history of the supplied file as an array of
-    # hashes, each entry has keys:
-    # sha
-    # date
-    # author
-    # email
-    # parent
-    # message
-    def file_log(filename)
-      o, e, s = exec_cmd("log", %w[--follow --date=iso --], "'#{filename}'")
-      raise "Failed to get git log for #{filename}!!\n#{e}" if s.exitstatus != 0
-
-      process_log_output(o)
-    end
-
-    # Public: Find the root directory of the git repo in which the
-    #         given dirpath resides.
-    #
-    # dirpath - an absolute path to a directory that resides
-    #           within a git repo.
-    #
-    # Returns: the root direcotry of the git repo or nil if the input path
-    #          does not reside within a git repo.
-    def find_gitrepo_root(dirpath)
-      Pathname.new(dirpath).realpath.ascend do |p|
-        git_dir = p.join(".git")
-        return p if git_dir.directory?
       end
     end
 
@@ -124,63 +95,6 @@ module Giblish
       @git_repo.tags.select do |t|
         regexp.match t.name
       end
-    end
-
-    # Process the log output from git
-    # (This is copied to 90% from the ruby-git gem)
-    def process_log_output(output)
-      in_message = false
-      hsh_array = []
-      hsh = nil
-
-      output.each_line do |line|
-        line = line.chomp
-
-        if line[0].nil?
-          in_message = !in_message
-          next
-        end
-
-        if in_message
-          hsh["message"] << "#{line[4..]}\n"
-          next
-        end
-
-        key, *value = line.split
-        key = key.sub(":", "").downcase
-        value = value.join(" ")
-
-        case key
-        when "commit"
-          hsh_array << hsh if hsh
-          hsh = {"sha" => value, "message" => +"", "parent" => []}
-        when "parent"
-          hsh["parent"] << value
-        when "author"
-          tmp = value.split("<")
-          hsh["author"] = tmp[0].strip
-          hsh["email"] = tmp[1].sub(">", "").strip
-        when "date"
-          hsh["date"] = DateTime.parse(value)
-        else
-          hsh[key] = value
-        end
-      end
-      hsh_array << hsh if hsh
-      hsh_array
-    end
-
-    # Execute engine for git commands,
-    # Returns same as capture3 (stdout, stderr, Process.Status)
-    def exec_cmd(cmd, flags, args)
-      # always add the git dir to the cmd to ensure that git is executed
-      # within the expected repo
-      gd_flag = "--git-dir=\"#{@git_dir}\""
-      wt_flag = "--work-tree=\"#{@repo_root}\""
-      flag_str = flags.join(" ")
-      git_cmd = "git #{gd_flag} #{wt_flag} #{cmd} #{flag_str} #{args}"
-      Giblog.logger.debug { "running: #{git_cmd}" }
-      Open3.capture3(git_cmd.to_s)
     end
   end
 end

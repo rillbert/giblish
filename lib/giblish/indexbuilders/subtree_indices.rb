@@ -1,14 +1,8 @@
-# frozen_string_literal: true
 
-require "pathname"
-require "git"
-
-require_relative "../pathtree"
-require_relative "../gititf"
 require_relative "verbatimtree"
 
 module Giblish
-  class SubtreeIndexBase
+  class SubtreeIndexBase < SubtreeSrcItf
     attr_reader :adoc_source
 
     def initialize(dst_node)
@@ -99,23 +93,6 @@ module Giblish
       CONV_INFO
     end
 
-    def history_info(conv_info)
-      return "" unless defined?(conv_info.history) && !conv_info.history.empty?
-
-      str = +HISTORY_TABLE_HEADING
-
-      # Generate table rows of history information
-      conv_info.history.each do |h|
-        str << <<~HISTORY_ROW
-          |#{h.date.strftime("%Y-%m-%d")}
-          |#{h.author}
-          |#{h.message}
-  
-        HISTORY_ROW
-      end
-      str << "|===\n\n"
-    end
-
     def document_detail_fail(conv_info)
       <<~FAIL_INFO
         === #{conv_info.src_basename}
@@ -144,67 +121,60 @@ module Giblish
 
         #{display_source_file(conv_info)}
 
-        #{history_info(conv_info)}
-
         '''
 
       DETAIL_SRC
     end
   end
 
-  class IndexTreeBuilder
-    attr_accessor :da_provider
+  # Generates a directory index with history info for all files under the
+  # given subdir node.
+  class SubtreeIndexGit < SubtreeIndexBase
+    # The fixed heading of the table used to display file history
+    HISTORY_TABLE_HEADING = <<~HISTORY_HEADER
+      File history::
+  
+      [cols=\"2,3,8\",options=\"header\"]
+      |===
+      |Date |Author |Message |Sha1
+    HISTORY_HEADER
 
-    DEFAULT_BASENAME = "index"
+    HISTORY_TABLE_FOOTING = <<~HIST_FOOTER
+      
+      |===\n\n
+    HIST_FOOTER
 
-    def initialize(da_provider = nil, api_opt_provider = nil, basename = DEFAULT_BASENAME)
-      @da_provider = da_provider
-      @api_opt_provider = api_opt_provider
-      @basename = basename
-      @adoc_source = nil
+    def initialize(dst_node)
+      super(dst_node)
     end
 
-    def document_attributes(src_node, dst_node, dst_top)
-      @da_provider.nil? ? {} : @da_provider.document_attributes(src_node, dst_node, dst_top)
+    def document_detail_fail(conv_info)
+      super(conv_info) + <<~FAIL_INFO
+        Git stuff here
+      FAIL_INFO
     end
 
-    def api_options(src_node, dst_node, dst_top)
-      @api_opt_provider.nil? ? {} : @api_opt_provider.api_options(dst_top)
+    # Show some details about file content
+    def document_detail(conv_info)
+      s = super(conv_info)
+
+      s + <<~DETAIL_SRC
+
+        Git stuff here 
+      DETAIL_SRC
     end
 
-    def adoc_source(src_node, dst_node, dst_top)
-      @adoc_source
-    end
-
-    # Called from TreeConverter during post build phase
-    #
-    # adds a 'index' node for each directory in the source tree
-    # and convert that index using the options from the provider
-    # objects given at instantiation of this object
-    def on_postbuild(src_tree, dst_tree, converter)
-      dst_tree.traverse_preorder do |level, dst_node|
-        next if dst_node.leaf?
-
-        # get the relative path to the index dir from the top dir
-        index_dir = dst_node.pathname.relative_path_from(dst_tree.pathname).cleanpath
-        Giblog.logger.info { "Setting up index for #{index_dir}" }
-
-        # build the index source for all nodes below dst_node
-        @adoc_source = SubtreeIndexBase.new(dst_node).adoc_source
-
-        # add a virtual 'index.adoc' node as the only node in a source tree
-        # with this object as source for conversion options
-        # and adoc_source
-        v_path = Pathname.new("/virtual") / index_dir / "#{@basename}.adoc"
-        v_tree = PathTree.new(v_path, self)
-        src_node = v_tree.node(v_path, from_root: true)
-
-        # add the destination node where the converted file will be stored
-        i_node = dst_node.add_descendants(@basename)
-
-        # do the conversion
-        converter.convert(src_node, i_node, dst_tree)
-      end
+    def generate_history_info(d)
+      # Generate table rows of history information
+      rows = d.history.collect do |h|
+        str << <<~HISTORY_ROW
+          |#{h.date.strftime("%Y-%m-%d")}
+          |#{h.author}
+          |#{h.message}  
+          |#{h.sha1}
+        HISTORY_ROW
+      end.join("\n\n")
+      HISTORY_TABLE_HEADING + rows + HISTORY_TABLE_FOOTING
     end
   end
 end

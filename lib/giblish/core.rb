@@ -4,7 +4,7 @@ require_relative "pathutils"
 require_relative "docconverter"
 require_relative "docinfo"
 require_relative "search/headingindexer"
-require_relative "indexbuilders/buildindex"
+require_relative "subtreeinfobuilder"
 require_relative "buildgraph"
 
 module Giblish

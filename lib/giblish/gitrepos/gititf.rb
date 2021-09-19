@@ -1,5 +1,4 @@
 require "open3"
-require_relative "pathutils"
 
 module Giblish
   # A home-grown interface class to git. Used for situations when the
@@ -8,14 +7,30 @@ module Giblish
     attr_reader :repo_root, :git_dir
 
     def initialize(path)
-      @repo_root = Giblish::PathManager.find_gitrepo_root(path)
+      @repo_root = GitItf::find_gitrepo_root(path)
       raise ArgumentError("The path: @{path} is not within a git repo!") if @repo_root.nil?
 
       @git_dir = @repo_root / ".git"
     end
 
+    # Find the root directory of the git repo in which the
+    # given dirpath resides.
+    #
+    # dirpath:: an absolute path to a directory that resides
+    #           within a git repo.
+    #
+    # returns:: the root direcotry of the git repo or nil if the input path
+    #          does not reside within a git repo.
+    def self.find_gitrepo_root(dirpath)
+      Pathname.new(dirpath).realpath.ascend do |p|
+        git_dir = p.join(".git")
+        return p if git_dir.directory?
+      end
+    end
+
     # Get the log history of the supplied file as an array of
     # hashes, each entry has keys:
+    #
     # sha
     # date
     # author
