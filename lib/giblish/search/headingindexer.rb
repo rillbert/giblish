@@ -115,7 +115,7 @@ module Giblish
     def write_washed_doc(lines, dst_path)
       Giblog.logger.debug { "Copy searchable text to #{dst_path}" }
       dst_path.dirname.mkpath
-      File.write(dst_path.to_s, lines.join('\n'))
+      File.write(dst_path.to_s, lines.join("\n"))
     end
 
     # replace {a_doc_attr} with the value of the attribute

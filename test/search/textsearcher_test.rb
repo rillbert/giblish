@@ -166,8 +166,13 @@ module Giblish
         )
 
         results = searcher.search(sp)
-        raise "Complete this test!"
-        # pp results
+        expected_keys = [Pathname.new("file1.adoc"), Pathname.new("subdir/file2.adoc")]
+
+        # at least check that the number of matches is consistent with
+        # the content of the test docs
+        assert_equal(expected_keys, results.keys)
+        assert_equal(4, results[expected_keys[0]][:sections].count)
+        assert_equal(2, results[expected_keys[1]][:sections].count)
       end
     end
 

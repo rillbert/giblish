@@ -10,7 +10,7 @@ module Giblish
 
     def initialize(filepath)
       @src_lines = []
-      File.readlines(filepath.to_s).each do |line|
+      File.readlines(filepath.to_s, chomp: true).each do |line|
         @src_lines << wash_line(line)
       end
     end
@@ -254,12 +254,14 @@ module Giblish
       repo.src_tree.traverse_preorder do |level, node|
         next unless node.leaf?
 
+        relative_path = node.relative_path_from(repo.src_tree)
         line_no = 0
+        # pp node.data
+        # puts "src_lines: #{node.data.src_lines}"
         node.data.src_lines.each do |line|
           line_no += 1
           next if line.empty? || !r.match?(line)
 
-          relative_path = node.relative_path_from(repo.src_tree)
           result[relative_path] << {
             line_no: line_no,
             # replace match with an embedded rule that can
