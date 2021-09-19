@@ -30,7 +30,7 @@ module Giblish
     end
 
     def test_build_docid_cache
-      TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         srcdir = Pathname.new(tmp_docs.dir) / "src"
         dstdir = Pathname.new(tmp_docs.dir) / "dst"
 

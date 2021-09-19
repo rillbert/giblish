@@ -120,8 +120,8 @@ module Giblish
   #      nil
   #   end
   # end
-  def process_header_lines(lines)
-    return unless block_given?
+  def process_header_lines(lines, &block)
+    return unless block
 
     state = "before_header"
     lines.each do |line|
@@ -147,11 +147,11 @@ module Giblish
   #      nil
   #   end
   # end
-  def process_header_lines_from_file(path)
-    return unless block_given?
+  def process_header_lines_from_file(path, &block)
+    return unless block
 
     lines = File.readlines(path)
-    process_header_lines(lines)
+    process_header_lines(lines, &block)
   end
   module_function :process_header_lines_from_file
 

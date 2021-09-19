@@ -366,32 +366,15 @@ module Giblish
 
         # repo_tree = PathTree.build_from_fs(repo_top, prune:  true)
         # puts repo_tree.to_s
-        EntryPoint.run(%W[-f html -g .* #{src_top} #{dst_top}])
+        EntryPoint.run(%W[-f html -c -g .* #{src_top} #{dst_top}])
 
         dsttree = PathTree.build_from_fs(dst_top, prune: true)
-        # puts dsttree.to_s
         assert(dsttree.leave_pathnames.count > 0)
 
-        raise "Not completed yet..."
-        # check that there are three generated docs and two index files
-        # doc_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
-        # assert_equal(3, doc_tree.leave_pathnames.count)
-        # index_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.basename.to_s == "index.html" }
-        # assert_equal(2, index_tree.leave_pathnames.count)
-
-        # check that the titles are correct in the generated files
-        # expected_titles = TEST_DOCS.collect { |h| h[:title].dup }
-        # tmp_docs.get_html_dom(doc_tree) do |node, dom|
-        #   next if !node.leaf? || /index.html$/ =~ node.pathname.to_s
-
-        #   nof_headers = 0
-        #   dom.xpath("//h1").each do |title|
-        #     nof_headers += 1
-        #     assert(expected_titles.reject! { |t| t == title.text })
-        #   end
-        #   assert_equal(1, nof_headers)
-        # end
-        # assert(expected_titles.empty?)
+        expected_branches = %w[product_1 product_2]
+        dsttree.children.each do |c|
+          assert(expected_branches.any? { |b| b == c.segment })
+        end
       end
     end
   end
