@@ -100,6 +100,9 @@ module Giblish
         @build_options[:adoc_extensions][type] << instance
       end
 
+      # TODO: Remove this after testing
+      @build_options[:adoc_extensions][:docinfo_processor] << AddSearchForm
+
       # override doc attributes with ones from the supplied configuration to
       # ensure they have highest pref
       doc_attr.add_doc_attr_providers(CmdLineDocAttribs.new(config_opts))
@@ -120,18 +123,6 @@ module Giblish
     end
 
     private
-
-    def default_content(config_opts, build_options, doc_attr)
-      # TODO: maybe rename 'no_index'
-      return if config_opts.no_index
-
-      if config_opts.tag_regex || config_opts.branch_regex
-        # setup index generation
-        idx = SubtreeInfoBuilder.new(doc_attr, nil, nil, config_opts.index_basename)
-        @build_options[:post_builders] << idx
-
-      end
-    end
 
     def setup_index_generation(config_opts, build_options, doc_attr)
       return if config_opts.no_index

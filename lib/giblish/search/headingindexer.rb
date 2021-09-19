@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "erb"
 require "json"
 require "pathname"
 require "asciidoctor"
@@ -124,7 +125,7 @@ module Giblish
       m_arr = line.scan(/\{\w+\}/)
       # replace each found occurence with its doc attr if exists
       m_arr.inject(line) do |memo, match|
-        memo.gsub(match.to_s, attrs[match[1..-2]])
+        attrs.key?(match[1..-2]) ? memo.gsub(match.to_s, attrs[match[1..-2]]) : memo
       end
     end
 
@@ -236,6 +237,45 @@ module Giblish
       File.open(heading_db_path.to_s, "w") do |f|
         f.write(@heading_index.to_json)
       end
+    end
+  end
+
+  class AddSearchForm < Asciidoctor::Extensions::DocinfoProcessor
+    use_dsl
+    at_location :header
+
+    FORM_DATA = <<~FORM_HTML
+      <script type="text/javascript">
+      window.onload = function () {
+        document.getElementById("calingurl_input").value = window.location.href;
+      };
+      </script>
+
+      <form class="gibsearch" action="<%=action_path%>">
+        <input type="search" name="searchphrase" />
+        <input type="checkbox" name="usecase" />
+        <input type="checkbox" name="useregexp" />
+
+        <input type="hidden" name="calling-url" id=calingurl_input />
+        <input type="hidden" name="search-asset-top-rel" value="<%=sa_top_rel%>"/>
+        <input type="hidden" name="css-path" value="<%=css_path%>"/>
+
+        <button type="submit">Search</button>
+      </form>
+    FORM_HTML
+
+    def process(document)
+      attrs = document.attributes
+      src_node = attrs["giblish-info"][:src_node]
+      dst_node = attrs["giblish-info"][:dst_node]
+      dst_top = attrs["giblish-info"][:dst_top]
+
+      to_top_rel = dst_top.relative_path_from(dst_node.parent)
+      sa_top_rel = to_top_rel.join("gibsearch_assets").cleanpath
+      css_path = ""
+      action_path = to_top_rel.join("gibsearch.cgi").cleanpath
+
+      ERB.new(FORM_DATA).result(binding)
     end
   end
 end
