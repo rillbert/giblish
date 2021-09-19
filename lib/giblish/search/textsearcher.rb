@@ -159,7 +159,7 @@ module Giblish
   # Provides access to all search related info for one tree
   # of adoc src docs.
   class SearchDataRepo
-    attr_reader :search_db, :src_tree
+    attr_reader :search_db, :src_tree, :db_mod_time
 
     SEARCH_DB_BASENAME = "heading_db.json"
 
@@ -183,13 +183,15 @@ module Giblish
       @search_db[:fileinfos].find { |info| info[:filepath] == filepath.to_s }
     end
 
+    def is_stale
+      @db_mod_time != File.stat(db_filepath.to_s).mtime
+    end
+
     private
 
     def build_src_tree
       # setup the tree of source files and pro-actively read in all text
       # into memory
-      # TODO: Add a mechanism that triggers re-read when the file time-stamp
-      # has changed
       src_tree = PathTree.build_from_fs(@assets_fs_path, prune: false) do |p|
         p.extname.downcase == ".adoc"
       end
@@ -201,9 +203,14 @@ module Giblish
       src_tree
     end
 
+    def db_filepath
+      @assets_fs_path.join(SEARCH_DB_BASENAME)
+    end
+
     def read_search_db
       # read the heading_db from file
-      json = File.read(@assets_fs_path.join(SEARCH_DB_BASENAME).to_s)
+      @db_mod_time = File.stat(db_filepath.to_s).mtime
+      json = File.read(db_filepath.to_s)
       JSON.parse(json, symbolize_names: true)
     end
   end
@@ -215,12 +222,20 @@ module Giblish
       @repos = {}
     end
 
+    # search_parameters:: a SearchParameters instance
+    #
     # returns:: the SearchDataRepo corresponding to the given search parameters
     def repo(search_parameters)
       ap = search_parameters.assets_fs_path
-      @repos[ap] ||= {repo: SearchDataRepo.new(ap), db_mod_time: nil}
-      # TODO: Add time mod check here for reload of repo
-      @repos[ap][:repo]
+
+      # check if we shall read a new repo from disk
+      if !@repos.key?(ap) || @repos[ap].is_stale
+        puts "read from disk for ap: #{ap}.."
+        puts "is stale" if @repos.key?(ap) && @repos[ap].is_stale
+        @repos[ap] = SearchDataRepo.new(ap)
+      end
+
+      @repos[ap]
     end
   end
 

@@ -20,7 +20,7 @@ module Giblish
     def with_search_testdata
       TmpDocDir.open do |tmpdocdir|
         dstdir = Pathname.new(tmpdocdir.dir) / "dst"
-        puts `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`
+        `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`
         assert_equal 0, $?.exitstatus
 
         dst_tree = PathTree.build_from_fs(dstdir, prune: false)
@@ -177,9 +177,40 @@ module Giblish
     end
 
     def test_repo_caching
-      # TODO: Add re-reading of the repo from disc when a file time stamp
-      # changes.
-      raise NotImplementedError
+      TmpDocDir.open do |tmpdocdir|
+        dstdir = Pathname.new(tmpdocdir.dir) / "dst"
+        `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`
+        assert_equal 0, $?.exitstatus
+
+        dst_tree = PathTree.build_from_fs(dstdir, prune: false)
+
+        rc = SearchRepoCache.new
+        searcher = TextSearcher.new(rc)
+
+        # fake minimal search request from file1 deployed to /my/docs/repo1
+        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&searchphrase=text"
+        sp = SearchParameters.new(
+          calling_uri: uri,
+          uri_mappings: {"/" => dst_tree.pathname}
+        )
+
+        # check that two consecutive searches returns the same repo
+        searcher.search(sp)
+        id1 = rc.repo(sp).object_id
+        searcher.search(sp)
+        assert_equal(id1, rc.repo(sp).object_id)
+
+        # sleep as long as the mtime granularity and then recreate all
+        # search data files
+        sleep(1)
+        `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`
+        assert_equal 0, $?.exitstatus
+
+        # check that the repo is now different from above since
+        # it has been reread from the file system
+        searcher.search(sp)
+        assert(id1 != rc.repo(sp).object_id)
+      end
     end
   end
 end
