@@ -372,6 +372,7 @@ module Giblish
         # puts dsttree.to_s
         assert(dsttree.leave_pathnames.count > 0)
 
+        raise "Not completed yet..."
         # check that there are three generated docs and two index files
         # doc_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         # assert_equal(3, doc_tree.leave_pathnames.count)

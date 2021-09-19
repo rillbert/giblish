@@ -5,6 +5,17 @@ require "pathname"
 require_relative "pathutils"
 
 module Giblish
+  class FileHistory
+    # History info from git
+    LogEntry = Struct.new(:date, :author, :message, :sha1)
+
+    attr_accessor :history
+
+    def initialize
+      @entries = []
+    end
+  end
+
   # Base class for bundling together data we always cache for
   # each asciidoc file we come across.
   #
@@ -15,22 +26,6 @@ module Giblish
     # The relative Pathname from the root dir to the src doc
     # Ex Pathname("my/subdir/file1.adoc")
     attr_reader :src_rel_path
-
-    # History info from git
-    # DocHistory = Struct.new(:date, :author, :message)
-
-    # these members can have encoding issues when
-    # running in a mixed Windows/Linux setting.
-    # that is why we explicitly encode them when
-    # writing to them
-
-    # def title=(rhs)
-    #   @title = rhs.nil? ? nil : rhs.encode("utf-8")
-    # end
-
-    # def src_file=(rhs)
-    #   @src_file = rhs.nil? ? nil : rhs.encode("utf-8")
-    # end
 
     def initialize(converted:, src_node:, dst_node:, dst_top:)
       @converted = converted

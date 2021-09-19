@@ -120,6 +120,18 @@ module Giblish
 
     private
 
+    def default_content(config_opts, build_options, doc_attr)
+      # TODO: maybe rename 'no_index'
+      return if config_opts.no_index
+
+      if config_opts.tag_regex || config_opts.branch_regex
+        # setup index generation
+        idx = IndexTreeBuilder.new(doc_attr, nil, config_opts.index_basename)
+        @build_options[:post_builders] << idx
+
+      end
+    end
+
     def setup_index_generation(config_opts, build_options, doc_attr)
       return if config_opts.no_index
 
