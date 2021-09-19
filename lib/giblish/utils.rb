@@ -122,7 +122,7 @@ module Giblish
   # end
   def process_header_lines(lines)
     return unless block_given?
-    
+
     state = "before_header"
     lines.each do |line|
       case state

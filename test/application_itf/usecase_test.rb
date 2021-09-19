@@ -368,7 +368,7 @@ module Giblish
         # puts repo_tree.to_s
         EntryPoint.run(%W[-f html -g .* #{src_top} #{dst_top}])
 
-        dsttree = PathTree.build_from_fs(dst_top, prune:  true)
+        dsttree = PathTree.build_from_fs(dst_top, prune: true)
         # puts dsttree.to_s
         assert(dsttree.leave_pathnames.count > 0)
 

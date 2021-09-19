@@ -153,7 +153,7 @@ module Giblish
           tc = TreeConverter.new(st, branch_dst,
             {
               post_builders: [
-                AddHistoryPostBuilder.new(repo), 
+                AddHistoryPostBuilder.new(repo),
                 SubtreeInfoBuilder.new(
                   nil,
                   nil,

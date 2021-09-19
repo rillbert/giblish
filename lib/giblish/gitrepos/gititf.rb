@@ -8,7 +8,7 @@ module Giblish
     attr_reader :repo_root, :git_dir
 
     def initialize(path)
-      @repo_root = GitItf::find_gitrepo_root(path)
+      @repo_root = GitItf.find_gitrepo_root(path)
       raise ArgumentError("The path: @{path} is not within a git repo!") if @repo_root.nil?
 
       @git_dir = @repo_root / ".git"

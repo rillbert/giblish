@@ -76,7 +76,7 @@ module Giblish
         # post builder for indices
         css_path = "web_assets/hejsan/hopp.css"
         tc = TreeConverter.new(src_tree, dstdir, {
-          post_builders: SubtreeInfoBuilder.new(RelativeCssDocAttr.new(css_path),nil, SubtreeIndexBase, "index")
+          post_builders: SubtreeInfoBuilder.new(RelativeCssDocAttr.new(css_path), nil, SubtreeIndexBase, "index")
         })
         tc.run
 
@@ -127,7 +127,7 @@ module Giblish
             adoc_api_opts: {
               backend: "pdf"
             },
-            
+
             post_builders: SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
           })
         tc.run

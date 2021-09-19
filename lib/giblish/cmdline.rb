@@ -30,7 +30,7 @@ module Giblish
         @style_name = nil
         @web_path = nil
         @branch_regex, @tag_regex = nil, nil
-        @local_only = false,
+        @local_only = false
         @doc_attributes = {}
         @resolve_docid = false
         @make_searchable = false
@@ -188,7 +188,7 @@ module Giblish
           "this is what you shall set the path to.") do |p|
           @search_assets_deploy = Pathname.new(p)
         end
-        parser.on("-l","--log-level LEVEL", LOG_LEVELS,
+        parser.on("-l", "--log-level LEVEL", LOG_LEVELS,
           "set the log level explicitly. Must be one of",
           LOG_LEVELS.keys.join(",").to_s, "(default 'info')") do |level|
           @log_level = level

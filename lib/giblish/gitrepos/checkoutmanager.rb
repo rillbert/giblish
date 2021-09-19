@@ -13,8 +13,8 @@ module Giblish
     # upstream changes
     # branch_regex:: the regex for the branches to include during iteration (default: none)
     # tag_regex:: the regex for the tags to include during iteration (default: none)
-    def initialize(srcdir: , local_only: false, branch_regex: nil, tag_regex: nil)
-      repo_root = GitItf::find_gitrepo_root(srcdir)
+    def initialize(srcdir:, local_only: false, branch_regex: nil, tag_regex: nil)
+      repo_root = GitItf.find_gitrepo_root(srcdir)
       raise ArgumentError("The path: #{srcdir} is not within a git repo!") if repo_root.nil?
 
       @local_only = local_only
@@ -85,7 +85,7 @@ module Giblish
         # match branches but remove eventual HEAD -> ... entry
         regexp.match b.name unless /^HEAD/.match?(b.name)
       end
-      Giblog.logger.debug { "selected git branches: #{user_checkouts.collect{|b| b.name}.join(", ")}" }
+      Giblog.logger.debug { "selected git branches: #{user_checkouts.collect { |b| b.name }.join(", ")}" }
       user_checkouts
     end
 

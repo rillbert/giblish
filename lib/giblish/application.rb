@@ -160,7 +160,7 @@ module Giblish
     # does not return, exits with status code
     def self.run_from_cmd_line
       begin
-        EntryPoint::run(ARGV)
+        EntryPoint.run(ARGV)
         Giblog.logger.info { "Giblish is done!" }
         exit_code = 0
       rescue => exc

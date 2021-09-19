@@ -210,7 +210,7 @@ module Giblish
 
     # copies .../data/resources/* to dst_dir/.
     def copy_test_resources(dst_dir)
-      r_top = (Pathname.new(__FILE__).join("../../data/resources")).cleanpath
+      r_top = Pathname.new(__FILE__).join("../../data/resources").cleanpath
       d = Pathname.new(dst_dir)
       d.mkpath
       FileUtils.cp_r(
@@ -257,6 +257,5 @@ module Giblish
       # return repo instance
       g
     end
-
   end
 end

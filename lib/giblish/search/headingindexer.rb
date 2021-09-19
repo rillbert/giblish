@@ -90,7 +90,7 @@ module Giblish
     private
 
     # get the relative path from the src_topdirdir to the source node
-    # 
+    #
     # returns:: a Pathname with the relative path
     def rel_src_path(src_node)
       src_node.pathname.relative_path_from(@src_topdir)
