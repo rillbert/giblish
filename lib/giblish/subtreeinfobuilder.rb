@@ -4,7 +4,7 @@ require_relative "pathtree"
 module Giblish
   class SubtreeSrcItf
     attr_reader :adoc_source
-    def initialize(dst_node)
+    def initialize(dst_node, output_basename)
       raise NotImplementedError
     end
   end
@@ -53,7 +53,7 @@ module Giblish
 
         # get the adoc source from the provider (Class or instance)
         @adoc_source = if @adoc_src_provider.is_a?(Class)
-          @adoc_src_provider.new(dst_node).adoc_source
+          @adoc_src_provider.new(dst_node, @basename).adoc_source
         else
           @adoc_src_provider.adoc_source
         end

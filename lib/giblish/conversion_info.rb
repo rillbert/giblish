@@ -9,9 +9,10 @@ module Giblish
     # History info from git
     LogEntry = Struct.new(:date, :author, :message, :sha1)
 
-    attr_accessor :history
+    attr_accessor :history, :branch
 
-    def initialize
+    def initialize(branch)
+      @branch = branch
       @history = []
     end
   end

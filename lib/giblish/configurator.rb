@@ -1,11 +1,12 @@
 require_relative "config_utils"
 require_relative "resourcepaths"
-require_relative "docid/docid"
-require_relative "search/headingindexer"
-require_relative "subtreeinfobuilder"
-require_relative "indexbuilders/depgraphviz"
 require_relative "docattr_providers"
 require_relative "adocsrc_providers"
+require_relative "subtreeinfobuilder"
+require_relative "docid/docid"
+require_relative "search/headingindexer"
+require_relative "indexbuilders/depgraphviz"
+require_relative "indexbuilders/subtree_indices"
 
 module Giblish
   class HtmlLayoutConfig
@@ -136,7 +137,7 @@ module Giblish
       return if config_opts.no_index
 
       # setup index generation
-      idx = SubtreeInfoBuilder.new(doc_attr, nil, nil, config_opts.index_basename)
+      idx = SubtreeInfoBuilder.new(doc_attr, nil, SubtreeIndexBase, config_opts.index_basename)
       @build_options[:post_builders] << idx
     end
 

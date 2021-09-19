@@ -1,11 +1,11 @@
-
 require_relative "verbatimtree"
 
 module Giblish
   class SubtreeIndexBase < SubtreeSrcItf
     attr_reader :adoc_source
 
-    def initialize(dst_node)
+    def initialize(dst_node, output_basename)
+      @output_basename = output_basename
       @adoc_source = <<~DOC_STR
         #{title}
         #{subtitle(dst_node)}
@@ -40,7 +40,7 @@ module Giblish
     end
 
     def tree(dst_node)
-      VerbatimTree.new(dst_node).source
+      VerbatimTree.new(dst_node, {dir_index_base_name: @output_basename}).source
     end
 
     def add_depgraph_id
@@ -68,22 +68,20 @@ module Giblish
     end
 
     # return the adoc string for displaying the source file
-    def display_source_file(conv_info)
+    def display_source_file(node_data)
       <<~SRC_FILE_TXT
         Source file::
-        #{conv_info.src_node.pathname}
+        #{node_data.src_node.pathname}
       SRC_FILE_TXT
     end
 
-    private
-
     # return info about any conversion issues during the
     # asciidoctor conversion
-    def conversion_issues(conv_info)
-      return "" if conv_info.stderr.empty?
+    def conversion_issues(node_data)
+      return "" if node_data.stderr.empty?
 
       # extract conversion warnings from asciddoctor std err
-      conv_warnings = conv_info.stderr.gsub(/^/, " * ")
+      conv_warnings = node_data.stderr.gsub(/^/, " * ")
 
       # assemble info to index page
       <<~CONV_INFO
@@ -93,14 +91,14 @@ module Giblish
       CONV_INFO
     end
 
-    def document_detail_fail(conv_info)
+    def document_detail_fail(node_data)
       <<~FAIL_INFO
-        === #{conv_info.src_basename}
+        === #{node_data.src_basename}
 
-        #{display_source_file(conv_info)}
+        #{display_source_file(node_data)}
 
         Error detail::
-        #{conv_info.error_msg}
+        #{node_data.error_msg}
 
         ''''
 
@@ -108,18 +106,18 @@ module Giblish
     end
 
     # Show some details about file content
-    def document_detail(conv_info)
+    def document_detail(node_data)
       <<~DETAIL_SRC
-        [[#{Giblish.to_valid_id(conv_info.title.encode("utf-8"))}]]
-        === #{conv_info.title.encode("utf-8")}
+        [[#{Giblish.to_valid_id(node_data.title.encode("utf-8"))}]]
+        === #{node_data.title.encode("utf-8")}
 
-        #{"Doc id::\n_#{conv_info.docid}_" unless conv_info.docid.nil?}
+        #{"Doc id::\n_#{node_data.docid}_" unless node_data.docid.nil?}
 
-        #{"Purpose::\n#{conv_info.purpose_str}" unless conv_info.purpose_str.to_s.empty?}
+        #{"Purpose::\n#{node_data.purpose_str}" unless node_data.purpose_str.to_s.empty?}
 
-        #{conversion_issues conv_info}
+        #{conversion_issues node_data}
 
-        #{display_source_file(conv_info)}
+        #{display_source_file(node_data)}
 
         '''
 
@@ -134,7 +132,7 @@ module Giblish
     HISTORY_TABLE_HEADING = <<~HISTORY_HEADER
       File history::
   
-      [cols=\"2,3,8\",options=\"header\"]
+      [cols=\"2,3,8,3\",options=\"header\"]
       |===
       |Date |Author |Message |Sha1
     HISTORY_HEADER
@@ -144,34 +142,28 @@ module Giblish
       |===\n\n
     HIST_FOOTER
 
-    def initialize(dst_node)
-      super(dst_node)
+    def subtitle(dst_node)
+      "from #{dst_node.data.branch}"
     end
 
-    def document_detail_fail(conv_info)
-      super(conv_info) + <<~FAIL_INFO
-        Git stuff here
-      FAIL_INFO
+    def document_detail_fail(node_data)
+      super(node_data) + generate_history_info(node_data)
     end
 
-    # Show some details about file content
-    def document_detail(conv_info)
-      s = super(conv_info)
-
-      s + <<~DETAIL_SRC
-
-        Git stuff here 
-      DETAIL_SRC
+    def document_detail(node_data)
+      super(node_data) + generate_history_info(node_data)
     end
 
-    def generate_history_info(d)
+    def generate_history_info(node_data)
+      return "Could not find history information" unless node_data.respond_to?(:history)
+
       # Generate table rows of history information
-      rows = d.history.collect do |h|
-        str << <<~HISTORY_ROW
+      rows = node_data.history.collect do |h|
+        <<~HISTORY_ROW
           |#{h.date.strftime("%Y-%m-%d")}
           |#{h.author}
           |#{h.message}  
-          |#{h.sha1}
+          |#{h.sha1[0..7]} ... 
         HISTORY_ROW
       end.join("\n\n")
       HISTORY_TABLE_HEADING + rows + HISTORY_TABLE_FOOTING

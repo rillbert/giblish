@@ -148,10 +148,6 @@ module Giblish
           # create a new top_dir for each branch/tag
           branch_dst = dst_root / name.sub("/", "_")
 
-          # setup a post-builder to build index pages in each dir using a relative
-          # css path
-          css_path = "web_assets/hejsan/hopp.css"
-
           # setup a tree converter with postbuilders for getting git history
           # and showing that in index
           tc = TreeConverter.new(st, branch_dst,
@@ -159,7 +155,7 @@ module Giblish
               post_builders: [
                 AddHistoryPostBuilder.new(repo), 
                 SubtreeInfoBuilder.new(
-                  RelativeCssDocAttr.new(dst_root / css_path),
+                  nil,
                   nil,
                   SubtreeIndexGit,
                   "myindex"

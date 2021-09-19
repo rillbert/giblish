@@ -1,4 +1,5 @@
 require "open3"
+require "git"
 
 module Giblish
   # A home-grown interface class to git. Used for situations when the
@@ -42,6 +43,14 @@ module Giblish
       raise "Failed to get git log for #{filename}!!\n#{e}" if s.exitstatus != 0
 
       process_log_output(o)
+    end
+
+    def current_branch
+      # git rev-parse --abbrev-ref HEAD
+      o, e, s = exec_cmd("rev-parse", %w[--abbrev-ref HEAD], "")
+      raise "Failed to get git log for #{filename}!!\n#{e}" if s.exitstatus != 0
+
+      o.strip
     end
 
     private

@@ -2,6 +2,7 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/treeconverter"
 require_relative "../../lib/giblish/pathtree"
 require_relative "../../lib/giblish/subtreeinfobuilder"
+require_relative "../../lib/giblish/indexbuilders/subtree_indices"
 
 module Giblish
   class BasicIndexTest < Minitest::Test
@@ -44,7 +45,7 @@ module Giblish
         # Convert all adoc files in the src tree to html and use a
         # 'post builder' to generate adoc source for index pages for each
         # directory.
-        index_builder = SubtreeInfoBuilder.new
+        index_builder = SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
         tc = TreeConverter.new(src_tree, dstdir, {post_builders: index_builder})
         tc.run
 
@@ -75,7 +76,7 @@ module Giblish
         # post builder for indices
         css_path = "web_assets/hejsan/hopp.css"
         tc = TreeConverter.new(src_tree, dstdir, {
-          post_builders: SubtreeInfoBuilder.new(RelativeCssDocAttr.new(css_path))
+          post_builders: SubtreeInfoBuilder.new(RelativeCssDocAttr.new(css_path),nil, SubtreeIndexBase, "index")
         })
         tc.run
 
@@ -126,7 +127,8 @@ module Giblish
             adoc_api_opts: {
               backend: "pdf"
             },
-            post_builders: SubtreeInfoBuilder.new
+            
+            post_builders: SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
           })
         tc.run
 
