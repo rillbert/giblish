@@ -47,7 +47,7 @@ module Giblish
     end
 
     def test_uri_mapping
-      uri = "http://www.example.com/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&searchphrase=hejsan"
+      uri = "http://www.example.com/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan"
 
       # use one mapping
       mapping = {"/my/docs" => Pathname.new(__FILE__).dirname}
@@ -82,7 +82,7 @@ module Giblish
       mapping = {"/my/docs" => Pathname.new(__FILE__).dirname}
 
       # use give the bare minima
-      uri = "http://www.example.com/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&searchphrase=hejsan"
+      uri = "http://www.example.com/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan"
       sp = SearchParameters.new(calling_uri: uri, uri_mappings: mapping)
 
       assert_equal("/my/docs/repo1/gibsearch_assets", sp.assets_uri_path.to_s)
@@ -90,13 +90,13 @@ module Giblish
       assert_equal("#{__dir__}/repo1/gibsearch_assets", sp.assets_fs_path.to_s)
       assert_equal("../gibsearch_assets", sp.assets_top_rel.to_s)
       assert_equal("subdir1/file_1.html", sp.repo_file_path.to_s)
-      assert_equal("hejsan", sp.searchphrase)
+      assert_equal("hejsan", sp.search_phrase)
       assert_nil(sp.css_path)
       assert_equal(false, sp.as_regexp?)
       assert_equal(false, sp.consider_case?)
 
       # use give all values
-      uri = "http://www.example.com/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&searchphrase=hejsan&css-path=/my/style/sheet.css&consider-case&as-regexp=true"
+      uri = "http://www.example.com/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan&css-path=/my/style/sheet.css&consider-case&as-regexp=true"
       sp = SearchParameters.new(calling_uri: uri, uri_mappings: mapping)
 
       assert_equal("/my/docs/repo1/gibsearch_assets", sp.assets_uri_path.to_s)
@@ -104,7 +104,7 @@ module Giblish
       assert_equal("#{__dir__}/repo1/gibsearch_assets", sp.assets_fs_path.to_s)
       assert_equal("../gibsearch_assets", sp.assets_top_rel.to_s)
       assert_equal("subdir1/file_1.html", sp.repo_file_path.to_s)
-      assert_equal("hejsan", sp.searchphrase)
+      assert_equal("hejsan", sp.search_phrase)
       assert_equal("/my/style/sheet.css", sp.css_path.to_s)
       assert_equal(true, sp.as_regexp?)
       assert_equal(true, sp.consider_case?)
@@ -115,7 +115,7 @@ module Giblish
       mapping = {"/my/docs" => Pathname.new(__FILE__).dirname}
 
       # use give the bare minima
-      uri = "http://www.example.com:8000/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&searchphrase=hejsan"
+      uri = "http://www.example.com:8000/my/docs/repo1/subdir1/file_1.html?search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan"
       sp = SearchParameters.new(calling_uri: uri, uri_mappings: mapping)
 
       assert_equal(
@@ -132,7 +132,7 @@ module Giblish
     def test_search_data_repo
       with_search_testdata do |dsttree|
         # fake minimal search request from file1 deployed to /my/docs/repo1
-        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&searchphrase=hejsan"
+        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&search-phrase=hejsan"
         sp = SearchParameters.new(
           calling_uri: uri,
           uri_mappings: {"/" => dsttree.pathname}
@@ -159,7 +159,7 @@ module Giblish
         searcher = TextSearcher.new(SearchRepoCache.new)
 
         # fake minimal search request from file1 deployed to /my/docs/repo1
-        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&searchphrase=text"
+        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&search-phrase=text"
         sp = SearchParameters.new(
           calling_uri: uri,
           uri_mappings: {"/" => dsttree.pathname}
@@ -188,7 +188,7 @@ module Giblish
         searcher = TextSearcher.new(rc)
 
         # fake minimal search request from file1 deployed to /my/docs/repo1
-        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&searchphrase=text"
+        uri = "http://www.example.com/file_1.html?search-assets-top-rel=./gibsearch_assets&search-phrase=text"
         sp = SearchParameters.new(
           calling_uri: uri,
           uri_mappings: {"/" => dst_tree.pathname}

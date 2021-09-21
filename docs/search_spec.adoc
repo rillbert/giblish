@@ -55,21 +55,24 @@ The search service expects a number of parameters as part of the search query, s
 
 .URI parameters
 [[uri_params]]
+[cols="2,2,5,3"]
 |===
-|name |status |comment 
+|name |status |comment |example
 
 |calling-url
 |required
-|the complete URL to the file from which the search request originated
-
+|the URL to the file from which the search request originated
+|www.example.com/my/doc/site/subdir/file_1.html
 
 |search-assets-top-rel
 |required
-|the relative path to the `gibsearch_assets` dir from the originating file's directory.
+|the relative path from the originating file's directory to the top dir of the search assets. The default implementation in giblish uses the name `gibsearch_assets` for this directory.
+|../../gibsearch_assets
 
-|searchphrase
+|search-phrase
 |required
 |a string with the phrase to search for
+|meaning of life
 
 |css-path
 |optional
@@ -84,6 +87,9 @@ the relative path to the css file from the originating file's directory.
 not set::
 the styling is left to the search implementation.
 
+a| * *absolute* - /var/www/html/my/site/style.css
+* *relative* - ../../web_assets/css/style.css
+
 |consider-case
 |optional
 a|
@@ -93,6 +99,8 @@ search case sensitive
 not set::
 ignore case during search
 
+|true
+
 |as-regexp
 |optional
 a|
@@ -101,6 +109,7 @@ treat the search phrase as a regexp
 
 not set::
 treat the search phrase as a string
+|true
 
 |===
 
@@ -142,7 +151,7 @@ The other required parameters must come from the generated document itself.
   </script>
 
   <form class="gibsearch" action="gibsearch.html">
-    <input type="search" name="searchphrase" />
+    <input type="search" name="search-phrase" />
     <input type="checkbox" name="usecase" />
     <input type="checkbox" name="useregexp" />
 

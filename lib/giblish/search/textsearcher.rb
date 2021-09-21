@@ -39,8 +39,8 @@ module Giblish
     #             file system. Ex {"/my/doc" => "/var/www/html/doc/repos"}. The default
     #             is { "/" => "/var/www/html" }
     #
-    # ex URI = www.example.com/my/doc/repo/subdir/file1.html?search-assets-top-rel=../my/docs&searchphrase=hejsan
-    def initialize(calling_uri:, uri_mappings: {"/" => "/var/www/html"})
+    # ex URI = www.example.com/my/doc/repo/subdir/file1.html?search-assets-top-rel=../my/docs&search-phrase=hejsan
+    def initialize(calling_uri:, uri_mappings: {"/" => "/var/www/html/"})
       @uri = URI(calling_uri)
 
       # convert keys and values to Pathnames
@@ -79,8 +79,8 @@ module Giblish
       Pathname.new(uri.path).relative_path_from(uri_path_repo_top)
     end
 
-    def searchphrase
-      parameters["searchphrase"]
+    def search_phrase
+      parameters["search-phrase"]
     end
 
     def css_path
@@ -144,7 +144,7 @@ module Giblish
       raise ArgumentError, "Asset top must be relative, found '#{assets_top_rel}'" if assets_top_rel.absolute?
 
       # search phrase
-      raise ArgumentError, "No search phrase found!" if searchphrase.nil?
+      raise ArgumentError, "No search phrase found!" if search_phrase.nil?
 
       # uri_mapping
       @uri_mappings.each do |k, v|
@@ -263,7 +263,7 @@ module Giblish
     def grep_tree(repo, params)
       # TODO: Add ignore case and use regex options
       result = Hash.new { |h, k| h[k] = [] }
-      r = Regexp.new(params.searchphrase)
+      r = Regexp.new(params.search_phrase)
 
       # find all matching lines in the src tree
       repo.src_tree.traverse_preorder do |level, node|

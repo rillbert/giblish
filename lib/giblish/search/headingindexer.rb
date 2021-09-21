@@ -252,7 +252,7 @@ module Giblish
       </script>
 
       <form class="gibsearch" action="<%=action_path%>">
-        <input type="search" name="searchphrase" />
+        <input type="search" name="search-phrase" />
         <input type="checkbox" name="usecase" />
         <input type="checkbox" name="useregexp" />
 
