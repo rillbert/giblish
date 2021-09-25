@@ -32,34 +32,28 @@ module Giblish
     attr_reader :parameters
     attr_reader :uri
 
-    # Search input:
-    #
-    # calling_uri:: the full URI of the originating search request
-    # uri_mappings:: mappings between uri.path prefix and an absolute path in the local
-    #             file system. Ex {"/my/doc" => "/var/www/html/doc/repos"}. The default
-    #             is { "/" => "/var/www/html" }
-    #
-    # ex URI = www.example.com/my/doc/repo/subdir/file1.html?search-assets-top-rel=../my/docs&search-phrase=hejsan
-    def initialize(calling_uri:, uri_mappings: {"/" => "/var/www/html/"})
-      @uri = URI(calling_uri)
-
-      # convert keys and values to Pathnames
-      @uri_mappings = uri_mappings.map { |k, v| [Pathname.new(k).cleanpath, Pathname.new(v).cleanpath] }.to_h
-
-      @parameters = URI.decode_www_form(@uri.query).to_h
-
-      validate_parameters
+    def self.from_uri(uri_str, uri_mappings: {"/" => "/var/www/html/"})
+      q = SearchQuery.new(uri: uri_str)
+      SearchParameters.new(query: q, uri_mappings: uri_mappings)
     end
 
-    # return::
+    def self.from_hash(h, uri_mappings: {"/" => "/var/www/html/"})
+      q = SearchQuery.new(query_params: h)
+      SearchParameters.new(query: q, uri_mappings: uri_mappings)
+    end
+
+    def uri_path
+      URI(calling_url).path
+    end
+
     def assets_uri_path
-      @assets_uri_path ||= Pathname.new(@uri.path).dirname.join(assets_top_rel).cleanpath
+      @assets_uri_path ||= Pathname.new(uri_path).dirname.join(search_assets_top_rel).cleanpath
       @assets_uri_path
     end
 
     # return:: the uri path pointing to the doc repo top dir
     def uri_path_repo_top
-      Pathname.new(@uri.path).join(assets_top_rel.dirname).dirname
+      Pathname.new(uri_path).join(search_assets_top_rel.dirname).dirname
     end
 
     # return:: the absolute Pathname of the file system path to the
@@ -68,31 +62,19 @@ module Giblish
       uri_to_fs(assets_uri_path)
     end
 
-    # return:: a Pathname with the relative dir from the file in the
-    # given url to the asset top
-    def assets_top_rel
-      Pathname.new(parameters["search-assets-top-rel"])
+    def method_missing(meth, *args, &block)
+      return @query.send(meth, *args, &block) if respond_to_missing?(meth)
+
+      super(meth, args, &block)
+    end
+
+    def respond_to_missing?(meth, include_private = false)
+      @query.respond_to?(meth)
     end
 
     # return:: the relative path from the doc top dir to the file
     def repo_file_path
-      Pathname.new(uri.path).relative_path_from(uri_path_repo_top)
-    end
-
-    def search_phrase
-      parameters["search-phrase"]
-    end
-
-    def css_path
-      parameters["css-path"]
-    end
-
-    def consider_case?
-      parameters.key?("consider-case")
-    end
-
-    def as_regexp?
-      parameters.key?("as-regexp")
+      Pathname.new(uri_path).relative_path_from(uri_path_repo_top)
     end
 
     # repo_filepath:: the filepath from the repo top to a given file
@@ -101,7 +83,7 @@ module Giblish
     # return:: the access url for a given section in a given src file
     def url(repo_filepath, fragment = nil)
       # create result by replacing relevant parts of the original uri
-      res = @uri.dup
+      res = URI(@query.calling_url)
       res.query = nil
       res.fragment = fragment
       res.path = uri_path_repo_top.join(repo_filepath).cleanpath.to_s
@@ -109,6 +91,22 @@ module Giblish
     end
 
     private
+
+    # Search input:
+    #
+    # query:: a SearchQuery instance
+    # uri_mappings:: mappings between uri.path prefix and an absolute path in the local
+    #             file system. Ex {"/my/doc" => "/var/www/html/doc/repos"}. The default
+    #             is { "/" => "/var/www/html" }
+    #
+    # ex URI = www.example.com/search/action?calling-uri=www.example.com/my/doc/repo/subdir/file1.html&search-assets-top-rel=../my/docs&search-phrase=hejsan
+    def initialize(query:, uri_mappings: {"/" => "/var/www/html/"})
+      @query = query
+
+      # convert keys and values to Pathnames
+      @uri_mappings = uri_mappings.map { |k, v| [Pathname.new(k).cleanpath, Pathname.new(v).cleanpath] }.to_h
+      validate_parameters
+    end
 
     # return:: a Pathname where the prefix of an uri path has been replaced with the
     #          corresponding fs mapping, if one exists. Returns the original pathname
@@ -140,11 +138,7 @@ module Giblish
     #   system path.
     def validate_parameters
       # asset_top_rel
-      raise ArgumentError, "Missing relative asset path!" if assets_top_rel.nil?
-      raise ArgumentError, "Asset top must be relative, found '#{assets_top_rel}'" if assets_top_rel.absolute?
-
-      # search phrase
-      raise ArgumentError, "No search phrase found!" if search_phrase.nil?
+      raise ArgumentError, "Asset top must be relative, found '#{search_assets_top_rel}'" if search_assets_top_rel.absolute?
 
       # uri_mapping
       @uri_mappings.each do |k, v|
@@ -245,6 +239,19 @@ module Giblish
       @repo_cache = repo_cache
     end
 
+    # transform the output from grep_tree to an Array of hashes according to:
+    #
+    # {Pathname("subdir/file1.adoc") => {
+    #   doc_title: "My doc!!",
+    #   sections: [{
+    #     url: URI("http://my.site.com/docs/repo1/file1.html#section_id_1"),
+    #     title: "Purpose",
+    #     lines: [
+    #       "this is the line with matching text",
+    #       "this is another line with matching text"
+    #     ]
+    #   }]
+    # }}
     # params:: a SearchParameters instance
     def search(params)
       repo = @repo_cache.repo(params)
@@ -288,18 +295,7 @@ module Giblish
       result
     end
 
-    # transform the output from grep_tree to an Array of hashes according to:
-    # {Pathname("subdir/file1.adoc") => {
-    #   doc_title: "My doc!!",
-    #   sections: [{
-    #     url: URI("http://my.site.com/docs/repo1/file1.html#section_id_1"),
-    #     title: "Purpose",
-    #     lines: [
-    #       "this is the line with matching text",
-    #       "this is another line with matching text"
-    #     ]
-    #   }]
-    # }}
+    # returns:: a hash described in the 'search' method doc
     def search_result(repo, grep_result, params)
       result = Hash.new { |h, k| h[k] = [] }
 

@@ -18,6 +18,7 @@ module Giblish
         "copycss!" => 1
       } : {}
       doc_attr["data-uri"] = 1
+      doc_attr["example-caption"] = nil
 
       # setup default conversion options
       converter_options = {
@@ -30,7 +31,7 @@ module Giblish
       }
 
       # convert to html and return result
-      Asciidoctor.convert(docstr, converter_options)
+      Asciidoctor.convert(adoc_source, converter_options)
     end
 
     # search_result:: a hash conforming to the output of
@@ -38,16 +39,16 @@ module Giblish
     def search_2_adoc(search_result)
       str = ""
       search_result.each do |filepath, info|
-        str << "== #{info[:doc_title]}\n\n"
+        str << ".#{info[:doc_title]}\n"
+        str << "====\n\n"
         info[:sections].each do |section|
-          str << "#{section[:url]}::\n\n"
-          str << "[subs=\"quotes\"]\n"
-          str << "----\n"
+          str << "#{section[:url]}[#{section[:title]}]::\n\n"
           section[:lines].each do |line|
-            str << "-- #{line}\n"
+            str << "#{line}\n+\n"
           end.join("\n\n")
-          str << "----\n\n"
         end
+        str << "\n"
+        str << "====\n"
       end
 
       <<~ADOC
@@ -77,11 +78,7 @@ module Giblish
     end
 
     def response
-      sp = SearchParameters.new(
-        calling_uri: assemble_uri(@cgi),
-        uri_mappings: @uri_mappings
-      )
-
+      sp = SearchParameters.from_hash(@cgi, uri_mappings: @uri_mappings)
       @html_generator.response(searcher.search(sp))
     end
 
@@ -99,6 +96,15 @@ module Giblish
     def assemble_uri(cgi)
       uri = cgi["calling-url"] + "?" + REQUIRED_PARAMS.collect { |p| "#{p}=#{cgi[p]}" }.join("&")
       uri + OPTIONAL_PARAMS.collect { |p| "#{p}=#{cgi[p]}" if cgi.key?(p) }.join("&")
+    end
+
+    def encode_query(cgi)
+      query = URI.encode_www_form(
+        REQUIRED_PARAMS.collect { |p| [p, cgi[p]] }.concat(
+          OPTIONAL_PARAMS.collect { |p| [p, cgi[p]] if cgi.key?(p) }
+        )
+      )
+      uri.query = query
     end
   end
 end
