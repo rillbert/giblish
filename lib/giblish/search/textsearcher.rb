@@ -84,11 +84,13 @@ module Giblish
     #
     # return:: the access url for a given section in a given src file
     def url(repo_filepath, fragment = nil)
+      p = Pathname.new(repo_filepath)
+
       # create result by replacing relevant parts of the original uri
       res = URI(@query.calling_url)
       res.query = nil
       res.fragment = fragment
-      res.path = uri_path_repo_top.join(repo_filepath.sub_ext('.html')).cleanpath.to_s
+      res.path = uri_path_repo_top.join(p.sub_ext('.html')).cleanpath.to_s
       res
     end
 

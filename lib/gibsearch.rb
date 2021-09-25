@@ -25,35 +25,21 @@ def init_web_server web_root
   server.start
 end
 
-def hello_world
-  require "pp"
+def send_search_response
+  begin
+    cgi = CGI.new
+    print cgi.header
 
-  # init a new cgi 'connection'
-  cgi = CGI.new
-  print cgi.header
-  print "<br>"
-  print "Useful cgi parameters and variables."
-  print "<br>"
-  print cgi.public_methods(false).sort
-  print "<br>"
-  print "<br>"
-  print "referer: #{cgi.referer}<br>"
-  print "path: #{URI(cgi.referer).path}<br>"
-  print "host: #{cgi.host}<br>"
-  print "client_sent_topdir: #{cgi["topdir"]}<br>"
-  print "<br>"
-  print "client_sent_reldir: #{cgi["reltop"]}<br>"
-  print "<br>"
-  print "ENV: "
-  pp ENV
-  print "<br>"
+    rm = Giblish::CGIRequestManager.new(cgi, {"/" => "/home/andersr/repos/gendocs"})
+    print rm.response
+  rescue => e
+    print e.message
+    print ""
+    print e.backtrace
+    return 1
+  end
+  0
 end
-
-def search_response(cgi)
-  rm = Giblish::CGIRequestManager.new(cgi, {"/" => "/home/andersr/repos/gendocs"})
-  rm.response
-end
-
 
 # Usage:
 #   to start a local web server for development work
@@ -65,28 +51,22 @@ end
 if __FILE__ == $PROGRAM_NAME
 
   STDOUT.sync = true
+
+  # called without arguments (typically via a web server)
   if ARGV.length == 0
-    # 'Normal' cgi usage, as called from a web server
-
-    # init a new cgi 'connection' and print headers
-    cgi = CGI.new
-    print cgi.header
-
-    begin      
-      print search_response(cgi)
-    rescue => e
-      print e.message
-      print ""
-      print e.backtrace
-      exit 1
-    end
-    exit 0
+    exit(send_search_response)
   end
 
+  # Starts up a simple web server to test this locally.
+  #
+  # A typical dev flow can look as:
+  #
+  # 1. Create your html docs using eg
+  # giblish -m -r <resource_dir> -s <style_name> <src_root> <dst_root>
+  # 2. Copy or symlink this script into <dst_root> as 'gibsearch.cgi'
+  # 3. Start a simple web server to test this as
+  # .../gibsearch.rb <dst_root>
   if ARGV.length == 1
-    # Run a simple web server to test this locally..
-    # and then create the html docs using:
-    # giblish -c -m -w <web_root> -r <resource_dir> -s <style_name> -g <git_branch> <src_root> <web_root>
     init_web_server(ARGV[0])
     exit 0
   end

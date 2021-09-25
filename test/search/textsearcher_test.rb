@@ -119,7 +119,7 @@ module Giblish
       sp = SearchParameters.from_uri(uri, uri_mappings: mapping)
 
       assert_equal(
-        "http://www.example.com:8000/my/docs/repo1/file1.adoc#_my_id",
+        "http://www.example.com:8000/my/docs/repo1/file1.html#_my_id",
         sp.url("file1.adoc", "_my_id").to_s
       )
     end
