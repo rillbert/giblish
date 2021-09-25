@@ -119,7 +119,7 @@ treat the search phrase as a string
 
  . Collect all adoc docs in a search asset directory.
  . Embed html code for a search form as part of running gibish on the source tree. During generation, the following search parameters are known for each document to be generated:
- .. search-asset-top-rel
+ .. search-assets-top-rel
  .. css-path
  . The `calling-url` is not known but it is possible to embed javascript code as part of the search form code that will resolve the url at runtime.
  . The URL for the search service endpoint must be given by the user or hard-coded in giblish.
@@ -156,7 +156,7 @@ The other required parameters must come from the generated document itself.
     <input type="checkbox" name="useregexp" />
 
     <input type="hidden" name="calling-url" id=calingurl_input />
-    <input type="hidden" name="search-asset-top-rel" />
+    <input type="hidden" name="search-assets-top-rel" />
     <input type="hidden" name="css-path" />
 
     <button type="submit">Search</button>

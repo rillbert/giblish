@@ -257,7 +257,7 @@ module Giblish
         <input type="checkbox" name="useregexp" />
 
         <input type="hidden" name="calling-url" id=calingurl_input />
-        <input type="hidden" name="search-asset-top-rel" value="<%=sa_top_rel%>"/>
+        <input type="hidden" name="search-assets-top-rel" value="<%=sa_top_rel%>"/>
         <input type="hidden" name="css-path" value="<%=css_path%>"/>
 
         <button type="submit">Search</button>

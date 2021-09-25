@@ -6,13 +6,15 @@ module Giblish
     OPTIONAL_PARAMS = %w[css-path consider-case as-regexp]
 
     def initialize(uri: nil, query_params: nil)
+      print query_params
+      print "\n----\n"
       @parameters = case [uri, query_params]
         in [String, nil]
           uri_2_params(uri)
-        in [nil, Hash]
+        in [nil, _]
           validate_parameters(query_params)
         else
-          raise ArgumentError, "You must supply one of 'uri: [String]' or 'query_params: [Hash]'"
+          raise ArgumentError, "You must supply one of 'uri: [String]' or 'query_params: [Hash]' got: #{query_params}"
       end
     end
 
@@ -21,7 +23,8 @@ module Giblish
     end
 
     def search_assets_top_rel
-      Pathname.new(@parameters["search-assets-top-rel"])
+      # convert to pathname and make sure we always are relative
+      Pathname.new("./" + @parameters["search-assets-top-rel"]).cleanpath
     end
 
     def consider_case?
@@ -60,6 +63,7 @@ module Giblish
       REQUIRED_PARAMS.each do |p|
         raise ArgumentError, "Missing or empty parameter: #{p}" if !uri_params.key?(p) || uri_params[p].empty?
       end
+
 
       uri_params
     end

@@ -390,7 +390,7 @@ class PathTree
     top_node = top_node.realpath
 
     t = nil
-    Find.find(top_node.to_s) do |path|
+    top_node.find do |path|
       p = Pathname.new(path)
 
       if (block_given? && yield(p)) || !block_given?

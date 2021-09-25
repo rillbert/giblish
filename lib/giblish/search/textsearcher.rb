@@ -1,6 +1,8 @@
 require "pathname"
 require "json"
 require "uri"
+require_relative "searchquery"
+require_relative "../pathtree"
 
 module Giblish
   # reads all lines in the given file at instantiation and
@@ -86,7 +88,7 @@ module Giblish
       res = URI(@query.calling_url)
       res.query = nil
       res.fragment = fragment
-      res.path = uri_path_repo_top.join(repo_filepath).cleanpath.to_s
+      res.path = uri_path_repo_top.join(repo_filepath.sub_ext('.html')).cleanpath.to_s
       res
     end
 
@@ -224,8 +226,8 @@ module Giblish
 
       # check if we shall read a new repo from disk
       if !@repos.key?(ap) || @repos[ap].is_stale
-        puts "read from disk for ap: #{ap}.."
-        puts "is stale" if @repos.key?(ap) && @repos[ap].is_stale
+        # puts "read from disk for ap: #{ap}.."
+        # puts "is stale" if @repos.key?(ap) && @repos[ap].is_stale
         @repos[ap] = SearchDataRepo.new(ap)
       end
 
@@ -252,13 +254,13 @@ module Giblish
     #     ]
     #   }]
     # }}
-    # params:: a SearchParameters instance
-    def search(params)
-      repo = @repo_cache.repo(params)
+    # search_params:: a SearchParameters instance
+    def search(search_params)
+      repo = @repo_cache.repo(search_params)
 
-      grep_results = grep_tree(repo, params)
+      grep_results = grep_tree(repo, search_params)
 
-      search_result(repo, grep_results, params)
+      search_result(repo, grep_results, search_params)
     end
 
     # result = {
@@ -267,10 +269,10 @@ module Giblish
     #     line: ""
     #   }]
     # }
-    def grep_tree(repo, params)
+    def grep_tree(repo, search_params)
       # TODO: Add ignore case and use regex options
       result = Hash.new { |h, k| h[k] = [] }
-      r = Regexp.new(params.search_phrase)
+      r = Regexp.new(search_params.search_phrase)
 
       # find all matching lines in the src tree
       repo.src_tree.traverse_preorder do |level, node|
@@ -296,7 +298,7 @@ module Giblish
     end
 
     # returns:: a hash described in the 'search' method doc
-    def search_result(repo, grep_result, params)
+    def search_result(repo, grep_result, search_params)
       result = Hash.new { |h, k| h[k] = [] }
 
       grep_result.each do |filepath, matches|
@@ -311,7 +313,7 @@ module Giblish
 
         sections = sect_to_match.collect do |section, matches|
           {
-            url: params.url(filepath, section[:id]),
+            url: search_params.url(filepath, section[:id]),
             title: section[:title],
             lines: matches.collect { |match| match[:line].chomp }
           }
