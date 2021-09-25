@@ -274,8 +274,15 @@ module Giblish
 
       to_top_rel = dst_top.relative_path_from(dst_node.parent)
       sa_top_rel = to_top_rel.join("gibsearch_assets").cleanpath
-      css_path = ""
       action_path = to_top_rel.join("gibsearch.cgi").cleanpath
+
+      # only include css_path if it is given in the document's attributes
+      doc_attrs = src_node.data.document_attributes(src_node, dst_node, dst_top)
+      css_path = if (%w(stylesdir stylesheet).all? { |k| doc_attrs.key?(k) } )
+        doc_attrs["stylesdir"] + "/" + doc_attrs["stylesheet"]
+      else
+        nil
+      end
 
       ERB.new(FORM_DATA).result(binding)
     end

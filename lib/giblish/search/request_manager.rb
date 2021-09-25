@@ -5,8 +5,8 @@ module Giblish
     # search_result:: a hash conforming to the output of
     #                 the TextSearcher::search method.
     # returns::       a string with the html to return to the client
-    def response(search_result)
-      adoc_2_html(search_2_adoc(search_result))
+    def response(search_result, css_path=nil)
+      adoc_2_html(search_2_adoc(search_result), css_path)
     end
 
     private
@@ -14,10 +14,10 @@ module Giblish
     def adoc_2_html(adoc_source, css_path = nil)
       # setup default document attributes used in the html conversion
       doc_attr = css_path ? {
-        "linkcss" => 1,
-        "stylesdir" => css_path.dirname,
-        "stylesheet" => css_path.basename,
-        "copycss!" => 1
+        "stylesdir" => css_path.dirname.to_s,
+        "stylesheet" => css_path.basename.to_s,
+        "linkcss" => true,
+        "copycss" => nil
       } : {}
       doc_attr["data-uri"] = 1
       doc_attr["example-caption"] = nil
@@ -85,7 +85,7 @@ module Giblish
 
     def response
       sp = SearchParameters.from_hash(@cgi, uri_mappings: @uri_mappings)
-      @html_generator.response(searcher.search(sp))
+      @html_generator.response(searcher.search(sp),sp.css_path)
     end
 
     private
