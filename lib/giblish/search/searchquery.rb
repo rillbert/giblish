@@ -6,8 +6,6 @@ module Giblish
     OPTIONAL_PARAMS = %w[css-path consider-case as-regexp]
 
     def initialize(uri: nil, query_params: nil)
-      print query_params
-      print "\n----\n"
       @parameters = case [uri, query_params]
         in [String, nil]
           uri_2_params(uri)

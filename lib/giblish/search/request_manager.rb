@@ -41,7 +41,7 @@ module Giblish
     def search_2_adoc(search_result)
       str = ""
       search_result.each do |filepath, info|
-        str << ".From #{info[:doc_title]}\n"
+        str << ".From: '#{info[:doc_title]}'\n"
         str << "====\n\n"
         info[:sections].each do |section|
           str << "#{section[:url]}[#{section[:title]}]::\n\n"

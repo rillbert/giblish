@@ -12,7 +12,7 @@ module Giblish
 
     def initialize(filepath)
       @src_lines = []
-      File.readlines(filepath.to_s, chomp: true).each do |line|
+      File.readlines(filepath.to_s, chomp: true, :encoding => 'UTF-8').each do |line|
         @src_lines << wash_line(line)
       end
     end

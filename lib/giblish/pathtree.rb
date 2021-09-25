@@ -387,8 +387,6 @@ class PathTree
     top_node = Pathname.new(fs_point).cleanpath
     raise ArgumentError, "The path '#{fs_point}' does not exist in the file system!" unless top_node.exist?
 
-    top_node = top_node.realpath
-
     t = nil
     top_node.find do |path|
       p = Pathname.new(path)
