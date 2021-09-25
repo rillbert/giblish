@@ -170,6 +170,44 @@ module Giblish
       end
     end
 
+    def test_text_search_consider_case
+      with_search_testdata do |dsttree|
+        searcher = TextSearcher.new(SearchRepoCache.new)
+
+        # fake minimal search request from file1 deployed to /my/docs/repo1
+        uri = "http://www.example.com/search?calling-url=http://www.example.com/file_1.html&search-assets-top-rel=./gibsearch_assets&search-phrase=More&consider-case"
+        sp = SearchParameters.from_uri(uri, uri_mappings: {"/" => dsttree.pathname})
+
+        results = searcher.search(sp)
+        expected_keys = [Pathname.new("file1.adoc"), Pathname.new("subdir/file2.adoc")]
+
+        # at least check that the number of matches is consistent with
+        # the content of the test docs
+        assert_equal(expected_keys, results.keys)
+        assert_equal(2, results[expected_keys[0]][:sections].count)
+        assert_equal(1, results[expected_keys[1]][:sections].count)
+      end
+    end
+
+    def test_text_search_use_regexp
+      with_search_testdata do |dsttree|
+        searcher = TextSearcher.new(SearchRepoCache.new)
+
+        # fake minimal search request from file1 deployed to /my/docs/repo1
+        uri = "http://www.example.com/search?calling-url=http://www.example.com/file_1.html&search-assets-top-rel=./gibsearch_assets&search-phrase=Some.%2Athat&as-regexp"
+        sp = SearchParameters.from_uri(uri, uri_mappings: {"/" => dsttree.pathname})
+
+        results = searcher.search(sp)
+        expected_keys = [Pathname.new("file1.adoc"), Pathname.new("subdir/file2.adoc")]
+
+        # at least check that the number of matches is consistent with
+        # the content of the test docs
+        assert_equal(expected_keys, results.keys)
+        assert_equal(1, results[expected_keys[0]][:sections].count)
+        assert_equal(1, results[expected_keys[1]][:sections].count)
+      end
+    end
+
     def test_repo_caching
       TmpDocDir.open do |tmpdocdir|
         dstdir = Pathname.new(tmpdocdir.dir) / "dst"

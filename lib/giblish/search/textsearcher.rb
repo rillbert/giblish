@@ -12,7 +12,7 @@ module Giblish
 
     def initialize(filepath)
       @src_lines = []
-      File.readlines(filepath.to_s, chomp: true, :encoding => 'UTF-8').each do |line|
+      File.readlines(filepath.to_s, chomp: true, encoding: "UTF-8").each do |line|
         @src_lines << wash_line(line)
       end
     end
@@ -90,7 +90,7 @@ module Giblish
       res = URI(@query.calling_url)
       res.query = nil
       res.fragment = fragment
-      res.path = uri_path_repo_top.join(p.sub_ext('.html')).cleanpath.to_s
+      res.path = uri_path_repo_top.join(p.sub_ext(".html")).cleanpath.to_s
       res
     end
 
@@ -272,9 +272,12 @@ module Giblish
     #   }]
     # }
     def grep_tree(repo, search_params)
-      # TODO: Add ignore case and use regex options
       result = Hash.new { |h, k| h[k] = [] }
-      r = Regexp.new(search_params.search_phrase)
+
+      # handle case-sensitivity and input as regex pattern or string
+      r_flags = search_params.consider_case? ? 0 : Regexp::IGNORECASE
+      r_str = search_params.as_regexp? ? search_params.search_phrase : Regexp.escape(search_params.search_phrase)
+      r = Regexp.new(r_str, r_flags)
 
       # find all matching lines in the src tree
       repo.src_tree.traverse_preorder do |level, node|
@@ -282,17 +285,15 @@ module Giblish
 
         relative_path = node.relative_path_from(repo.src_tree)
         line_no = 0
-        # pp node.data
-        # puts "src_lines: #{node.data.src_lines}"
         node.data.src_lines.each do |line|
           line_no += 1
           next if line.empty? || !r.match?(line)
 
+          # replace match with an embedded rule that can
+          # be styled
           result[relative_path] << {
             line_no: line_no,
-            # replace match with an embedded rule that can
-            # be styled
-            line: line.gsub(r, '[.darkblue]#*_\0_*#')
+            line: line.gsub(r, '[.red]##*_\0_*##')
           }
         end
       end
