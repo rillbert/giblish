@@ -32,6 +32,9 @@ module Giblish
         attributes: doc_attr
       }
 
+      # for debugging of adoc source
+      # File.write("search.adoc",adoc_source)
+      
       # convert to html and return result
       Asciidoctor.convert(adoc_source, converter_options)
     end

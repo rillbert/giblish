@@ -73,8 +73,6 @@ module Giblish
       # index sections and wash source lines
       # Copy the washed document to the search asset folder
       dst_top = attrs["giblish-info"][:dst_top]
-      puts "src_path: #{src_node.pathname}"
-      puts "dst_top: #{dst_top.pathname} rel_src: #{rel_src_path(src_node)}"
       write_washed_doc(
         parse_document(document, src_node, opts),
         dst_top.pathname / SEARCH_ASSET_DIRNAME / rel_src_path(src_node)
@@ -149,7 +147,7 @@ module Giblish
       lines.each do |line|
         line_no += 1
         line = replace_attrs(document.attributes, line)
-        indexed_doc[:washed_lines] << line
+        indexed_doc[:washed_lines] << line.strip
 
         # implement a state machine that supports both custom
         # anchors for a heading and the default heading ids generated

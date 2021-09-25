@@ -290,7 +290,7 @@ module Giblish
             line_no: line_no,
             # replace match with an embedded rule that can
             # be styled
-            line: line.gsub(r, '[.match]#\0#')
+            line: line.gsub(r, '[.darkblue]#*_\0_*#')
           }
         end
       end
