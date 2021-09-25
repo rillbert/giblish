@@ -33,7 +33,7 @@ module Giblish
       }
 
       # for debugging of adoc source
-      # File.write("search.adoc",adoc_source)
+      File.write("search.adoc",adoc_source)
       
       # convert to html and return result
       Asciidoctor.convert(adoc_source, converter_options)
@@ -49,8 +49,9 @@ module Giblish
         info[:sections].each do |section|
           str << "#{section[:url]}[#{section[:title]}]::\n\n"
           section[:lines].each do |line|
-            str << "#{line}\n+\n"
-          end.join("\n\n")
+            str << line
+          end.join("\n+\n")
+          str << "\n\n"
         end
         str << "\n"
         str << "====\n"

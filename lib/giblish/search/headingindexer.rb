@@ -253,8 +253,10 @@ module Giblish
 
       <form class="gibsearch" action="<%=action_path%>">
         <input type="search" name="search-phrase" />
-        <input type="checkbox" name="usecase" />
-        <input type="checkbox" name="useregexp" />
+        <input type="checkbox" id="consider-case" name="consider-case" />
+        <label for="consider-case">case sensitive</label>
+        <input type="checkbox" id="as-regexp" name="as-regexp" />
+        <label for="as-regexp">use regexp</label>
 
         <input type="hidden" name="calling-url" id=calingurl_input />
         <input type="hidden" name="search-assets-top-rel" value="<%=sa_top_rel%>"/>
