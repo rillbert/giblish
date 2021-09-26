@@ -84,6 +84,29 @@ module Giblish
       end
     end
 
+    def test_gitdata_provider
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        root = Pathname.new(tmp_docs.dir)
+
+        # setup repo with two branches
+        # repo = root / "tstrepo"
+        # setup_repo(tmp_docs, repo)
+
+        repo = Pathname.pwd / "../asciidoctor"
+        gm = GitCheckoutManager.new(
+          srcdir: repo,
+          local_only: true,
+          branch_regex: /main/,
+          tag_regex: /v1.5/
+        )
+        gm.each_checkout do |treeish|
+          puts treeish
+        end
+        str = GitSummaryDataProvider.source(gm.git_data)
+        File.write("testtags.adoc",str)
+      end
+    end
+
     def test_generate_html_two_branches
       TmpDocDir.open(preserve: false) do |tmp_docs|
         root = Pathname.new(tmp_docs.dir)

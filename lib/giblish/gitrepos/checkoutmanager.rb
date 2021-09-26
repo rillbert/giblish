@@ -6,43 +6,70 @@ require_relative "../version"
 require_relative "gititf"
 
 module Giblish
-
   class GitSummaryDataProvider
+    attr_reader :tags, :branches
+
     Commit = Struct.new(:sha, :datetime, :committer, :message)
-    Tag = Struct.new(:name, :date, :message, :author, :commit) do
+    Tag = Struct.new(:sha, :name, :date, :message, :author, :commit) do
       def id
         Giblish.to_valid_id(name)
       end
     end
-    
+
+    def self.source(data_provider)
+      template = File.read("gitsummary.erb", encoding: "UTF-8")
+      summary = ERB.new(template, trim_mode: "<>")
+      summary.result(data_provider.get_binding)
+    end
+
     def initialize(repo_name)
       @repo_name = repo_name
       @branches = []
       @tags = []
     end
-  
+
+    # Cache info on one tag or branch
+    #
+    # repo:: a handle to a Git repo object
+    # treeish:: either a Git::Tag or a Git::Branch object
     def cache_info(repo, treeish)
-      
+      if treeish.respond_to?(:tag?) && treeish.tag?
+        t = cache_tag_info(repo, treeish)
+        @tags.push(t).sort_by!(&:date).reverse!
+        # @tags << t unless t.nil?
+      else
+        @branches << treeish.name
+      end
     end
 
+    # supply an ERB binding
     def get_binding
       binding
     end
-  
+
+    # returns:: a string with the relative path to the index file
+    #           in the given branch/tag subtree
     def index_path(treeish_name)
-      Giblish.to_fs_str(treeish_name) + "/index.html"
+      Giblish.to_fs_str(treeish_name) + "/index.adoc"
     end
 
     private
 
-    def 
+    def cache_tag_info(repo, tag)
+      return nil unless tag.annotated?
+
+      # get sha of the associated commit. (a bit convoluted...)
+      c = repo.gcommit(tag.contents_array[0].split(" ")[1])
+      commit = Commit.new(c.sha, c.date, c.committer.name, c.message)
+      Tag.new(tag.sha, tag.name, tag.tagger.date, tag.message, tag.tagger.name, commit)
+    end
   end
-  
+
   # acquires a handle to an existing git repo and provide the user
   # with a iteration method 'each_checkout' where each matching branch and/or tag is
   # checked out and presented to the user code.
   class GitCheckoutManager
-    attr_reader :branches_and_tags
+    attr_reader :branches, :tags, :git_data
 
     # srcdir:: Pathname to the top dir of the local git repo to work with
     # local_only:: if true, do not try to access any remote branches or merge with any
@@ -57,7 +84,7 @@ module Giblish
       @git_repo = init_git_repo(repo_root, local_only)
       @branches = select_user_branches(branch_regex, local_only)
       @tags = select_user_tags(tag_regex)
-      @summary_data = GitSummaryDataProvider.new
+      @git_data = GitSummaryDataProvider.new(repo_root.basename)
     end
 
     # present each git checkout matching the init criteria to the user's code.
@@ -73,10 +100,10 @@ module Giblish
       begin
         (@branches + @tags).each do |treeish|
           sync_treeish(treeish)
-          # cache branch info for summary page
-          @summary_data.cache_info(@git_repo, treeish)
+          # cache branch/tag info for downstream content generation
+          @git_data.cache_info(@git_repo, treeish)
 
-          yield(b.name)
+          yield(treeish.name)
         end
       ensure
         Giblog.logger.info { "Checking out #{current_branch}" }
