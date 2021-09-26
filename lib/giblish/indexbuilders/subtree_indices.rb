@@ -169,4 +169,10 @@ module Giblish
       HISTORY_TABLE_HEADING + rows + HISTORY_TABLE_FOOTING
     end
   end
+
+  class GitSummaryPage
+    def source(reponame, tags, branches)
+      
+    end
+  end
 end

@@ -251,19 +251,35 @@ module Giblish
       };
       </script>
 
+      <style>
+      #gibsearch-form {
+        position:fixed;
+        top:0.5rem;
+        left:70%;
+        width:30%;
+        height:3rem;
+        background:white;
+        z-index:2000; 
+        }
+      </style>
+
+      <div id=gibsearch-form>
       <form class="gibsearch" action="<%=action_path%>">
-        <input type="search" name="search-phrase" />
+        <input type="search" placeholder="Search the docs.." name="search-phrase" />
+        <button type="submit">Search</button>
+        <br>
+
         <input type="checkbox" id="consider-case" name="consider-case" />
         <label for="consider-case">case sensitive</label>
+        &nbsp;&nbsp;
         <input type="checkbox" id="as-regexp" name="as-regexp" />
         <label for="as-regexp">use regexp</label>
 
         <input type="hidden" name="calling-url" id=calingurl_input />
         <input type="hidden" name="search-assets-top-rel" value="<%=sa_top_rel%>"/>
         <input type="hidden" name="css-path" value="<%=css_path%>"/>
-
-        <button type="submit">Search</button>
       </form>
+      </div>
     FORM_HTML
 
     def process(document)

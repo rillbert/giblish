@@ -25,20 +25,21 @@ def init_web_server web_root
   server.start
 end
 
+# assemble the html response for a given search request
+# 
+# returns:: 0 for success, 1 for failure
 def send_search_response
-  begin
-    cgi = CGI.new
-    print cgi.header
+  cgi = CGI.new
+  print cgi.header
 
-    rm = Giblish::CGIRequestManager.new(cgi, {"/" => "/home/andersr/repos/gendocs"})
-    print rm.response
-  rescue => e
-    print e.message
-    print ""
-    print e.backtrace
-    return 1
-  end
+  rm = Giblish::CGIRequestManager.new(cgi, {"/" => "/home/andersr/repos/gendocs"})
+  print rm.response
   0
+rescue => e
+  print e.message
+  print "<br>"
+  print e.backtrace
+  1
 end
 
 # Usage:

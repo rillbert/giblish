@@ -1,7 +1,43 @@
 require "git"
+require "date"
+require "erb"
+require_relative "../utils"
+require_relative "../version"
 require_relative "gititf"
 
 module Giblish
+
+  class GitSummaryDataProvider
+    Commit = Struct.new(:sha, :datetime, :committer, :message)
+    Tag = Struct.new(:name, :date, :message, :author, :commit) do
+      def id
+        Giblish.to_valid_id(name)
+      end
+    end
+    
+    def initialize(repo_name)
+      @repo_name = repo_name
+      @branches = []
+      @tags = []
+    end
+  
+    def cache_info(repo, treeish)
+      
+    end
+
+    def get_binding
+      binding
+    end
+  
+    def index_path(treeish_name)
+      Giblish.to_fs_str(treeish_name) + "/index.html"
+    end
+
+    private
+
+    def 
+  end
+  
   # acquires a handle to an existing git repo and provide the user
   # with a iteration method 'each_checkout' where each matching branch and/or tag is
   # checked out and presented to the user code.
@@ -19,7 +55,9 @@ module Giblish
 
       @local_only = local_only
       @git_repo = init_git_repo(repo_root, local_only)
-      @branches_and_tags = select_user_branches(branch_regex, local_only) + select_user_tags(tag_regex)
+      @branches = select_user_branches(branch_regex, local_only)
+      @tags = select_user_tags(tag_regex)
+      @summary_data = GitSummaryDataProvider.new
     end
 
     # present each git checkout matching the init criteria to the user's code.
@@ -33,8 +71,10 @@ module Giblish
     def each_checkout
       current_branch = @git_repo.current_branch
       begin
-        @branches_and_tags.each do |b|
-          sync_treeish(b)
+        (@branches + @tags).each do |treeish|
+          sync_treeish(treeish)
+          # cache branch info for summary page
+          @summary_data.cache_info(@git_repo, treeish)
 
           yield(b.name)
         end
@@ -46,16 +86,16 @@ module Giblish
 
     private
 
-    def sync_treeish(b)
-      Giblog.logger.info { "Checking out #{b.name}" }
-      @git_repo.checkout b.name
+    def sync_treeish(treeish)
+      Giblog.logger.info { "Checking out #{treeish.name}" }
+      @git_repo.checkout treeish.name
 
       # merge branches with their upstream at origin unless
       # 'only local'
-      unless (b.respond_to?(:tag?) && b.tag?) || @local_only
+      unless (treeish.respond_to?(:tag?) && treeish.tag?) || @local_only
         # this is a branch, make sure it is up-to-date
-        Giblog.logger.info { "Merging with origin/#{b.name}" }
-        @git_repo.merge "origin/#{b.name}"
+        Giblog.logger.info { "Merging with origin/#{treeish.name}" }
+        @git_repo.merge "origin/#{treeish.name}"
       end
     end
 

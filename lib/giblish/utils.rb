@@ -232,4 +232,27 @@ module Giblish
     SEARCH_INFO
   end
   module_function :generate_search_box_html
+
+  # Convert a string into a string where all characters forbidden as part of
+  # filenames are replaced by an underscore '_'.
+  #
+  # returns:: a String most likely a valid filename in windows & linux
+  #
+  # A comprehensive list of forbidden chars in different file systems can be
+  # found here: https://stackoverflow.com/a/31976060
+  # In short, chars forbidden in any of Windows and Linux are:
+  # / < > : " \\ | ? *
+  def to_fs_str(str)
+    # printable chars -> '_'
+    tmp = str.gsub(/[\/<>:"\\|?*]/, "_")
+    # non-printable chars -> '_'
+    tmp.gsub!(/[\x00-\x1F]/,'_')
+    # remove heading/trailing spaces
+    tmp.strip!
+    # Windows disallows files ending in '.'
+    tmp += "_" if tmp.end_with?(".")
+
+    tmp
+  end
+  module_function :to_fs_str
 end

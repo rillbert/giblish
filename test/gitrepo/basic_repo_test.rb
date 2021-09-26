@@ -146,7 +146,7 @@ module Giblish
           st = fs_root.node(repo, from_root: true)
 
           # create a new top_dir for each branch/tag
-          branch_dst = dst_root / name.sub("/", "_")
+          branch_dst = dst_root / Giblish.to_fs_str(name)
 
           # setup a tree converter with postbuilders for getting git history
           # and showing that in index
