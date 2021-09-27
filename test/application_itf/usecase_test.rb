@@ -193,6 +193,17 @@ module Giblish
       PathTree.build_from_fs(Pathname.new(tmp_docs.dir) / src_topdir)
     end
 
+    def convert(src_tree, configurator)
+      data_provider = DataDelegator.new(SrcFromFile.new, configurator.doc_attr)
+      src_tree.traverse_preorder do |level, node|
+        next unless node.leaf?
+    
+        node.data = data_provider
+      end
+    
+      TreeConverter.new(src_tree, configurator.config_opts.dstdir, configurator.build_options).run
+    end
+
     def test_generate_html_default_css
       # generate docs with asciidoctor's default css embedded in the doc
 
@@ -207,7 +218,7 @@ module Giblish
 
         src_tree = PathTree.build_from_fs(Pathname.new(src_top))
         app = Configurator.new(opts)
-        app.setup_converter(src_tree).run
+        convert(src_tree, app)
 
         # check that there are three generated docs and two index files
         doc_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
@@ -267,7 +278,7 @@ module Giblish
 
         opts = CmdLine.new.parse(%W[-f html -r #{topdir / "resources"} -s giblish #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts)
-        app.setup_converter(src_top).run
+        convert(src_top, app)
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: false)
@@ -307,7 +318,7 @@ module Giblish
 
         opts = CmdLine.new.parse(%W[-f html -w my/style/giblish.css #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts)
-        app.setup_converter(src_top).run
+        convert(src_top, app)
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)
@@ -325,7 +336,7 @@ module Giblish
 
         opts = CmdLine.new.parse(%W[-f pdf #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts)
-        app.setup_converter(src_top).run
+        convert(src_top, app)
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)
@@ -342,7 +353,7 @@ module Giblish
 
         opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts)
-        app.setup_converter(src_top).run
+        convert(src_top, app)
 
         # check that the files are there
         r = PathTree.build_from_fs(topdir / "dst", prune: true)
@@ -352,7 +363,7 @@ module Giblish
     end
 
     def test_html_from_gitrepo
-      TmpDocDir.open(preserve: true) do |tmp_docs|
+      TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
 
         # setup repo with two branches
@@ -371,8 +382,7 @@ module Giblish
         dsttree = PathTree.build_from_fs(dst_top, prune: true)
         assert(dsttree.leave_pathnames.count > 0)
 
-        return
-        expected_branches = %w[product_1 product_2]
+        expected_branches = %w[product_1 product_2 index.html]
         dsttree.children.each do |c|
           assert(expected_branches.any? { |b| b == c.segment })
         end

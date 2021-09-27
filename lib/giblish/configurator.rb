@@ -65,7 +65,7 @@ module Giblish
   # configure all parts needed to execute the options specified by
   # the user
   class Configurator
-    attr_reader :build_options, :doc_attr
+    attr_reader :build_options, :doc_attr, :config_opts
 
     # config_opts:: a Cmdline::Options instance with config info
     def initialize(config_opts)
@@ -109,19 +109,6 @@ module Giblish
         @build_options[:adoc_extensions][type] << instance
       end
     end
-
-    # def setup_converter(src_tree, adoc_src_provider)
-    #   # compose the attribute provider and associate it with all source
-    #   # nodes
-    #   data_provider = DataDelegator.new(adoc_src_provider, @doc_attr)
-    #   src_tree.traverse_preorder do |level, node|
-    #     next unless node.leaf?
-    #
-    #     node.data = data_provider
-    #   end
-    #
-    #   TreeConverter.new(src_tree, @config_opts.dstdir, @build_options)
-    # end
 
     private
 

@@ -59,19 +59,29 @@ module Giblish
       Giblog.setup
     end
 
+    def convert(src_tree, configurator)
+      data_provider = DataDelegator.new(SrcFromFile.new, configurator.doc_attr)
+      src_tree.traverse_preorder do |level, node|
+        next unless node.leaf?
+
+        node.data = data_provider
+      end
+
+      TreeConverter.new(src_tree, configurator.config_opts.dstdir, configurator.build_options).run
+    end
+
     def test_xref_short_style_via_attrib_flag
       TmpDocDir.open(preserve: false) do |tmp_docs|
         tmp_docs.add_doc_from_str(XREF_DOC_STR)
-        src_tree = PathTree.build_from_fs(tmp_docs.dir)
-        src_top = src_tree.node(tmp_docs.dir, from_root: true)
 
         args = ["--log-level", "info",
           "-a", "xrefstyle=short",
           tmp_docs.dir,
           tmp_docs.dir]
-        opts = CmdLine.new.parse(args)
-        app = Configurator.new(opts)
-        app.setup_converter(src_tree).run
+        convert(
+          PathTree.build_from_fs(tmp_docs.dir),
+          Configurator.new(CmdLine.new.parse(args))
+        )
 
         result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
@@ -92,16 +102,15 @@ module Giblish
     def test_xref_full_style_via_attrib_flag
       TmpDocDir.open(preserve: false) do |tmp_docs|
         tmp_docs.add_doc_from_str(XREF_DOC_STR)
-        src_tree = PathTree.build_from_fs(tmp_docs.dir)
-        src_top = src_tree.node(tmp_docs.dir, from_root: true)
 
         args = ["--log-level", "info",
           "-a", "xrefstyle=full",
           tmp_docs.dir,
           tmp_docs.dir]
-        opts = CmdLine.new.parse(args)
-        app = Configurator.new(opts)
-        app.setup_converter(src_tree).run
+        convert(
+          PathTree.build_from_fs(tmp_docs.dir),
+          Configurator.new(CmdLine.new.parse(args))
+        )
 
         result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
@@ -124,8 +133,6 @@ module Giblish
     def test_xref_and_note_attrib
       TmpDocDir.open(preserve: false) do |tmp_docs|
         tmp_docs.add_doc_from_str(XREF_DOC_STR)
-        src_tree = PathTree.build_from_fs(tmp_docs.dir)
-        src_top = src_tree.node(tmp_docs.dir, from_root: true)
 
         expected_note_text = "TestNote"
 
@@ -134,9 +141,10 @@ module Giblish
           "-a", "note-caption=#{expected_note_text}",
           tmp_docs.dir,
           tmp_docs.dir]
-        opts = CmdLine.new.parse(args)
-        app = Configurator.new(opts)
-        app.setup_converter(src_tree).run
+        convert(
+          PathTree.build_from_fs(tmp_docs.dir),
+          Configurator.new(CmdLine.new.parse(args))
+        )
 
         result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
@@ -172,13 +180,13 @@ module Giblish
         # create adocs from the test strings
         file1 = tmp_docs.add_doc_from_str(IDPREFIX_DEFAULT, src_topdir)
         file2 = tmp_docs.add_doc_from_str(IDPREFIX_WITH_CUSTOM, src_topdir)
-        p_top = Pathname.new(tmp_docs.dir) / src_topdir
-        src_tree = PathTree.build_from_fs(p_top)
-        src_top = src_tree.node(p_top, from_root: true)
+        # p_top = Pathname.new(tmp_docs.dir) / src_topdir
 
-        opts = CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts)
-        app.setup_converter(src_tree).run
+        src_tree = PathTree.build_from_fs(tmp_docs.dir)
+        convert(
+          src_tree, 
+          Configurator.new(CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}]))
+        )
 
         # check that the idprefix is as expected
         expected_ids = {
@@ -204,9 +212,10 @@ module Giblish
         assert_equal(expected_ids.keys.count, count)
 
         # now re-do the html generation using a hard-coded idprefix
-        opts = CmdLine.new.parse(%W[-f html -a idprefix=idefix #{topdir} #{topdir / "dst"}])
-        app = Configurator.new(opts)
-        app.setup_converter(src_tree).run
+        convert(
+          src_tree, 
+          Configurator.new(CmdLine.new.parse(%W[-f html -a idprefix=idefix #{topdir} #{topdir / "dst"}]))
+        )
 
         expected_ids = {
           Pathname.new(file1).basename.sub_ext(".html") => ["idefixparagraph_1", "my_id"],
