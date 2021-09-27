@@ -16,11 +16,7 @@ module Giblish
       end
     end
 
-    def self.source(data_provider)
-      template = File.read("gitsummary.erb", encoding: "UTF-8")
-      summary = ERB.new(template, trim_mode: "<>")
-      summary.result(data_provider.get_binding)
-    end
+    DEFAULT_GIT_SUMMARY_TEMPLATE = "/gitsummary.erb"
 
     def initialize(repo_name)
       @repo_name = repo_name
@@ -42,15 +38,15 @@ module Giblish
       end
     end
 
-    # supply an ERB binding
-    def get_binding
-      binding
-    end
-
     # returns:: a string with the relative path to the index file
     #           in the given branch/tag subtree
     def index_path(treeish_name)
       Giblish.to_fs_str(treeish_name) + "/index.adoc"
+    end
+
+    def source
+      erb_template = File.read(__dir__ + DEFAULT_GIT_SUMMARY_TEMPLATE)
+      ERB.new(erb_template, trim_mode: "<>").result(binding)
     end
 
     private
@@ -76,7 +72,7 @@ module Giblish
     # upstream changes
     # branch_regex:: the regex for the branches to include during iteration (default: none)
     # tag_regex:: the regex for the tags to include during iteration (default: none)
-    def initialize(srcdir:, local_only: false, branch_regex: nil, tag_regex: nil)
+    def initialize(srcdir:, local_only: false, branch_regex: nil, tag_regex: nil, erb_template: nil)
       repo_root = GitItf.find_gitrepo_root(srcdir)
       raise ArgumentError("The path: #{srcdir} is not within a git repo!") if repo_root.nil?
 
@@ -84,6 +80,7 @@ module Giblish
       @git_repo = init_git_repo(repo_root, local_only)
       @branches = select_user_branches(branch_regex, local_only)
       @tags = select_user_tags(tag_regex)
+      @erb_template = erb_template
       @git_data = GitSummaryDataProvider.new(repo_root.basename)
     end
 

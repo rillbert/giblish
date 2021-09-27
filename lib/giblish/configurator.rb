@@ -38,6 +38,8 @@ module Giblish
         search_provider = HeadingIndexer.new(config_opts.srcdir)
         @adoc_extensions[:tree_processor] = search_provider
         @post_builders << search_provider
+        # TODO: Remove this after testing
+        @adoc_extensions[:docinfo_processor] = AddSearchForm
       end
     end
   end
@@ -63,7 +65,7 @@ module Giblish
   # configure all parts needed to execute the options specified by
   # the user
   class Configurator
-    attr_reader :build_options, :data_provider
+    attr_reader :build_options, :doc_attr
 
     # config_opts:: a Cmdline::Options instance with config info
     def initialize(config_opts)
@@ -77,12 +79,9 @@ module Giblish
       }
 
       # Initiate the doc attribute repo used during 'run-time'
-      doc_attr = DocAttrBuilder.new(
+      @doc_attr = DocAttrBuilder.new(
         GiblishDefaultDocAttribs.new
       )
-
-      setup_docid(config_opts, @build_options, doc_attr)
-      setup_index_generation(config_opts, @build_options, doc_attr)
 
       layout_config = case config_opts
         in format: "html" then HtmlLayoutConfig.new(config_opts)
@@ -91,36 +90,38 @@ module Giblish
           raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{config_opts.inspect}"
       end
 
-      # setup all options from the chosen layout configuration
-      doc_attr.add_doc_attr_providers(*layout_config.docattr_providers)
+      # setup all options from the chosen layout configuration but 
+      # override doc attributes with ones from the supplied configuration to
+      # ensure they have highest pref
+      @doc_attr.add_doc_attr_providers(
+        *layout_config.docattr_providers,CmdLineDocAttribs.new(config_opts)
+      )
+      # @doc_attr.add_doc_attr_providers()
+
+      setup_docid(config_opts, @build_options)
+      setup_index_generation(config_opts, @build_options, @doc_attr)
+
+      # setup all pre,post, and build options
       @build_options[:adoc_api_opts] = layout_config.adoc_api_opts
       @build_options[:pre_builders] += layout_config.pre_builders
       @build_options[:post_builders] += layout_config.post_builders
       layout_config.adoc_extensions.each do |type, instance|
         @build_options[:adoc_extensions][type] << instance
       end
-
-      # TODO: Remove this after testing
-      @build_options[:adoc_extensions][:docinfo_processor] << AddSearchForm
-
-      # override doc attributes with ones from the supplied configuration to
-      # ensure they have highest pref
-      doc_attr.add_doc_attr_providers(CmdLineDocAttribs.new(config_opts))
-
-      # compose the attribute provider and associate it with all source
-      # nodes
-      @data_provider = DataDelegator.new(SrcFromFile.new, doc_attr)
     end
 
-    def setup_converter(src_tree)
-      src_tree.traverse_preorder do |level, node|
-        next unless node.leaf?
-
-        node.data = @data_provider
-      end
-
-      TreeConverter.new(src_tree, @config_opts.dstdir, @build_options)
-    end
+    # def setup_converter(src_tree, adoc_src_provider)
+    #   # compose the attribute provider and associate it with all source
+    #   # nodes
+    #   data_provider = DataDelegator.new(adoc_src_provider, @doc_attr)
+    #   src_tree.traverse_preorder do |level, node|
+    #     next unless node.leaf?
+    #
+    #     node.data = data_provider
+    #   end
+    #
+    #   TreeConverter.new(src_tree, @config_opts.dstdir, @build_options)
+    # end
 
     private
 
@@ -129,23 +130,23 @@ module Giblish
 
       # setup index generation
       idx = SubtreeInfoBuilder.new(doc_attr, nil, SubtreeIndexBase, config_opts.index_basename)
-      @build_options[:post_builders] << idx
+      build_options[:post_builders] << idx
     end
 
-    def setup_docid(config_opts, build_options, doc_attr)
+    def setup_docid(config_opts, build_options)
       return unless config_opts.resolve_docid
 
       # setup docid resolution
       d = DocIdExtension::DocidPreBuilder.new
-      @build_options[:pre_builders] << d
+      build_options[:pre_builders] << d
       docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: d.id_2_node})
-      @build_options[:adoc_extensions][:preprocessor] << docid_pp
+      build_options[:adoc_extensions][:preprocessor] << docid_pp
 
       return if config_opts.no_index
 
       # generate dep graph if graphviz is available
       dg = DepGraphDot.new(docid_pp.node_2_ids)
-      @build_options[:post_builders] << dg
+      build_options[:post_builders] << dg
     end
   end
 end

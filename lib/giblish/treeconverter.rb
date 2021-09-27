@@ -26,7 +26,7 @@ module Giblish
   # the desired destination format.
 
   class TreeConverter
-    attr_reader :dst_tree, :pre_builders, :post_builders
+    attr_reader :dst_tree, :pre_builders, :post_builders, :converter
 
     class << self
       # register all asciidoctor extensions given at instantiation
@@ -69,7 +69,7 @@ module Giblish
       @adoc_log_level = opts.fetch(:adoc_log_level, Logger::Severity::WARN)
 
       # get the top-most node of the source and destination trees
-      @src_top = src_top
+      @src_tree = src_top
       @dst_tree = PathTree.new(dst_top).node(dst_top, from_root: true)
 
       # setup build-phase callback objects
@@ -93,7 +93,7 @@ module Giblish
 
     def pre_build(abort_on_exc: true)
       @pre_builders.each do |pb|
-        pb.on_prebuild(@src_top, @dst_tree, @converter)
+        pb.on_prebuild(@src_tree, @dst_tree, @converter)
       rescue => ex
         @logger&.error { ex.message.to_s }
         raise ex if abort_on_exc
@@ -101,11 +101,11 @@ module Giblish
     end
 
     def build(abort_on_exc: true)
-      @src_top.traverse_preorder do |level, n|
+      @src_tree.traverse_preorder do |level, n|
         next unless n.leaf?
 
         # create the destination node, using the correct suffix depending on conversion backend
-        rel_path = n.relative_path_from(@src_top)
+        rel_path = n.relative_path_from(@src_tree)
         dst_node = @dst_tree.add_descendants(rel_path.sub_ext(""))
 
         # perform the conversion
@@ -118,7 +118,7 @@ module Giblish
 
     def post_build(abort_on_exc: true)
       @post_builders.each do |pb|
-        pb.on_postbuild(@src_top, @dst_tree, @converter)
+        pb.on_postbuild(@src_tree, @dst_tree, @converter)
       rescue => exc
         @logger&.error { exc.message.to_s }
         raise exc if abort_on_exc

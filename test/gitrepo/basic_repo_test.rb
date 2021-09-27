@@ -102,7 +102,8 @@ module Giblish
         gm.each_checkout do |treeish|
           puts treeish
         end
-        str = GitSummaryDataProvider.source(gm.git_data)
+        template = File.read("../../lib/giblish/gitrepos/gitsummary.erb", encoding: "UTF-8")
+        str = GitSummaryDataProvider.source(gm.git_data, template)
         File.write("testtags.adoc",str)
       end
     end

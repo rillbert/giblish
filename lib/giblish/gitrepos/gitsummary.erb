@@ -10,7 +10,7 @@ Generated at <%= DateTime.now %>
 |Branch 
 
 <% @branches.each do |b| %>
-|<<<%= index_path(b) %>,<%= b %>>>
+|xref:<%= index_path(b) %>[<%= b %>]
 <% end %>
 
 |===
