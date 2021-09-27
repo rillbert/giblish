@@ -172,7 +172,6 @@ module Giblish
 
   class GitSummaryPage
     def source(reponame, tags, branches)
-      
     end
   end
 end

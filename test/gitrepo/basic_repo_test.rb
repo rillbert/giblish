@@ -104,7 +104,7 @@ module Giblish
         end
         template = File.read("../../lib/giblish/gitrepos/gitsummary.erb", encoding: "UTF-8")
         str = GitSummaryDataProvider.source(gm.git_data, template)
-        File.write("testtags.adoc",str)
+        File.write("testtags.adoc", str)
       end
     end
 

@@ -5,7 +5,7 @@ module Giblish
     # search_result:: a hash conforming to the output of
     #                 the TextSearcher::search method.
     # returns::       a string with the html to return to the client
-    def response(search_result, css_path=nil)
+    def response(search_result, css_path = nil)
       adoc_2_html(search_2_adoc(search_result), css_path)
     end
 
@@ -33,8 +33,8 @@ module Giblish
       }
 
       # for debugging of adoc source
-      File.write("search.adoc",adoc_source)
-      
+      File.write("search.adoc", adoc_source)
+
       # convert to html and return result
       Asciidoctor.convert(adoc_source, converter_options)
     end
@@ -85,7 +85,7 @@ module Giblish
 
     def response
       sp = SearchParameters.from_hash(@cgi, uri_mappings: @uri_mappings)
-      @html_generator.response(searcher.search(sp),sp.css_path)
+      @html_generator.response(searcher.search(sp), sp.css_path)
     end
 
     private

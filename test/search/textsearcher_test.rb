@@ -222,7 +222,6 @@ module Giblish
         # fake minimal search request from file1 deployed to /my/docs/repo1
         uri = "http://www.example.com/search?calling-url=http://www.example.com/file_1.html&search-assets-top-rel=./gibsearch_assets&search-phrase=text"
         sp = SearchParameters.from_uri(uri, uri_mappings: {"/" => dst_tree.pathname})
-        
 
         # check that two consecutive searches returns the same repo
         searcher.search(sp)

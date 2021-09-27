@@ -36,7 +36,7 @@ module Giblish
       }
       with_search_testdata do |dsttree|
         rm = CGIRequestManager.new(fake_cgi, {"/" => dsttree.pathname.to_s})
-        File.write("s_result.html",rm.response)
+        File.write("s_result.html", rm.response)
       end
     end
   end

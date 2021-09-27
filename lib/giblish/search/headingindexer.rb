@@ -294,10 +294,8 @@ module Giblish
 
       # only include css_path if it is given in the document's attributes
       doc_attrs = src_node.data.document_attributes(src_node, dst_node, dst_top)
-      css_path = if (%w(stylesdir stylesheet).all? { |k| doc_attrs.key?(k) } )
+      css_path = if %w[stylesdir stylesheet].all? { |k| doc_attrs.key?(k) }
         doc_attrs["stylesdir"] + "/" + doc_attrs["stylesheet"]
-      else
-        nil
       end
 
       ERB.new(FORM_DATA).result(binding)

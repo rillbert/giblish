@@ -90,11 +90,11 @@ module Giblish
           raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{config_opts.inspect}"
       end
 
-      # setup all options from the chosen layout configuration but 
+      # setup all options from the chosen layout configuration but
       # override doc attributes with ones from the supplied configuration to
       # ensure they have highest pref
       @doc_attr.add_doc_attr_providers(
-        *layout_config.docattr_providers,CmdLineDocAttribs.new(config_opts)
+        *layout_config.docattr_providers, CmdLineDocAttribs.new(config_opts)
       )
       # @doc_attr.add_doc_attr_providers()
 

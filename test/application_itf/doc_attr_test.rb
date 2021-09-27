@@ -184,7 +184,7 @@ module Giblish
 
         src_tree = PathTree.build_from_fs(tmp_docs.dir)
         convert(
-          src_tree, 
+          src_tree,
           Configurator.new(CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}]))
         )
 
@@ -213,7 +213,7 @@ module Giblish
 
         # now re-do the html generation using a hard-coded idprefix
         convert(
-          src_tree, 
+          src_tree,
           Configurator.new(CmdLine.new.parse(%W[-f html -a idprefix=idefix #{topdir} #{topdir / "dst"}]))
         )
 

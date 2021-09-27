@@ -246,7 +246,7 @@ module Giblish
     # printable chars -> '_'
     tmp = str.gsub(/[\/<>:"\\|?*]/, "_")
     # non-printable chars -> '_'
-    tmp.gsub!(/[\x00-\x1F]/,'_')
+    tmp.gsub!(/[\x00-\x1F]/, "_")
     # remove heading/trailing spaces
     tmp.strip!
     # Windows disallows files ending in '.'

@@ -26,7 +26,7 @@ def init_web_server web_root
 end
 
 # assemble the html response for a given search request
-# 
+#
 # returns:: 0 for success, 1 for failure
 def send_search_response
   cgi = CGI.new

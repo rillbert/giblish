@@ -197,10 +197,10 @@ module Giblish
       data_provider = DataDelegator.new(SrcFromFile.new, configurator.doc_attr)
       src_tree.traverse_preorder do |level, node|
         next unless node.leaf?
-    
+
         node.data = data_provider
       end
-    
+
       TreeConverter.new(src_tree, configurator.config_opts.dstdir, configurator.build_options).run
     end
 
