@@ -96,7 +96,7 @@ module Giblish
 
         # run the build step -> will replace the :docid: with resolved :xref:
         # references before generating html
-        tc.build
+        # tc.build
 
         # TODO: find a check that is not brittle...
         # assert that the expected xrefs have been converted to correct html

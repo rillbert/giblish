@@ -46,7 +46,7 @@ class LinkCSSTest < Minitest::Test
   # |    |- css
   #          |- giblish.css
   def test_custom_styling_without_webroot
-    TmpDocDir.open do |tmp_docs|
+    TmpDocDir.open(preserve: true) do |tmp_docs|
       srcdir, dstdir, r_dir = setup_dirs(tmp_docs.dir)
 
       # create a doc in the 'subdir' folder.
@@ -82,6 +82,7 @@ class LinkCSSTest < Minitest::Test
           href = csslink.get("href")
           next if /font-awesome/.match?(href)
 
+          puts node.pathname
           assert_equal("stylesheet", csslink.get("rel"))
           assert_equal(rp.to_s, href)
         end

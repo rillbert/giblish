@@ -86,12 +86,7 @@ module Giblish
 
     def test_gitdata_provider
       TmpDocDir.open(preserve: false) do |tmp_docs|
-        root = Pathname.new(tmp_docs.dir)
-
-        # setup repo with two branches
-        # repo = root / "tstrepo"
-        # setup_repo(tmp_docs, repo)
-
+        # TODO: Remove the dep to this local git repo
         repo = Pathname.pwd / "../asciidoctor"
         gm = GitCheckoutManager.new(
           srcdir: repo,
@@ -102,8 +97,7 @@ module Giblish
         gm.each_checkout do |treeish|
           puts treeish
         end
-        template = File.read("../../lib/giblish/gitrepos/gitsummary.erb", encoding: "UTF-8")
-        str = GitSummaryDataProvider.source(gm.git_data, template)
+        str = GitSummaryDataProvider.new("testrepo").source
         File.write("testtags.adoc", str)
       end
     end

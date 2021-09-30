@@ -139,7 +139,7 @@ module Giblish
         sections: []
       }
       sections = indexed_doc[:sections]
-      lines = document.reader.source_lines
+      lines = document.reader.source_lines.dup
 
       line_no = 0
       match_str = ""

@@ -102,6 +102,11 @@ module Giblish
       def process(document, reader)
         # Add doc as a source dependency for doc ids
         gib_data = document.attributes["giblish-info"]
+        if gib_data.nil?
+          Giblog.logger.error "The docid preprocessor did not find required info in the doc attribute. (Doc title: #{document.title}"
+          return reader
+        end
+
         src_node = gib_data[:src_node]
 
         # Convert all docid refs to valid relative refs

@@ -1,6 +1,7 @@
 require_relative "cmdline"
 require_relative "configurator"
 require_relative "treeconverter"
+require_relative "gitrepos/checkoutmanager"
 
 module Giblish
   # The app class for the giblish application
@@ -54,6 +55,24 @@ module Giblish
   end
 
   class DirTreeConvert
+    # This class provides a file as the source for the asciidoc info and 
+    # sets the document attributes required by Asciidoctor to resolve 
+    # 'imagesdir' et al.
+    class AdocFileProvider
+      def adoc_source(src_node, dst_node, dst_top)
+        File.read(src_node.pathname)
+      end
+
+      def document_attributes(src_node, dst_node, dst_top)
+        p = src_node.pathname
+        {
+          'docfile' => p.to_s,
+          'docdir' => p.dirname.to_s,
+          'docname' => p.basename.to_s
+        }        
+      end
+    end
+
     def initialize(user_opts)
       @user_opts = user_opts.dup
 
@@ -69,7 +88,7 @@ module Giblish
       # assign/setup a configurator containing all api options and doc attributes
       build_config = configurator || Configurator.new(@user_opts)
 
-      tc = setup_converter(@src_tree, SrcFromFile.new, build_config)
+      tc = setup_converter(@src_tree, AdocFileProvider.new, build_config)
       tc.run
     end
 
@@ -92,9 +111,12 @@ module Giblish
     end
 
     def setup_converter(src_tree, adoc_src_provider, configurator)
-      # compose the attribute provider and associate it with all source
-      # nodes
-      data_provider = DataDelegator.new(adoc_src_provider, configurator.doc_attr)
+      # compose the doc attribute provider.
+      configurator.doc_attr.add_doc_attr_providers(adoc_src_provider)
+      # NOTE: The order in the line below is important!
+      data_provider = DataDelegator.new(configurator.doc_attr, adoc_src_provider)
+
+      # associate the data providers with each source node in the tree
       src_tree.traverse_preorder do |level, node|
         next unless node.leaf?
 
