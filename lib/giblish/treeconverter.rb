@@ -120,8 +120,8 @@ module Giblish
       @post_builders.each do |pb|
         pb.on_postbuild(@src_tree, @dst_tree, @converter)
       rescue => exc
-        @logger&.error { exc.message.to_s }
         raise exc if abort_on_exc
+        @logger&.error { exc.message.to_s }
       end
     end
 

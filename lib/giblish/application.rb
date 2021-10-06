@@ -156,10 +156,9 @@ module Giblish
         Giblog.logger.debug { "cmdline: #{@user_opts.inspect}" }
         DirTreeConvert.new(@user_opts).run
       rescue => e
-        raise e if @abort_on_error
-
         Giblog.logger.error { "Conversion of #{name} failed!" }
         Giblog.logger.error { e.message }
+        raise e if @abort_on_error
       end
       make_summary
     end
@@ -180,7 +179,7 @@ module Giblish
   class EntryPoint
     def initialize(args)
       # force immediate output
-      $stdout.sync = true
+      # $stdout.sync = true
 
       # setup logging
       Giblog.setup

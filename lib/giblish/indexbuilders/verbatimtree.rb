@@ -39,14 +39,10 @@ module Giblish
     #
     # Returns [ title, clickableTitleStr, clickableDetailsStr ]
     def format_title_and_ref(conv_info)
-      conv_info.title = "NO TITLE FOUND (#{@nof_missing_titles += 1}) !" unless conv_info.title
-
-      # Manipulate the doc title if we have a doc id
-      title = +""
-      title << "#{conv_info.docid} - " unless conv_info.docid.nil?
-      title << conv_info.title
-
-      [title, "<<#{conv_info.src_rel_path}#,#{title}>>",
+      # Use docid and title in title reference
+      title_ref = (conv_info.docid.nil? ? "" : "#{conv_info.docid} - ") + conv_info.title
+      
+      [title_ref, "<<#{conv_info.src_rel_path}#,#{title_ref}>>",
         "<<#{Giblish.to_valid_id(conv_info.title)},details>>\n"]
     end
 

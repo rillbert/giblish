@@ -46,7 +46,9 @@ module Giblish
   # Provide data and access methods available when a conversion has
   # succeeded
   class SuccessfulConversion < ConversionInfo
-    attr_reader :stderr
+    attr_reader :stderr, :adoc
+
+    @@nof_missing_titles = 0
 
     # The relative Pathname from the root dir to the dst file
     # Ex Pathname("my/subdir/file1.html")
@@ -67,7 +69,9 @@ module Giblish
     end
 
     def title
-      @adoc.doctitle
+      return @title if @title
+
+      @title = @adoc.doctitle || "NO TITLE FOUND (#{@@nof_missing_titles += 1}) !"
     end
 
     def docid

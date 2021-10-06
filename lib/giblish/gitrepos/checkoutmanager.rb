@@ -82,6 +82,8 @@ module Giblish
       @tags = select_user_tags(tag_regex)
       @erb_template = erb_template
       @git_data = GitSummaryDataProvider.new(repo_root.basename)
+      # TODO: Do not hardcode this!
+      @abort_on_error = false
     end
 
     # present each git checkout matching the init criteria to the user's code.
@@ -94,18 +96,19 @@ module Giblish
     # end
     def each_checkout
       current_branch = @git_repo.current_branch
-      begin
-        (@branches + @tags).each do |treeish|
-          sync_treeish(treeish)
-          # cache branch/tag info for downstream content generation
-          @git_data.cache_info(@git_repo, treeish)
+      (@branches + @tags).each do |treeish|
+        sync_treeish(treeish)
+        # cache branch/tag info for downstream content generation
+        @git_data.cache_info(@git_repo, treeish)
 
-          yield(treeish.name)
-        end
-      ensure
-        Giblog.logger.info { "Checking out #{current_branch}" }
-        @git_repo.checkout current_branch
+        yield(treeish.name)
+      rescue => e
+        Giblog.logger.error { e.message }
+        raise e if @abort_on_error
       end
+
+      Giblog.logger.info { "Checking out #{current_branch}" }
+      @git_repo.checkout current_branch
     end
 
     private
