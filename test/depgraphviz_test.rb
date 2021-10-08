@@ -82,7 +82,7 @@ module Giblish
         # Instantiate docid and graph processors
         pb = DocIdExtension::DocidPreBuilder.new
         docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: pb.id_2_node})
-        dg = DepGraphDot.new(docid_pp.node_2_ids)
+        dg = DepGraphDot.new(docid_pp.node_2_ids, nil, nil, nil, "graph")
 
         tc = TreeConverter.new(src_tree, dstdir,
           {

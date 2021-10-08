@@ -96,9 +96,8 @@ module Giblish
       @doc_attr.add_doc_attr_providers(
         *layout_config.docattr_providers, CmdLineDocAttribs.new(config_opts)
       )
-      # @doc_attr.add_doc_attr_providers()
 
-      setup_docid(config_opts, @build_options)
+      setup_docid(config_opts, @build_options, @doc_attr)
       setup_index_generation(config_opts, @build_options, @doc_attr)
 
       # setup all pre,post, and build options
@@ -120,7 +119,7 @@ module Giblish
       build_options[:post_builders] << idx
     end
 
-    def setup_docid(config_opts, build_options)
+    def setup_docid(config_opts, build_options, doc_attr)
       return unless config_opts.resolve_docid
 
       # setup docid resolution
@@ -129,10 +128,11 @@ module Giblish
       docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: d.id_2_node})
       build_options[:adoc_extensions][:preprocessor] << docid_pp
 
+      # early exit if user does not want indices
       return if config_opts.no_index
 
       # generate dep graph if graphviz is available
-      dg = DepGraphDot.new(docid_pp.node_2_ids)
+      dg = DepGraphDot.new(docid_pp.node_2_ids, doc_attr, nil, nil, config_opts.graph_basename)
       build_options[:post_builders] << dg
     end
   end

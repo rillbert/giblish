@@ -61,6 +61,7 @@ module Giblish
 
       @adoc = adoc
       @stderr = adoc_stderr
+      @title = nil
 
       @dst_rel_path = dst_node.relative_path_from(dst_top)
 

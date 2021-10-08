@@ -7,7 +7,7 @@ module Giblish
     # Container class for all supported options that are
     # accessible via the cmd line.
     class Options
-      attr_accessor :format, :no_index, :index_basename, :include_regex, :exclude_regex,
+      attr_accessor :format, :no_index, :index_basename, :graph_basename, :include_regex, :exclude_regex,
         :resource_dir, :style_name, :web_path, :branch_regex, :tag_regex, :local_only, :doc_attributes,
         :resolve_docid, :make_searchable, :search_assets_deploy, :log_level, :srcdir, :dstdir
 
@@ -24,7 +24,9 @@ module Giblish
       def initialize
         @format = OUTPUT_FORMATS[0]
         @publish_type = :local
-        @no_index, @index_basename = false, "index"
+        @no_index = false
+        @index_basename = "index"
+        @graph_basename = "gibgraph"
         @include_regex, @exclude_regex = /.*\.(?i)adoc$/, nil
         @resource_dir = nil
         @style_name = nil
