@@ -55,8 +55,8 @@ module Giblish
   end
 
   class DirTreeConvert
-    # This class provides a file as the source for the asciidoc info and 
-    # sets the document attributes required by Asciidoctor to resolve 
+    # This class provides a file as the source for the asciidoc info and
+    # sets the document attributes required by Asciidoctor to resolve
     # 'imagesdir' et al.
     class AdocFileProvider
       def adoc_source(src_node, dst_node, dst_top)
@@ -66,10 +66,10 @@ module Giblish
       def document_attributes(src_node, dst_node, dst_top)
         p = src_node.pathname
         {
-          'docfile' => p.to_s,
-          'docdir' => p.dirname.to_s,
-          'docname' => p.basename.to_s
-        }        
+          "docfile" => p.to_s,
+          "docdir" => p.dirname.to_s,
+          "docname" => p.basename.to_s
+        }
       end
     end
 

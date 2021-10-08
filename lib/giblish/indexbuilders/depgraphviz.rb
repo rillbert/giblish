@@ -5,7 +5,7 @@ module Giblish
   #
   # Note: The asciidoctor-diagram API seems a bit strange when it comes to storing
   # temporary files:
-  # * it uses a document attribute {imagesoutdir} and stores the 
+  # * it uses a document attribute {imagesoutdir} and stores the
   #   generated svg image under that regardless of svg-type.
   # * it uses an option in the diagram macro "cachedir" under which a cached image
   #   is stored.

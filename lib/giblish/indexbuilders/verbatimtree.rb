@@ -41,7 +41,7 @@ module Giblish
     def format_title_and_ref(conv_info)
       # Use docid and title in title reference
       title_ref = (conv_info.docid.nil? ? "" : "#{conv_info.docid} - ") + conv_info.title
-      
+
       [title_ref, "<<#{conv_info.src_rel_path}#,#{title_ref}>>",
         "<<#{Giblish.to_valid_id(conv_info.title)},details>>\n"]
     end
