@@ -1,3 +1,5 @@
+require_relative "../utils"
+
 module Giblish
   # Provides a graphviz-formatted digraph of the provided node<->id ref map.
   #
@@ -89,7 +91,7 @@ module Giblish
     end
 
     def make_dot_entry(doc_dict, conv_info)
-      title = conv_info&.title.nil? ? "" : break_line(conv_info.title, 15).join("\n")
+      title = conv_info&.title.nil? ? "" : Giblish.break_line(conv_info.title, 15).join("\n")
 
       # create the label used to display the node in the graph
       dot_entry = if conv_info.docid.nil?
@@ -113,10 +115,10 @@ module Giblish
       doc_dict[doc_id] = dot_entry
     end
 
+    # create an entry in the 'dot' description for each
+    # document, sort them according to descending doc id to
+    # get them displayed in the opposite order in the graph
     def generate_labels
-      # create an entry in the 'dot' description for each
-      # document, sort them according to descending doc id to
-      # get them displayed in the opposite order in the graph
       node_dict = {}
       @info_2_ids.each_key do |conv_info|
         make_dot_entry node_dict, conv_info
@@ -157,50 +159,6 @@ module Giblish
     def next_fake_id
       @next_id += 1
       "_generated_id_#{@next_id.to_s.rjust(4, "0")}"
-    end
-
-    # TODO: Move this to a util class
-    # Break a line into rows of max_length, using '-' semi-intelligently
-    # to split words if needed
-    #
-    # return:: an Array with the resulting rows
-    def break_line(line, max_length)
-      too_short = 4
-      return [line] if line.length <= too_short
-      raise ArgumentError, "max_length must be larger than #{too_short - 1}" if max_length < too_short
-
-      rows = []
-      row = ""
-
-      until line.empty?
-        word, _sep, _remaining = line.strip.partition(" ")
-        row_space = max_length - row.length
-
-        # start word with a space if row is not empty
-        sep = row.empty? ? "" : " "
-
-        # if word fits in row, just insert it and take next word
-        if row_space - (word.length + sep.length) >= 0
-          row = "#{row}#{sep}#{word}"
-          line = line.sub(word, "").strip
-          next
-        end
-
-        # shall we split word or just move it to next row?
-        unless word.length <= too_short || (row_space <= too_short) || (word.length.to_f / row_space < 0.5)
-          # we will split the word, using a '-'
-          first_part = word[0..row_space - (1 + sep.length)]
-          row = "#{row}#{sep}#{first_part}-"
-          line = line.sub(first_part, "").strip
-        end
-
-        # start a new row
-        rows << row
-        row = ""
-      end
-      # need to add unfinished row if any
-      rows << row unless row.empty?
-      rows
     end
   end
 end

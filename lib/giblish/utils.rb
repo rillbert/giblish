@@ -192,47 +192,6 @@ module Giblish
   end
   module_function :which
 
-  # returns raw html that displays a search box to let the user
-  # acces the text search functionality.
-  #
-  # css          - the name of the css file to use for the search result layout
-  # cgi_path     - the (uri) path to a cgi script that implements the server side
-  #                functionality of searching the text
-  # opts:
-  # :web_assets_top => string   # the path to the 'web_assets' dir as seen when serving
-  #                               the web server (eg www.mysite.com/blah/doc_root ->
-  #                               web_assets_top shall be '/blah/doc_root')
-  # :search_assets_top => string   # the path to where the 'heading.json' file is located (
-  #                                  as seen from the local file system on the machine that
-  #                                  runs the search script)
-  def generate_search_box_html(css, cgi_path, opts)
-    # Replace the button with the below to use a text-only version of the btn
-    # <button id="search" type="submit">Search</button>
-    <<~SEARCH_INFO
-      ++++
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-        <form class="example" action="#{cgi_path}" style="margin:20px 0px 20px 0px;max-width:790px">
-            Search all documents:
-            <input id="searchphrase" type="text" placeholder="Search.." name="searchphrase"/>
-            <button id="search" type="submit"><i class="fa fa-search"></i></button>
-            <br>
-
-            <input id="ignorecase" type="checkbox" value="true" name="ignorecase" checked/>
-            <label for="ignorecase">Ignore Case</label>
-            &nbsp;&nbsp;
-            <input id="useregexp" type="checkbox" value="true" name="useregexp"/>
-            <label for="useregexp">Use Regexp</label>
-
-            <input type="hidden" name="searchassetstop" value="#{opts[:search_assets_top]}"</input>
-            <input type="hidden" name="webassetstop" value="#{opts[:web_assets_top]}"</input>
-            #{%(<input type="hidden" name="css" value="#{css}"</input>) unless css.nil?}
-        </form>
-      ++++
-
-    SEARCH_INFO
-  end
-  module_function :generate_search_box_html
-
   # Convert a string into a string where all characters forbidden as part of
   # filenames are replaced by an underscore '_'.
   #
@@ -255,4 +214,48 @@ module Giblish
     tmp
   end
   module_function :to_fs_str
+
+  # Break a line into rows of max_length, using '-' semi-intelligently
+  # to split words if needed
+  #
+  # return:: an Array with the resulting rows
+  def break_line(line, max_length)
+    too_short = 3
+    return [line] if line.length <= too_short
+    raise ArgumentError, "max_length must be larger than #{too_short - 1}" if max_length < too_short
+
+    rows = []
+    row = ""
+
+    until line.empty?
+      word, _sep, _remaining = line.strip.partition(" ")
+      row_space = max_length - row.length
+
+      # start word with a space if row is not empty
+      sep = row.empty? ? "" : " "
+
+      # if word fits in row, just insert it and take next word
+      if row_space - (word.length + sep.length) >= 0
+        row = "#{row}#{sep}#{word}"
+        line = line.sub(word, "").strip
+        next
+      end
+
+      # shall we split word or just move it to next row?
+      if word.length > too_short && (row_space > too_short) && (word.length - row_space).abs > too_short
+        # we will split the word, using a '-'
+        first_part = word[0..row_space - (1 + sep.length)]
+        row = "#{row}#{sep}#{first_part}-"
+        line = line.sub(first_part, "").strip
+      end
+
+      # start a new row
+      rows << row
+      row = ""
+    end
+    # need to add unfinished row if any
+    rows << row unless row.empty?
+    rows
+  end
+  module_function :break_line
 end
