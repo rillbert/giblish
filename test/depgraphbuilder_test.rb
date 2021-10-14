@@ -1,10 +1,11 @@
 require "fileutils"
 require "test_helper"
 require_relative "../lib/giblish/indexbuilders/dotdigraphadoc"
-require_relative "../lib/giblish/indexbuilders/depgraphviz"
+require_relative "../lib/giblish/indexbuilders/d3treegraph"
+require_relative "../lib/giblish/indexbuilders/depgraphbuilder"
 
 module Giblish
-  class DepGraphVizTest < Minitest::Test
+  class DepGraphBuilderTest < Minitest::Test
     include Giblish::TestUtils
 
     TEST_STR_BASIC = <<~DOT_STR
@@ -58,6 +59,32 @@ module Giblish
       assert_equal(TEST_STR_BASIC, dg.source)
     end
 
+    class TestTitleDocid
+      attr_reader :title, :docid
+      @@docid = 0
+      def initialize(node)
+        @title = "T - #{node.segment}"
+        @docid = @@docid += 1
+      end
+    end
+    def test_create_d3_digraph
+      # tree = {
+      #   FakeConvInfo.new("Doc 1", "D-1", Pathname.new("my/subdir/file1.html")) => ["D-2", "D-3"],
+      #   FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html")) => ["D-1"],
+      #   FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html")) => []
+      # }
+      t = PathTree.build_from_fs(__dir__,prune: true)
+      t.traverse_preorder do |level,node|
+        # next unless node.leaf?
+
+        node.data = TestTitleDocid.new(node)
+      end
+      dg = D3TreeGraph.new(tree: t)
+      File.write("testd3.html",dg.source)
+      return
+      assert_equal(TEST_STR_BASIC, dg.source)
+    end
+
     def test_create_digraph_page
       TmpDocDir.open(preserve: true) do |tmp_docs|
         srcdir = Pathname.new(tmp_docs.dir) / "src"
@@ -82,7 +109,7 @@ module Giblish
         # Instantiate docid and graph processors
         pb = DocIdExtension::DocidPreBuilder.new
         docid_pp = DocIdExtension::DocidProcessor.new({id_2_node: pb.id_2_node})
-        dg = DepGraphDot.new(docid_pp.node_2_ids, nil, nil, nil, "graph")
+        dg = DependencyGraphPostBuilder.new(docid_pp.node_2_ids, nil, nil, nil, "graph")
 
         tc = TreeConverter.new(src_tree, dstdir,
           {

@@ -56,19 +56,9 @@
       NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
       EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 
-      treeData = {
-        "name": "/", "children": [{
-          "name": "utilities", "children": [{
-            "name": "MiniTEM", "children": [{
-              "name": "MicroCSApi2Json.adoc","children":[]},{"name":"MicroscopeTester.adoc","children":[]}]}]},{"name":"VIAS","children":[{"name":"dbadmin",
-"children": [{ "name": "dbadmin.adoc", "children": [] }]}, {
-              "name": "high_level_design", "children": [{
-                "name": "high_level_design.adoc","children":[]}]},{"name":"compatibility","children":[{"name":"third_party_software.adoc","children":[]}]},{"name":"user_manuals","children":[{"name":"Tutorials","children":[{"name":"VIAS_workflow_tutorial_GSI_MiniTEM.adoc","children":[]
-            }, { "name": "VIAS_workflow_tutorial_watershed.adoc", "children": [] }, {
-              "name": "VIAS_workflow_tutorial_GSI_ViroTEM.adoc", "children":[]},{"name":"VIAS_workflow_tutorial_introduction.adoc","children":[]},{"name":"VIAS_workflow_tutorial_screening.adoc","children":[]},{"name":"VIAS_workflow_tutorials_index.adoc","children":[]},{"name":"VIAS_workflow_tutorial_CNN.adoc","children":[]},{"name":"VIAS_workflow_tutorial_template_matching.adoc","children":[]},{"name":"VIAS_workflow_tutorial_RDP.adoc","children":[]}]},{"name":"MiniTEM_User_Manual.adoc","children":[]},{"name":"Analysis_User_Manual.adoc","children":[]},{"name":"ViroTEM_User_Manual.adoc","children":[]}]},{"name":"service_documents","children":[{"name":"ViroCam firmware upgrade Bundle 10.adoc","children":[]},{"name":"VIAS_config_files.adoc","children":[]},{"name":"VIAS_upgrade_instructions_from_3.0.adoc","children":[]},{"name":"installation_and_configuration.adoc","children":[]},{"name":"VIAS_upgrade_instructions.adoc","children":[]},{"name":"VIAS_commissioning_help.adoc","children":[]},{"name":"sql_server_installation.adoc","children":[]}]},{"name":"migration","children":[{"name":"migrate_images.adoc","children":[]},{"name":"migrating_workflows.adoc","children":[]},{"name":"migrate_projects.adoc","children":[]}]},{"name":"swdev","children":[{"name":"version_bumping.adoc","children":[]},{"name":"building_vias.adoc","children":[]},{"name":"module_inventory.adoc","children":[]}]}]}]};
 
-//  treeData = <%= tree %>;
-//  treeData = <%= tree.to_json %>;
+//  treeData = <%= @tree %>;
+ treeData = <%= @tree.to_json %>;
 
  // Calculate total nodes, max label length
  var maxLabelLength = 0;

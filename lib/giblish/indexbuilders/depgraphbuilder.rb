@@ -35,7 +35,7 @@ module Giblish
 
   # Generates a summary page with a docid-based dependency graph for an entire destination
   # tree.
-  class DepGraphDot
+  class DependencyGraphPostBuilder
     # the dependency graph relies on graphwiz (dot), check if we can access that
     def self.dot_supported
       !Giblish.which("dot").nil?
@@ -48,7 +48,7 @@ module Giblish
     #              build phase
     def initialize(node_2_ids, docattr_provider = nil, api_opt_provider = nil, adoc_src_provider = nil, basename = DEFAULT_BASENAME)
       # this class relies on graphwiz (dot), make sure we can access it
-      raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless DepGraphDot.dot_supported
+      raise "Could not find the 'dot' tool needed to generate a dependency graph!" unless DependencyGraphPostBuilder.dot_supported
 
       # require asciidoctor module needed for generating diagrams
       require "asciidoctor-diagram/graphviz"
@@ -76,7 +76,7 @@ module Giblish
 
     # Called from TreeConverter during post build phase
     def on_postbuild(src_tree, dst_tree, converter)
-      return unless DepGraphDot.dot_supported
+      return unless DependencyGraphPostBuilder.dot_supported
 
       # convert {src_node => [doc ids]} to {conv_info => [doc ids]}
       info_2_ids = {}

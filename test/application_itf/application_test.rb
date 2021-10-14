@@ -60,7 +60,7 @@ module Giblish
     def test_hello_world_pdf
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = tmp_docs.dir
-        puts `lib/giblish.rb -f pdf data/testdocs/wellformed #{topdir}`
+        `lib/giblish.rb -f pdf data/testdocs/wellformed #{topdir}`
         assert_equal 0, $?.exitstatus
       end
     end

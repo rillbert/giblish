@@ -5,7 +5,7 @@ require_relative "adocsrc_providers"
 require_relative "subtreeinfobuilder"
 require_relative "docid/docid"
 require_relative "search/headingindexer"
-require_relative "indexbuilders/depgraphviz"
+require_relative "indexbuilders/depgraphbuilder"
 require_relative "indexbuilders/subtree_indices"
 
 module Giblish
@@ -132,7 +132,7 @@ module Giblish
       return if config_opts.no_index
 
       # generate dep graph if graphviz is available
-      dg = DepGraphDot.new(docid_pp.node_2_ids, doc_attr, nil, nil, config_opts.graph_basename)
+      dg = DependencyGraphPostBuilder.new(docid_pp.node_2_ids, doc_attr, nil, nil, config_opts.graph_basename)
       build_options[:post_builders] << dg
     end
   end
