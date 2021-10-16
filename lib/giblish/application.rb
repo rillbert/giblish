@@ -154,7 +154,8 @@ module Giblish
         @user_opts.dstdir = @dst_topdir / Giblish.to_fs_str(name)
 
         Giblog.logger.debug { "cmdline: #{@user_opts.inspect}" }
-        DirTreeConvert.new(@user_opts).run
+        configurator = GitRepoConfigurator.new(@user_opts, @gm.repo_root)
+        DirTreeConvert.new(@user_opts).run(configurator)
       rescue => e
         Giblog.logger.error { "Conversion of #{name} failed!" }
         Giblog.logger.error { e.message }

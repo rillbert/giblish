@@ -65,7 +65,7 @@ module Giblish
   # with a iteration method 'each_checkout' where each matching branch and/or tag is
   # checked out and presented to the user code.
   class GitCheckoutManager
-    attr_reader :branches, :tags, :git_data
+    attr_reader :branches, :tags, :git_data, :git_repo, :repo_root
 
     # srcdir:: Pathname to the top dir of the local git repo to work with
     # local_only:: if true, do not try to access any remote branches or merge with any
@@ -73,17 +73,17 @@ module Giblish
     # branch_regex:: the regex for the branches to include during iteration (default: none)
     # tag_regex:: the regex for the tags to include during iteration (default: none)
     def initialize(srcdir:, local_only: false, branch_regex: nil, tag_regex: nil, erb_template: nil)
-      repo_root = GitItf.find_gitrepo_root(srcdir)
-      raise ArgumentError("The path: #{srcdir} is not within a git repo!") if repo_root.nil?
+      @repo_root = GitItf.find_gitrepo_root(srcdir)
+      raise ArgumentError("The path: #{srcdir} is not within a git repo!") if @repo_root.nil?
 
       @local_only = local_only
-      @git_repo = init_git_repo(repo_root, local_only)
+      @git_repo = init_git_repo(@repo_root, local_only)
       @branches = select_user_branches(branch_regex, local_only)
       @tags = select_user_tags(tag_regex)
       @erb_template = erb_template
-      @git_data = GitSummaryDataProvider.new(repo_root.basename)
+      @git_data = GitSummaryDataProvider.new(@repo_root.basename)
       # TODO: Do not hardcode this!
-      @abort_on_error = false
+      @abort_on_error = true
     end
 
     # present each git checkout matching the init criteria to the user's code.
@@ -96,7 +96,13 @@ module Giblish
     # end
     def each_checkout
       current_branch = @git_repo.current_branch
-      (@branches + @tags).each do |treeish|
+      checkouts = (@branches + @tags)
+      if checkouts.empty?
+        Giblog.logger.info { "No matching branches or tags found." }
+        return
+      end
+
+      checkouts.each do |treeish|
         sync_treeish(treeish)
         # cache branch/tag info for downstream content generation
         @git_data.cache_info(@git_repo, treeish)
@@ -107,14 +113,16 @@ module Giblish
         raise e if @abort_on_error
       end
 
-      Giblog.logger.info { "Checking out #{current_branch}" }
-      @git_repo.checkout current_branch
+      if @git_repo.current_branch != current_branch
+        Giblog.logger.info { "Checking out '#{current_branch}'" }
+        @git_repo.checkout current_branch
+      end
     end
 
     private
 
     def sync_treeish(treeish)
-      Giblog.logger.info { "Checking out #{treeish.name}" }
+      Giblog.logger.info { "Checking out '#{treeish.name}'" }
       @git_repo.checkout treeish.name
 
       # merge branches with their upstream at origin unless

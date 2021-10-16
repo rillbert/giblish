@@ -7,6 +7,7 @@ require_relative "docid/docid"
 require_relative "search/headingindexer"
 require_relative "indexbuilders/depgraphbuilder"
 require_relative "indexbuilders/subtree_indices"
+require_relative "gitrepos/history_pb"
 
 module Giblish
   class HtmlLayoutConfig
@@ -109,7 +110,7 @@ module Giblish
       end
     end
 
-    private
+    protected
 
     def setup_index_generation(config_opts, build_options, doc_attr)
       return if config_opts.no_index
@@ -134,6 +135,24 @@ module Giblish
       # generate dep graph if graphviz is available
       dg = DependencyGraphPostBuilder.new(docid_pp.node_2_ids, doc_attr, nil, nil, config_opts.graph_basename)
       build_options[:post_builders] << dg
+    end
+  end
+
+  # swap standard index generation from the base class to ones including 
+  # git history.
+  class GitRepoConfigurator < Configurator
+    def initialize(config_opts, git_repo_dir)
+      @git_repo_dir = git_repo_dir
+      super(config_opts)
+    end
+    
+    protected
+
+    def setup_index_generation(config_opts, build_options, doc_attr)
+      return if config_opts.no_index
+      
+      build_options[:post_builders] << AddHistoryPostBuilder.new(@git_repo_dir)
+      build_options[:post_builders] << SubtreeInfoBuilder.new(doc_attr,nil,SubtreeIndexGit,config_opts.index_basename)
     end
   end
 end
