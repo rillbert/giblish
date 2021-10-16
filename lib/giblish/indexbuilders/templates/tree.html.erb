@@ -57,7 +57,6 @@
       EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 
 
-//  treeData = <%= @tree %>;
  treeData = <%= @tree.to_json %>;
 
  // Calculate total nodes, max label length
@@ -242,7 +241,7 @@
                 return d._children ? "lightsteelblue" : "#fff";
               });
 
-            nodeEnter.append("svg:a").attr("xlink:href", function (d) { return "https://www.dn.se" })
+            nodeEnter.append("svg:a").attr("xlink:href", function (d) { return d.dst_ref })
               .append("text")
               .attr("x", function (d) {
                 return d.children || d._children ? -20 : 20;

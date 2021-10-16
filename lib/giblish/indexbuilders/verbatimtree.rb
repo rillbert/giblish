@@ -16,7 +16,6 @@ module Giblish
     def source
       # output tree intro
       tree_string = +<<~DOC_HEADER
-        .Files and dirs under _#{@tree.segment}_
         [subs=\"normal\"]
         ----
       DOC_HEADER

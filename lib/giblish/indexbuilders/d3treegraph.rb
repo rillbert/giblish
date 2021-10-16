@@ -9,7 +9,7 @@ class D3TreeGraph
   # options:
   # dir_index_base_name: String - the basename of the index file
   # residing in each directory
-  def initialize(tree:, options: {dir_index_base_name: "index"}) #target: "d3graph", format: "svg", opts: {})
+  def initialize(tree:, options: {dir_index_base_name: "index"})
     @tree = transform_data(tree)
     @options = options
   end
@@ -17,16 +17,6 @@ class D3TreeGraph
   def source
     erb_template = File.read("#{__dir__}/templates/tree.html.erb")
     ERB.new(erb_template, trim_mode: "<>").result(binding)
-    # <<~DOC_SRC
-    #   = A Graph test
-
-    #   Some text 
-    #   ++++
-    #   #{graph}
-    #   ++++
-
-    #   Some more text
-    # DOC_SRC
   end
 
   private
@@ -38,9 +28,18 @@ class D3TreeGraph
     # root -> left -> right
     tree.traverse_preorder do |level, node|
       conv_info = node.data
+      name = node.segment
+      dst_ref = ""
+
+      unless conv_info.nil?
+        name = (conv_info&.docid.nil? ? "" : "#{conv_info.docid} - ") + conv_info.title
+        dst_ref = conv_info.src_rel_path.sub_ext(".html")
+      end
+      
       # Display docid and title as name
       d = {
-        name: (conv_info.docid.nil? ? "" : "#{conv_info.docid} - ") + conv_info.title,
+        name: name,
+        dst_ref: dst_ref,
         children: []
       }
 
