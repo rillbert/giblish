@@ -22,7 +22,7 @@ module Giblish
 
     def test_invalid_combos
       assert_raises(OptionParser::InvalidArgument) {
-        CmdLine.new.parse(%w[--search-assets-deploy hejhopp src dst])
+        CmdLine.new.parse(%w[--server-search-path hejhopp src dst])
       }
 
       assert_raises(OptionParser::InvalidArgument) {
