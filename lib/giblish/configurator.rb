@@ -39,8 +39,9 @@ module Giblish
         search_provider = HeadingIndexer.new(config_opts.srcdir)
         @adoc_extensions[:tree_processor] = search_provider
         @post_builders << search_provider
-        # TODO: Remove this after testing
-        @adoc_extensions[:docinfo_processor] = AddSearchForm
+
+        # add search form to all docs
+        @adoc_extensions[:docinfo_processor] = AddSearchForm.new(config_opts.search_action_path)
       end
     end
   end

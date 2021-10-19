@@ -282,6 +282,11 @@ module Giblish
       </div>
     FORM_HTML
 
+    def initialize(action_path = nil, opts = {})
+      @action_path = action_path
+      super(opts)
+    end
+
     def process(document)
       attrs = document.attributes
       src_node = attrs["giblish-info"][:src_node]
@@ -290,7 +295,7 @@ module Giblish
 
       to_top_rel = dst_top.relative_path_from(dst_node.parent)
       sa_top_rel = to_top_rel.join("gibsearch_assets").cleanpath
-      action_path = to_top_rel.join("gibsearch.cgi").cleanpath
+      action_path = @action_path || to_top_rel.join("gibsearch.cgi").cleanpath
 
       # only include css_path if it is given in the document's attributes
       doc_attrs = src_node.data.document_attributes(src_node, dst_node, dst_top)

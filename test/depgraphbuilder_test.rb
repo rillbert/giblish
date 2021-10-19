@@ -60,11 +60,12 @@ module Giblish
     end
 
     class TestTitleDocid
-      attr_reader :title, :docid
+      attr_reader :title, :docid, :src_rel_path
       @@docid = 0
       def initialize(node)
         @title = "T - #{node.segment}"
         @docid = @@docid += 1
+        @src_rel_path = Pathname.new("hejsan")
       end
     end
     def test_create_d3_digraph
@@ -80,6 +81,9 @@ module Giblish
         node.data = TestTitleDocid.new(node)
       end
       dg = D3TreeGraph.new(tree: t)
+      require 'json'
+      puts JSON.pretty_generate(dg.tree)
+
       File.write("testd3.html",dg.source)
       return
       assert_equal(TEST_STR_BASIC, dg.source)

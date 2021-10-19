@@ -9,7 +9,7 @@ module Giblish
     class Options
       attr_accessor :format, :no_index, :index_basename, :graph_basename, :include_regex, :exclude_regex,
         :resource_dir, :style_name, :web_path, :branch_regex, :tag_regex, :local_only, :doc_attributes,
-        :resolve_docid, :make_searchable, :search_assets_deploy, :log_level, :srcdir, :dstdir
+        :resolve_docid, :make_searchable, :search_action_path, :log_level, :srcdir, :dstdir
 
       OUTPUT_FORMATS = ["html", "pdf"]
 
@@ -36,7 +36,7 @@ module Giblish
         @doc_attributes = {}
         @resolve_docid = false
         @make_searchable = false
-        @search_assets_deploy = nil
+        @search_action_path = nil
         @log_level = "info"
       end
 
@@ -178,17 +178,13 @@ module Giblish
           "cgi-bin dir in your webserver and rename it from .rb to .cgi") do |m|
           @make_searchable = m
         end
-        parser.on("-p", "--search-assets-deploy PATH",
-          "the absolute path to the 'search_assets' folder where the search",
-          "script can find the data needed for implementing the text search",
-          "(default is <dst_dir_top>).",
-          "Set this to the file system path where the generated html",
-          "docs will be deployed (if different from dst_dir_top):",
+        parser.on("--server-search-path URLPATH",
+          "the url path to which search requests are sent.",
+          "(default is #{@search_action_path}).",
           "E.g.",
-          "If the generated html docs will be deployed to the folder",
-          "'/var/www/mysite/blah/mydocs,'",
-          "this is what you shall set the path to.") do |p|
-          @search_assets_deploy = Pathname.new(p)
+          "If the search script resides under 'www.mysite.com/actions/gibsearch'",
+          "you would set this as '--server-search-path /actions/gibsearch'") do |p|
+          @search_action_path = Pathname.new(p)
         end
         parser.on("-l", "--log-level LEVEL", LOG_LEVELS,
           "set the log level explicitly. Must be one of",
@@ -273,8 +269,8 @@ module Giblish
         "is only supported for html rendering."
       end
 
-      if opts.search_assets_deploy && !opts.make_searchable
-        raise OptionParser::InvalidArgument, "Error: The --search-assets-deploy (-mp)"\
+      if opts.search_action_path && !opts.make_searchable
+        raise OptionParser::InvalidArgument, "Error: The --server-search-path "\
         "flag is only supported in combination with the --make-searchable (-m) flag."
       end
     end
