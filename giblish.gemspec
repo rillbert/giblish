@@ -40,10 +40,10 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
 
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
-  spec.add_runtime_dependency "warning"
+  spec.add_runtime_dependency "warning", "~>1.2"
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.16"
-  spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.1"]
-  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.6", ">= 1.6.0"]
+  spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.2"]
+  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.6", ">= 1.6.1"]
   spec.add_runtime_dependency "git", "~> 1.9"
   spec.add_runtime_dependency "rouge", "~> 3.0"
   spec.add_runtime_dependency "prawn-svg", "~> 0.32.0"
