@@ -68,23 +68,24 @@ module Giblish
         @src_rel_path = Pathname.new("hejsan")
       end
     end
+
     def test_create_d3_digraph
       # tree = {
       #   FakeConvInfo.new("Doc 1", "D-1", Pathname.new("my/subdir/file1.html")) => ["D-2", "D-3"],
       #   FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html")) => ["D-1"],
       #   FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html")) => []
       # }
-      t = PathTree.build_from_fs(__dir__,prune: true)
-      t.traverse_preorder do |level,node|
+      t = PathTree.build_from_fs(__dir__, prune: true)
+      t.traverse_preorder do |level, node|
         # next unless node.leaf?
 
         node.data = TestTitleDocid.new(node)
       end
       dg = D3TreeGraph.new(tree: t)
-      require 'json'
+      require "json"
       puts JSON.pretty_generate(dg.tree)
 
-      File.write("testd3.html",dg.source)
+      File.write("testd3.html", dg.source)
       return
       assert_equal(TEST_STR_BASIC, dg.source)
     end

@@ -129,7 +129,7 @@ module Giblish
 
   class SubtreeIndexBase < SubtreeSrcItf
     attr_reader :src_location
-    
+
     DEFAULT_INDEX_ERB = "/standard_index.erb"
 
     def initialize(pathtree, output_basename)
@@ -192,11 +192,11 @@ module Giblish
         #{"Purpose::\n#{node_data.purpose_str}" unless node_data.purpose_str.to_s.empty?}
 
         #{if node_data.stderr.empty?
-          ""
-         else
-          "Conversion issues::\n"\
-          "#{node_data.stderr.gsub(/^/, " * ")}"
-         end
+            ""
+          else
+            "Conversion issues::\n"\
+            "#{node_data.stderr.gsub(/^/, " * ")}"
+          end
         }
 
         Source file::

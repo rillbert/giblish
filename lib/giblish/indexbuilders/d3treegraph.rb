@@ -37,19 +37,19 @@ class D3TreeGraph
     path = []
     # root -> left -> right
     tree.traverse_preorder do |level, node|
-      d = node.leaf? ? leaf_info(node) : directory_info(node) 
+      d = node.leaf? ? leaf_info(node) : directory_info(node)
 
-      if level == 0 
+      if level == 0
         data = d
         path << d
       elsif level > last_level
         path[-1][:children] << d
-        path << d        
+        path << d
       elsif level == last_level
         path[-2][:children] << d
         path[-1] = d
       else
-        path[level-1][:children] << d
+        path[level - 1][:children] << d
         path[level] = d
         path = path[0..level]
       end
@@ -69,14 +69,14 @@ class D3TreeGraph
         children: []
       }
     else
-      Giblog.logger.warn {"Could not get node data for #{conv_info.src_basename}"}
+      Giblog.logger.warn { "Could not get node data for #{conv_info.src_basename}" }
       {
         name: "ERR: Failed Conversion",
         dst_ref: "",
         children: []
       }
     end
-end
+  end
 
   def directory_info(node)
     {
