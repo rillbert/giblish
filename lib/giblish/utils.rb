@@ -242,7 +242,8 @@ module Giblish
       end
 
       # shall we split word or just move it to next row?
-      if word.length > too_short && (row_space > too_short) && (word.length - row_space).abs > too_short
+      if (row_space == max_length && word.length > row_space) ||
+         (word.length > too_short && (row_space > too_short) && (word.length - row_space).abs > too_short)
         # we will split the word, using a '-'
         first_part = word[0..row_space - (1 + sep.length)]
         row = "#{row}#{sep}#{first_part}-"
