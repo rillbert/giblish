@@ -7,10 +7,8 @@ if /^2/.match?(RUBY_VERSION)
 end
 
 require_relative "giblish/version"
-# require_relative "giblish/utils"
-# require_relative "giblish/cmdline"
-# require_relative "giblish/pathtree"
 require_relative "giblish/application"
+require_relative "giblish/search/request_manager"
 
 module Giblish
   # The main entry point to the giblish application
