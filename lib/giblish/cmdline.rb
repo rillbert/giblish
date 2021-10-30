@@ -8,8 +8,8 @@ module Giblish
     # accessible via the cmd line.
     class Options
       attr_accessor :format, :no_index, :index_basename, :graph_basename, :include_regex, :exclude_regex,
-        :resource_dir, :style_name, :web_path, :branch_regex, :tag_regex, :local_only, :doc_attributes,
-        :resolve_docid, :make_searchable, :search_action_path, :log_level, :srcdir, :dstdir
+        :resource_dir, :style_name, :server_css, :branch_regex, :tag_regex, :local_only, :doc_attributes,
+        :resolve_docid, :make_searchable, :search_action_path, :log_level, :srcdir, :dstdir, :web_path
 
       OUTPUT_FORMATS = ["html", "pdf"]
 
@@ -30,6 +30,8 @@ module Giblish
         @include_regex, @exclude_regex = /.*\.(?i)adoc$/, nil
         @resource_dir = nil
         @style_name = nil
+        @server_css = nil
+        # TODO: remove this soon
         @web_path = nil
         @branch_regex, @tag_regex = nil, nil
         @local_only = false
@@ -99,15 +101,19 @@ module Giblish
           @exclude_regex = Regexp.new(regex_str)
         end
         parser.on("-w", "--web-path [PATH]",
-          "Specifies the URL path to where the generated html documents",
-          "will be deployed (only needed when serving the html docs via",
-          "a web server).",
-          "E.g.",
-          "If the docs are deployed to 'www.example.com/site_1/blah',",
-          "this flag shall be set to '/site_1/blah'. This switch is only",
-          "used when generating html. giblish uses this to link the deployed",
-          "html docs with the correct stylesheet.") do |path|
-          @web_path = Pathname.new(path)
+          "DEPRECATED!! You should use the server-search-path and",
+          "server-css-path flags instead.") do |path|
+          Giblog.logger.error { "The '-w' flag is DEPRECATED, use the '--server-search-path' and '--server-css-path' flags instead." }
+          @web_path = true
+        end
+        parser.on("--server-css-path [PATH]",
+          "Sets a specific path to the stylesheet used by the generated",
+          "html documents. This flag can be used instead of the 's' and",
+          "'r' flags if a pre-existing stylesheet exists at a known",
+          "location that is accessible from the generated documents via",
+          "an 'href' element.",
+          "This flag is only used for html generation.") do |path|
+          @server_css = Pathname.new(path)
         end
         parser.on("-g", "--git-branches [REGEX]",
           "if the source_dir_top is located within a git repo,",
@@ -248,11 +254,15 @@ module Giblish
     def validate_options(opts)
       raise OptionParser::InvalidArgument, "Could not find source path #{opts.srcdir}" unless opts.srcdir.exist?
 
-      if opts.web_path && (opts.resource_dir || opts.style_name)
+      if opts.web_path
+        raise OptionParser::InvalidArgument, "The '-w/--web-path' flag is DEPRECATED. Use the --server-css-path and --server--search-path flags instead."
+      end
+
+      if opts.server_css && (opts.resource_dir || opts.style_name)
         raise OptionParser::InvalidArgument, "The '-w' flag can not be used with either of the '-r' or '-s' flags"
       end
 
-      if opts.web_path && opts.format != "html"
+      if opts.server_css && opts.format != "html"
         raise OptionParser::InvalidArgument, "The '-w' flag can only be used for the 'html' format flags"
       end
 

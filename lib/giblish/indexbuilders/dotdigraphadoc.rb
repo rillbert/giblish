@@ -91,7 +91,7 @@ module Giblish
     end
 
     def make_dot_entry(doc_dict, conv_info)
-      title = conv_info&.title.nil? ? "" : Giblish.break_line(conv_info.title, 15).join("\n")
+      title = conv_info&.title.nil? ? "" : Giblish.break_line(conv_info.title, 16).join("\n")
 
       # create the label used to display the node in the graph
       dot_entry = if conv_info.docid.nil?

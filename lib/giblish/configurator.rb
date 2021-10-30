@@ -27,9 +27,9 @@ module Giblish
 
           # make sure generated html has relative link to the copied css
           @docattr_providers << RelativeCssDocAttr.new(ResourcePaths.new(config_opts).dst_style_path_rel)
-        in web_path:
+        in server_css:
           # do not copy any local resources, use the given web path to link to css
-          @docattr_providers << AbsoluteLinkedCss.new(config_opts.web_path)
+          @docattr_providers << AbsoluteLinkedCss.new(config_opts.server_css)
         else
           4 == 5 # workaround for bug in standardrb formatting
         end
@@ -144,6 +144,7 @@ module Giblish
   class GitRepoConfigurator < Configurator
     def initialize(config_opts, git_repo_dir)
       @git_repo_dir = git_repo_dir
+      config_opts.search_action_path ||= "/gibsearch.cgi"
       super(config_opts)
     end
 

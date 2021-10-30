@@ -4,6 +4,10 @@ require "asciidoctor"
 require "cgi"
 require_relative "../gh_giblish/lib/giblish/search/request_manager"
 
+# TODO: Fix dynamic uri-mapping
+# This example maps www.mysite.com/ to the local dir /home/andersr/repos/gendocs
+URI_MAPPINGS = {"/" => "/home/andersr/repos/gendocs"}
+
 def init_web_server web_root
   require "webrick"
 
@@ -31,9 +35,7 @@ end
 def send_search_response
   cgi = CGI.new
   print cgi.header
-
-  rm = Giblish::CGIRequestManager.new(cgi, {"/" => "/home/andersr/repos/gendocs"})
-  print rm.response
+  print Giblish::CGIRequestManager.new(cgi, URI_MAPPINGS).response
   0
 rescue => e
   print e.message

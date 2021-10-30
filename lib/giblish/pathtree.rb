@@ -216,9 +216,10 @@ class PathTree
 
   # Sort the nodes on each level in the tree in lexical order but put
   # leafs before non-leafs.
-  def sort_leaf_first
+  def sort_leaf_first!
     @children.sort! { |a, b| leaf_first(a, b) }
-    @children.each(&:sort_leaf_first)
+    @children.each(&:sort_leaf_first!)
+    self
   end
 
   # returns:: the number of nodes in the subtree with this node as

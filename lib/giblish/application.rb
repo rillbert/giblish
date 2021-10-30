@@ -127,6 +127,12 @@ module Giblish
     end
   end
 
+  # Converts a number of branches/tags in a gitrepo according to the given
+  # options.
+  # 
+  # Each branch/tag is converted into a subdir of the given root dir and a 
+  # summary page with links to the converted docs for each branch/tag is
+  # generated within the root dir.
   class GitRepoConvert
     def initialize(user_opts)
       raise ArgumentError, "No selection for git branches or tags were found!" unless user_opts.branch_regex || user_opts.tag_regex
@@ -165,15 +171,24 @@ module Giblish
     end
 
     def make_summary
+      opts = @user_opts.dup
+
+      # Make sure the summary page is just 'bare-bone'
+      opts.make_searchable = nil
+      opts.no_index = true
+      opts.resolve_docid = false
+
       # assign/setup the doc_attr and layout using the same user options as
       # for the adoc source files on each checkout
+      conf = Configurator.new(opts)
+      s = @gm.summary_provider
+      s.index_basename = conf.config_opts.index_basename
       data_provider = DataDelegator.new(
-        SrcFromString.new(@gm.git_data.source),
-        Configurator.new(@user_opts).doc_attr
+        SrcFromString.new(s.source),
+        conf.doc_attr
       )
-      # TODO: Do not hardcode 'index'
-      srctree = PathTree.new("/index.adoc", data_provider)
-      TreeConverter.new(srctree, @dst_topdir).run
+      srctree = PathTree.new("/" + conf.config_opts.index_basename + ".adoc", data_provider)
+      TreeConverter.new(srctree, @dst_topdir, conf.build_options).run
     end
   end
 

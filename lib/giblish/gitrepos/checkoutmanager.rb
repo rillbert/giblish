@@ -1,71 +1,16 @@
 require "git"
 require "date"
-require "erb"
 require_relative "../utils"
 require_relative "../version"
 require_relative "gititf"
+require_relative "gitsummaryprovider"
 
 module Giblish
-  class GitSummaryDataProvider
-    attr_reader :tags, :branches
-
-    Commit = Struct.new(:sha, :datetime, :committer, :message)
-    Tag = Struct.new(:sha, :name, :date, :message, :author, :commit) do
-      def id
-        Giblish.to_valid_id(name)
-      end
-    end
-
-    DEFAULT_GIT_SUMMARY_TEMPLATE = "/gitsummary.erb"
-
-    def initialize(repo_name)
-      @repo_name = repo_name
-      @branches = []
-      @tags = []
-    end
-
-    # Cache info on one tag or branch
-    #
-    # repo:: a handle to a Git repo object
-    # treeish:: either a Git::Tag or a Git::Branch object
-    def cache_info(repo, treeish)
-      if treeish.respond_to?(:tag?) && treeish.tag?
-        t = cache_tag_info(repo, treeish)
-        @tags.push(t).sort_by!(&:date).reverse!
-        # @tags << t unless t.nil?
-      else
-        @branches << treeish.name
-      end
-    end
-
-    # returns:: a string with the relative path to the index file
-    #           in the given branch/tag subtree
-    def index_path(treeish_name)
-      Giblish.to_fs_str(treeish_name) + "/index.adoc"
-    end
-
-    def source
-      erb_template = File.read(__dir__ + DEFAULT_GIT_SUMMARY_TEMPLATE)
-      ERB.new(erb_template, trim_mode: "<>").result(binding)
-    end
-
-    private
-
-    def cache_tag_info(repo, tag)
-      return nil unless tag.annotated?
-
-      # get sha of the associated commit. (a bit convoluted...)
-      c = repo.gcommit(tag.contents_array[0].split(" ")[1])
-      commit = Commit.new(c.sha, c.date, c.committer.name, c.message)
-      Tag.new(tag.sha, tag.name, tag.tagger.date, tag.message, tag.tagger.name, commit)
-    end
-  end
-
   # acquires a handle to an existing git repo and provide the user
   # with a iteration method 'each_checkout' where each matching branch and/or tag is
   # checked out and presented to the user code.
   class GitCheckoutManager
-    attr_reader :branches, :tags, :git_data, :git_repo, :repo_root
+    attr_reader :branches, :tags, :summary_provider, :git_repo, :repo_root
 
     # srcdir:: Pathname to the top dir of the local git repo to work with
     # local_only:: if true, do not try to access any remote branches or merge with any
@@ -81,7 +26,7 @@ module Giblish
       @branches = select_user_branches(branch_regex, local_only)
       @tags = select_user_tags(tag_regex)
       @erb_template = erb_template
-      @git_data = GitSummaryDataProvider.new(@repo_root.basename)
+      @summary_provider = GitSummaryDataProvider.new(@repo_root.basename)
       # TODO: Do not hardcode this!
       @abort_on_error = true
     end
@@ -105,7 +50,7 @@ module Giblish
       checkouts.each do |treeish|
         sync_treeish(treeish)
         # cache branch/tag info for downstream content generation
-        @git_data.cache_info(@git_repo, treeish)
+        @summary_provider.cache_info(@git_repo, treeish)
 
         yield(treeish.name)
       rescue => e
