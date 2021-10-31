@@ -60,6 +60,36 @@ module Giblish
       end
     end
 
+    def test_generate_index_when_dir_basename_same_as_file
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        srcdir = Pathname.new(tmp_docs.dir) / "src"
+        dstdir = Pathname.new(tmp_docs.dir) / "dst"
+
+        # create a file and dir with same basename
+        tmp_docs.create_file(srcdir / "mydir.adoc")
+        tmp_docs.create_file(srcdir / "mydir/myfile.adoc")
+
+        # setup the corresponding PathTree
+        src_tree = tree_from_src_dir(srcdir)
+
+        # Convert all adoc files in the src tree to html and use a
+        # 'post builder' to generate adoc source for index pages for each
+        # directory.
+        index_builder = SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
+        tc = TreeConverter.new(src_tree, dstdir, {post_builders: index_builder})
+        tc.run
+        
+        # get the node in the dst tree that points to .../dst
+        dt = tc.dst_tree.node(dstdir, from_root: true)
+
+        # assert that there are 4 files in total where 2 are index files
+        assert_equal(4, dt.leave_pathnames.count)
+        count = 0
+        dt.leave_pathnames.each { |p| count += 1 if p.basename.to_s == "index.html" }
+        assert_equal(2, count)
+      end
+    end
+
     def test_generate_index_linked_css
       TmpDocDir.open(preserve: false) do |tmp_docs|
         srcdir = Pathname.new(tmp_docs.dir) / "src"

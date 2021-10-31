@@ -92,24 +92,24 @@ class LinkCSSTest < Minitest::Test
 
   # test that the css link is a relative link to the css file
   # giblish -w /my/stylesheet/path
-  def test_custom_styling_with_webroot
+  def test_custom_styling_with_server_css_path
     TmpDocDir.open do |tmp_docs|
       srcdir, dstdir = setup_dirs(tmp_docs.dir)
-      web_root = Pathname("/my/css/custom.css")
+      server_css = Pathname("/my/css/custom.css")
 
       # create a doc in the 'subdir' folder.
       tmp_docs.create_adoc_src_on_disk(srcdir, TEST_DOC)
 
       # run conversion
       args = ["--log-level", "info",
-        "-w", web_root.to_s,
+        "--server-css-path", server_css.to_s,
         srcdir,
         dstdir]
       Giblish.application.run args
 
       # the link shall work when the doc is published on a web server
       # under the given web path
-      expected_csslink = web_root
+      expected_csslink = server_css
 
       dt = PathTree.build_from_fs(dstdir, prune: false)
       assert_nil(dt.match(/web_asset/))

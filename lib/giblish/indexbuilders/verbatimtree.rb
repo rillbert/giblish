@@ -35,7 +35,7 @@ module Giblish
 
     # Private: Return adoc elements for displaying a clickable title
     # and a 'details' ref that points to a section that uses the title as an id.
-    #
+    
     # Returns [ title, clickableTitleStr, clickableDetailsStr ]
     def format_title_and_ref(conv_info)
       # Use docid and title in title reference

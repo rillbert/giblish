@@ -65,17 +65,16 @@ module Giblish
         FileUtils.copy_entry(src_root, dst_top.to_s)
       end
 
-      # usage:
-      # tmp_docs.check_result_html adoc_filename do |html_tree|
-      #   <process the html tree>
-      # end
-      def check_html_dom filename
-        html_file = Pathname.new(filename.gsub(/\.adoc$/, ".html"))
-
-        # parse the generated html and return the result to the user
-        handle = File.open(html_file)
-        document = Oga.parse_html(handle)
-        yield document
+      def create_file(relpath, doc_str=nil)
+        # make dir if necessary
+        dst  = Pathname.new(@dir.to_s).realpath.join(relpath)
+        FileUtils.mkdir_p(dst.dirname.to_s)
+        
+        # find doc source
+        doc_src = doc_str || CreateAdocDocSrc.new.source
+      
+        # write the file
+        File.write(dst.to_s,doc_src)
       end
 
       # create an asciidoc file from the given string. If user supplies
@@ -127,6 +126,19 @@ module Giblish
           )
         end
         result
+      end
+
+      # usage:
+      # tmp_docs.check_result_html adoc_filename do |html_tree|
+      #   <process the html tree>
+      # end
+      def check_html_dom filename
+        html_file = Pathname.new(filename.gsub(/\.adoc$/, ".html"))
+
+        # parse the generated html and return the result to the user
+        handle = File.open(html_file)
+        document = Oga.parse_html(handle)
+        yield document
       end
 
       def get_html_dom(path_tree)

@@ -32,13 +32,13 @@ module Giblish
     def test_w_r_s_combos
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = tmp_docs.dir
-        `lib/giblish.rb -w my/css/sheet.css data/testdocs/wellformed #{topdir}`
+        `lib/giblish.rb --server-css-path my/css/sheet.css data/testdocs/wellformed #{topdir}`
         assert_equal 0, $?.exitstatus
 
-        `lib/giblish.rb -f pdf -w my/css/sheet.css data/testdocs/wellformed #{topdir}`
+        `lib/giblish.rb -f pdf --server-css-path my/css/sheet.css data/testdocs/wellformed #{topdir}`
         assert_equal 1, $?.exitstatus
 
-        `lib/giblish.rb -f html -w my/css/sheet.css -s mystyle data/testdocs/wellformed #{topdir}`
+        `lib/giblish.rb -f html --server-css-path my/css/sheet.css -s mystyle data/testdocs/wellformed #{topdir}`
         assert_equal 1, $?.exitstatus
 
         `lib/giblish.rb -f html -s mystyle data/testdocs/wellformed #{topdir}`

@@ -23,10 +23,9 @@ module Giblish
       
       
       "D-3"[label="D-3
-      Doc 3 - longlon-
-      glonglonglonglo-
-      nglong long
-      title", URL="./file3.html" ]
+      Doc 3 - longlong-
+      longlonglonglong-
+      long long title", URL="./file3.html" ]
       "D-2"[label="D-2
       Doc 2", URL="my/file2.html" ]
       "D-1"[label="D-1
@@ -46,13 +45,13 @@ module Giblish
     end
 
     # mockup for a ConversionInfo instance
-    FakeConvInfo = Struct.new(:title, :docid, :dst_rel_path)
+    FakeConvInfo = Struct.new(:title, :docid, :dst_rel_path, :converted)
 
     def test_create_dot_digraph
       info_2_ids = {
-        FakeConvInfo.new("Doc 1", "D-1", Pathname.new("my/subdir/file1.html")) => ["D-2", "D-3"],
-        FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html")) => ["D-1"],
-        FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html")) => []
+        FakeConvInfo.new("Doc 1", "D-1", Pathname.new("my/subdir/file1.html"),true) => ["D-2", "D-3"],
+        FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html"),true) => ["D-1"],
+        FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html"),true) => []
       }
       dg = DotDigraphAdoc.new(info_2_ids: info_2_ids,
         opts: {"svg-type" => "inline", "cachedir" => "/my/temp/dir"})

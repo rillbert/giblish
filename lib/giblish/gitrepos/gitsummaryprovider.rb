@@ -29,6 +29,7 @@ module Giblish
     def cache_info(repo, treeish)
       if treeish.respond_to?(:tag?) && treeish.tag?
         t = cache_tag_info(repo, treeish)
+        puts t
         @tags.push(t).sort_by!(&:date).reverse!
       else
         @branches << treeish.name
@@ -49,7 +50,9 @@ module Giblish
     private
 
     def cache_tag_info(repo, tag)
+      # TODO: Fix this so it works for un-annotated tags as well.
       return nil unless tag.annotated?
+      # c = repo.gcommit(tag) if tag.annotated?
 
       # get sha of the associated commit. (a bit convoluted...)
       c = repo.gcommit(tag.contents_array[0].split(" ")[1])

@@ -152,36 +152,31 @@ module Giblish
           @doc_attributes[tokens[0]] = tokens[1]
         end
         parser.on("-d", "--resolve-docid",
-          "use two passes, the first to collect :docid:",
-          "attributes in the doc headers, the second to",
-          "generate the documents and use the collected",
-          "doc ids to resolve relative paths between the",
-          "generated documents") do |d|
+          "Collect document ids in the form of :docid:",
+          "attributes in the doc headers. Use these ids to",
+          "resolve cross-references of docid:s from one document",
+          "to another.") do |d|
           @resolve_docid = d
         end
         parser.on("-m", "--make-searchable",
           "(only supported for html generation)",
-          "take steps to make it possible to",
-          "search the published content via a cgi-script. This",
-          "flag will do the following:",
+          "take steps to make it possible to search the generated",
+          "docs via the web server through which they are published.",
+          "This flag will do the following:",
           "  1. index all headings in all source files and store",
           "     the result in a JSON file",
           "  2. copy the JSON file and all source (adoc) files to",
           "     a 'search_assets' folder in the top-level dir of",
           "     the destination.",
-          "  3. add html code that displays a search field in the",
-          "     index page that will try to call the cgi-script",
-          "     'giblish-search' when the user inputs some text.",
-          "To actually provide search functionality for a user, you",
-          "need to provide the cgi-script and configure your web-server",
-          "to invoke it when needed. NOTE: The generated search box cgi",
-          "is currently hard-coded to look for the cgi script at the URL:",
-          "http://<your-web-domain>/cgi-bin/giblish-search.cgi",
-          "E.g.",
-          "http://example.com/cgi-bin/giblish-search.cgi",
-          "An implementation of the giblish-search cgi-script is found",
-          "within the lib folder of this gem, you can copy that to your",
-          "cgi-bin dir in your webserver and rename it from .rb to .cgi") do |m|
+          "  3. add html/javascript code that displays a search form",
+          "     at the top of the generated documents. The search form",
+          "     sends a html POST to the path specified with the ",
+          "     'server-search-path' flag when the user inputs some text.",
+          "To actually provide search functionality for readers, you",
+          "need to provide a server side script or application that can",
+          "respond to the html POST and return relevant info.",
+          "giblish contains most of the functionality for this and an",
+          "implementation of a cgi-script is bundled with this gem.") do |m|
           @make_searchable = m
         end
         parser.on("--server-search-path URLPATH",

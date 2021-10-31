@@ -24,11 +24,14 @@ module Giblish
     # Ex Pathname("my/subdir/file1.adoc")
     attr_reader :src_rel_path
 
+    @@nof_missing_titles = 0
+
     def initialize(converted:, src_node:, dst_node:, dst_top:)
       @converted = converted
       @src_node = src_node
       @dst_node = dst_node
       @dst_top = dst_top
+      @title = nil
 
       @src_rel_path = dst_node.relative_path_from(dst_top).dirname / src_node.pathname.basename
     end
@@ -36,6 +39,16 @@ module Giblish
     # return:: a String with the basename of the source file
     def src_basename
       @src_node.pathname.basename.to_s
+    end
+
+    def title
+      return @title if @title
+
+      "NO TITLE FOUND (#{@@nof_missing_titles += 1}) !"
+    end
+
+    def docid
+      nil
     end
 
     def to_s
@@ -48,8 +61,6 @@ module Giblish
   class SuccessfulConversion < ConversionInfo
     attr_reader :stderr, :adoc
 
-    @@nof_missing_titles = 0
-
     # The relative Pathname from the root dir to the dst file
     # Ex Pathname("my/subdir/file1.html")
     attr_reader :dst_rel_path
@@ -61,18 +72,12 @@ module Giblish
 
       @adoc = adoc
       @stderr = adoc_stderr
-      @title = nil
+      @title = @adoc.doctitle
 
       @dst_rel_path = dst_node.relative_path_from(dst_top)
 
       # Cach the purpose info if it exists
       @purpose_str = get_purpose_info adoc
-    end
-
-    def title
-      return @title if @title
-
-      @title = @adoc.doctitle || "NO TITLE FOUND (#{@@nof_missing_titles += 1}) !"
     end
 
     def docid

@@ -316,7 +316,7 @@ module Giblish
         # copy_test_resources(topdir / "resources")
         src_top = create_adoc_src_tree(tmp_docs, topdir / "src")
 
-        opts = CmdLine.new.parse(%W[-f html -w my/style/giblish.css #{topdir} #{topdir / "dst"}])
+        opts = CmdLine.new.parse(%W[-f html --server-css-path my/style/giblish.css #{topdir} #{topdir / "dst"}])
         app = Configurator.new(opts)
         convert(src_top, app)
 
