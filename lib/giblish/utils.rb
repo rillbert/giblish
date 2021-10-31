@@ -169,8 +169,12 @@ module Giblish
 
   # transforms strings to valid asciidoctor id strings
   def to_valid_id(input_str, id_prefix = "_", id_separator = "_")
+    # use a basic checksum to reduce the risk for duplicate ids
+    check_sum = input_str.chars().reduce(0) { |sum,c| sum + c.ord}
+
     id_str = input_str.strip.downcase.gsub(/[^a-z0-9]+/, id_separator)
-    id_str = "#{id_prefix}#{id_str}"
+    id_str = "#{id_prefix}#{check_sum}#{id_prefix}#{id_str}"
+    id_str.gsub!(/#{Regexp.quote(id_separator)}+/, id_separator)
     id_str.chomp(id_separator)
   end
   module_function :to_valid_id

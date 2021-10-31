@@ -41,7 +41,7 @@ module Giblish
       # Use docid and title in title reference
       title_ref = (conv_info.docid.nil? ? "" : "#{conv_info.docid} - ") + conv_info.title
 
-      [title_ref, "<<#{conv_info.src_rel_path}#,#{title_ref}>>",
+      [title_ref, "<<#{conv_info.src_rel_path}#,pass:[#{title_ref}] >>",
         "<<#{Giblish.to_valid_id(conv_info.title)},details>>\n"]
     end
 
@@ -58,6 +58,7 @@ module Giblish
       padding = 70
       [doc_title, prefix_str, warning_label].each { |p| padding -= p.length }
       padding = 0 unless padding.positive?
+      
       "#{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
     end
 
