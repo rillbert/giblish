@@ -55,12 +55,13 @@ module Giblish
     end
 
     def source
-      <<~DOC_STR
+      str = <<~DOC_STR
         #{graph_header}
         #{generate_labels}
         #{generate_deps}
         #{graph_footer}
       DOC_STR
+      str
     end
 
     private
@@ -91,8 +92,16 @@ module Giblish
     end
 
     def make_dot_entry(doc_dict, conv_info)
-      title = conv_info&.title.nil? ? "" : Giblish.break_line(conv_info.title, 16).join("\n")
+      title = if conv_info&.title.nil?
+        ""
+      else
+        # remove html markup in the title for displaying in the tree
+        stripped_title = conv_info.title.gsub(/<.*?>/,"")
+        stripped_title.gsub!(/"/,"'")
+        Giblish.break_line(stripped_title, 16).join("\n")
+      end
 
+      # title = conv_info&.title.nil? ? "" : Giblish.break_line(conv_info.title, 16).join("\n")
       # create the label used to display the node in the graph
       dot_entry = if conv_info.docid.nil?
         doc_id = next_fake_id

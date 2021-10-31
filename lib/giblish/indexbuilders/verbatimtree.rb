@@ -41,7 +41,9 @@ module Giblish
       # Use docid and title in title reference
       title_ref = (conv_info.docid.nil? ? "" : "#{conv_info.docid} - ") + conv_info.title
 
-      [title_ref, "<<#{conv_info.src_rel_path}#,pass:[#{title_ref}] >>",
+      # remove html markup in the title for displaying in the tree
+      stripped_title = title_ref.gsub(/<.*?>/,"")
+      [stripped_title , "<<#{conv_info.src_rel_path}#,#{stripped_title}>>",
         "<<#{Giblish.to_valid_id(conv_info.title)},details>>\n"]
     end
 
@@ -51,14 +53,15 @@ module Giblish
     # identified with the doc's title respectively.
     def tree_entry_converted(prefix_str, conv_info)
       # Get the elements of the entry
-      doc_title, doc_link, doc_details = format_title_and_ref conv_info
+      doc_title, doc_link, doc_details = format_title_and_ref(conv_info)
       warning_label = conv_info.stderr.empty? ? "" : "(conv issues)"
 
-      # Calculate padding to get (conv issues) and details aligned between entries
+      # Calculate padding to get (conv issues) and details aligned in columns
       padding = 70
       [doc_title, prefix_str, warning_label].each { |p| padding -= p.length }
       padding = 0 unless padding.positive?
       
+      # puts "str: #{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
       "#{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
     end
 
