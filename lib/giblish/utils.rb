@@ -3,7 +3,7 @@ require "pathname"
 require "fileutils"
 require "find"
 
-# The logger used from within giblish
+# The logger used from within giblishd 
 class Giblog
   # Defines the format for log messages from giblish.
   class GiblogFormatter
@@ -168,9 +168,11 @@ module Giblish
   module_function :with_captured_stderr
 
   # transforms strings to valid asciidoctor id strings
-  def to_valid_id(input_str, id_prefix = "_", id_separator = "_")
+  # in some cases you want to add a semi-unique checksum. If you do, you are no longer
+  # compatible with asciidoctor's generated ids
+  def to_valid_id(input_str, id_prefix = "_", id_separator = "_", use_checksum = false)
     # use a basic checksum to reduce the risk for duplicate ids
-    check_sum = input_str.chars().reduce(0) { |sum,c| sum + c.ord}
+    check_sum = use_checksum ? input_str.chars().reduce(0) { |sum,c| sum + c.ord} : ""
 
     id_str = input_str.strip.downcase.gsub(/[^a-z0-9]+/, id_separator)
     id_str = "#{id_prefix}#{check_sum}#{id_prefix}#{id_str}"

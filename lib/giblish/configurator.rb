@@ -109,6 +109,9 @@ module Giblish
       layout_config.adoc_extensions.each do |type, instance|
         @build_options[:adoc_extensions][type] << instance
       end
+
+      # TODO: Remove after testing
+      # @build_options[:adoc_extensions][:preprocessor] << TestReaderProcessor
     end
 
     protected

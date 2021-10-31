@@ -35,16 +35,16 @@ module Giblish
 
     # Private: Return adoc elements for displaying a clickable title
     # and a 'details' ref that points to a section that uses the title as an id.
-    
+
     # Returns [ title, clickableTitleStr, clickableDetailsStr ]
     def format_title_and_ref(conv_info)
       # Use docid and title in title reference
       title_ref = (conv_info.docid.nil? ? "" : "#{conv_info.docid} - ") + conv_info.title
 
       # remove html markup in the title for displaying in the tree
-      stripped_title = title_ref.gsub(/<.*?>/,"")
-      [stripped_title , "<<#{conv_info.src_rel_path}#,#{stripped_title}>>",
-        "<<#{Giblish.to_valid_id(conv_info.title)},details>>\n"]
+      stripped_title = title_ref.gsub(/<.*?>/, "")
+      [stripped_title, "<<#{conv_info.src_rel_path}#,#{stripped_title}>>",
+        "<<#{Giblish.to_valid_id(conv_info.title, "_", "_", true)},details>>\n"]
     end
 
     # Generate an adoc string that will display as
@@ -60,7 +60,7 @@ module Giblish
       padding = 70
       [doc_title, prefix_str, warning_label].each { |p| padding -= p.length }
       padding = 0 unless padding.positive?
-      
+
       # puts "str: #{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
       "#{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
     end

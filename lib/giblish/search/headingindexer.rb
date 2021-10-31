@@ -101,7 +101,11 @@ module Giblish
     def parse_document(document, src_node, opts)
       Giblog.logger.debug "index headings in #{src_node.pathname} using prefix '#{opts[:id_prefix]}' and separator '#{opts[:id_separator]}'"
       attrs = document.attributes
-      doc_info = index_sections(document, opts)
+      expanded_lines = []
+      ExpandAdoc.new(document, expanded_lines, 3)
+      # puts expanded_lines
+
+      doc_info = index_sections(expanded_lines, opts)
 
       @heading_index[:fileinfos] << {
         filepath: rel_src_path(src_node),
@@ -129,24 +133,72 @@ module Giblish
       end
     end
 
+    # expands the 'include' preprocessor directives found in the document 
+    # source and merges the the lines in the included document with the ones
+    # from the including document.
+    class ExpandAdoc
+      IncludeDirectiveRx = /^(\\)?include::([^\[][^\[]*)\[(.+)?\]$/
+      def initialize(document, target_lines, max_depth = 3)
+        source_lines = document.reader.source_lines
+        source_lines.each do |line|
+          if IncludeDirectiveRx =~ line
+            next unless max_depth > 0
+
+            p = resolve_include_path(document, $2, $3)
+            next if p.nil?
+
+            sub_doc = Asciidoctor.load_file(p, {parse: false})
+            ExpandAdoc.new(sub_doc, target_lines, max_depth - 1)
+          else
+            target_lines << wash_line(document, line)
+          end
+        end
+      end
+
+      def resolve_include_path(document, target, attrlist)
+        target = replace_attrs(document.attributes, target)
+        parsed_attrs = document.parse_attributes attrlist, [], sub_input: true
+
+        # use an asciidoctor-internal method to resolve the path in an attempt to keep compatibility
+        inc_path, target_type, _relpath = document.reader.send(:resolve_include_path, target, attrlist, parsed_attrs)
+        return nil unless target_type == :file
+
+        inc_path
+      end
+
+      def wash_line(document, line)
+        replace_attrs(document.attributes, line)
+      end
+
+      # replace {a_doc_attr} with the value of the attribute
+      def replace_attrs(attrs, line)
+        # find all '{...}' occurrences
+        m_arr = line.scan(/\{\w+\}/)
+        # replace each found occurence with its doc attr if exists
+        m_arr.inject(line) do |memo, match|
+          attrs.key?(match[1..-2]) ? memo.gsub(match.to_s, attrs[match[1..-2]]) : memo
+        end
+      end
+    end
+
     # provide a 'washed' version of all source lines in the document and
     # index all sections.
     #
     # returns:: { washed_lines: [lines], sections: [{:id, :title, :line_no}]}
-    def index_sections(document, opts)
+    def index_sections(lines, opts)
       indexed_doc = {
         washed_lines: [],
         sections: []
       }
       sections = indexed_doc[:sections]
-      lines = document.reader.source_lines.dup
+      # lines = document.reader.source_lines.dup
 
       line_no = 0
       match_str = ""
       state = :text
       lines.each do |line|
         line_no += 1
-        line = replace_attrs(document.attributes, line)
+        # line = replace_attrs(document.attributes, line)
         indexed_doc[:washed_lines] << line.strip
 
         # implement a state machine that supports both custom
@@ -304,6 +356,52 @@ module Giblish
       end
 
       ERB.new(FORM_DATA).result(binding)
+    end
+  end
+
+  class TestReaderProcessor < Asciidoctor::Extensions::Preprocessor
+    IncludeDirectiveRx = /^(\\)?include::([^\[][^\[]*)\[(.+)?\]$/
+
+    # This hook is called by Asciidoctor once for each document _before_
+    # Asciidoctor processes the adoc content.
+    #
+    # It replaces references of the format <<:docid: ID-1234,Hello >> with
+    # references to a resolved relative path.
+    def process(document, reader)
+      docname = document.attributes["giblish-info"][:src_node].segment
+      return unless /build-hat.adoc/.match?(docname)
+
+      # Convert all docid refs to valid relative refs
+      reader.lines.each do |line|
+        next unless IncludeDirectiveRx =~ line
+
+        puts line
+        target = $2
+        attrlist = $3
+        doc = document
+        puts "a: #{doc.attributes["myvar"]}"
+        # expanded_target = target.include?("{") ? doc.sub_attributes(target, attribute_missing: "hejsan") : target
+        expanded_target = target.include?("{") ? "subst" : target
+        parsed_attrs = document.parse_attributes $3, [], sub_input: true
+        puts "t: #{expanded_target}, al: #{attrlist}, pa: #{parsed_attrs}"
+        inc_path, target_type, relpath = reader.send(:resolve_include_path, expanded_target, attrlist, parsed_attrs)
+        puts "#{inc_path}, #{target_type}, #{relpath}"
+      end
+      reader
+    end
+  end
+
+  class TestIncludeProcessor < Asciidoctor::Extensions::IncludeProcessor
+    def handles? target
+      false
+      # (target.start_with? 'http://') or (target.start_with? 'https://')
+    end
+
+    def process doc, reader, target, attributes
+      # puts "including #{target}..."
+      # content = (open target).readlines
+      # reader.push_include content, target, target, 1, attributes
+      reader
     end
   end
 end
