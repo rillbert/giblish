@@ -2,12 +2,12 @@
 
 require "asciidoctor"
 require "cgi"
-require "giblish"
-# require_relative "../../gh_giblish/lib/giblish/search/request_manager"
+# require "giblish"
+require_relative "../../gh_giblish/lib/giblish/search/request_manager"
 
 # TODO: Fix dynamic uri-mapping
 # This example maps www.mysite.com/ to the local dir /home/andersr/repos/gendocs
-URI_MAPPINGS = {"/" => "/home/andersr/repos/gendocs/"}
+URI_MAPPINGS = {"/docs/blah" => "/home/andersr/repos/gendocs/docs/blah"}
 
 def init_web_server web_root
   require "webrick"

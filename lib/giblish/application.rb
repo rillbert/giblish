@@ -171,16 +171,17 @@ module Giblish
     end
 
     def make_summary
-      opts = @user_opts.dup
+      # reset the dst dir to the user-given-top
+      @user_opts.dstdir = @dst_topdir
 
       # Make sure the summary page is just 'bare-bone'
-      opts.make_searchable = nil
-      opts.no_index = true
-      opts.resolve_docid = false
+      @user_opts.make_searchable = nil
+      @user_opts.no_index = true
+      @user_opts.resolve_docid = false
 
       # assign/setup the doc_attr and layout using the same user options as
       # for the adoc source files on each checkout
-      conf = Configurator.new(opts)
+      conf = Configurator.new(@user_opts)
       s = @gm.summary_provider
       s.index_basename = conf.config_opts.index_basename
       data_provider = DataDelegator.new(

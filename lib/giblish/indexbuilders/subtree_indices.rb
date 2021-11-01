@@ -60,7 +60,7 @@ module Giblish
     # Show some details about file content
     def document_detail(node_data)
       <<~DETAIL_SRC
-        [[#{Giblish.to_valid_id(node_data.title.encode("utf-8"))}]]
+        [[#{Giblish.to_valid_id(node_data.title.encode("utf-8"), "_", "_", true)}]]
         === pass:[#{node_data.title.encode("utf-8")}]
 
         #{"Doc id::\n_#{node_data.docid}_" unless node_data.docid.nil?}

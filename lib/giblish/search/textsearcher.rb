@@ -44,15 +44,31 @@ module Giblish
       SearchParameters.new(query: q, uri_mappings: uri_mappings)
     end
 
+    # the fragment of the calling doc's URI
+    # eg: www.mysite.com/my/doc/path/subdir1/doc1.html -> uri_path = my/doc/path/subdir1/doc1.html
     def uri_path
       URI(calling_url).path
     end
 
+    # the URI path to the search asset directory
+    # eg: www.mysite.com/my/doc/path/subdir1/doc1.html could be assets_uri_path = my/doc/path/gibsearch_assets
     def assets_uri_path
       @assets_uri_path ||= Pathname.new(uri_path).dirname.join(search_assets_top_rel).cleanpath
       @assets_uri_path
     end
 
+    # the URI path to the css file to use for styling the search result
+    # eg: www.mysite.com/my/doc/path/subdir1/doc1.html could be css_path = my/doc/path/web/mystyle.css
+    def css_path
+      return nil if @query.css_path.nil?
+
+      return @query.css_path if @query.css_path.absolute?
+
+      # css paths from the query is relative, add it to the 
+      @css_path ||= Pathname.new(uri_path).dirname.join(@query.css_path).cleanpath
+      @css_path            
+    end
+    
     # return:: the uri path pointing to the doc repo top dir
     def uri_path_repo_top
       Pathname.new(uri_path).join(search_assets_top_rel.dirname).dirname
