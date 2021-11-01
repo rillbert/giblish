@@ -45,6 +45,7 @@ module Giblish
     # objects given at instantiation of this object
     def on_postbuild(src_tree, dst_tree, converter)
       dst_tree.traverse_preorder do |level, dst_node|
+        # we only care about directories
         next if dst_node.leaf?
 
         # get the relative path to the index dir from the top dir
