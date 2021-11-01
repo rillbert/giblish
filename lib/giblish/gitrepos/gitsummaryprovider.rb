@@ -17,7 +17,7 @@ module Giblish
 
     def initialize(repo_name)
       @index_basename = "index"
-      
+
       # all these are used by erb
       @repo_name = repo_name
       @branch_info = []
@@ -52,13 +52,16 @@ module Giblish
     private
 
     def cache_tag_info(repo, tag)
-      # TODO: Fix this so it works for un-annotated tags as well.
-      return nil unless tag.annotated?
-      # c = repo.gcommit(tag) if tag.annotated?
+      unless tag.annotated?
+        c = repo.gcommit(tag)
+        commit = CommitInfo.new(c.sha, c.date, c.author.name, c.message)
+        return TagInfo.new(tag.sha, tag.name, c.date, "<No message - this is not an annotated tag>", c.committer.name, commit)
+      end
 
+      # Handle annotated tags
       # get sha of the associated commit. (a bit convoluted...)
       c = repo.gcommit(tag.contents_array[0].split(" ")[1])
-      commit = CommitInfo.new(c.sha, c.date, c.committer.name, c.message)
+      commit = CommitInfo.new(c.sha, c.date, c.author.name, c.message)
       TagInfo.new(tag.sha, tag.name, tag.tagger.date, tag.message, tag.tagger.name, commit)
     end
 
