@@ -147,7 +147,7 @@ module Giblish
             p = resolve_include_path(document, $2, $3)
             next if p.nil?
 
-            sub_doc = Asciidoctor.load_file(p, {parse: false})
+            sub_doc = Asciidoctor.load_file(p, {parse: false, safe: :unsafe})
             ExpandAdoc.new(sub_doc, target_lines, max_depth - 1)
           else
             target_lines << wash_line(document, line)
