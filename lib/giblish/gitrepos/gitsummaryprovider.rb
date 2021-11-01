@@ -5,21 +5,23 @@ module Giblish
     attr_reader :tags, :branches
     attr_accessor :index_basename
 
-    Commit = Struct.new(:sha, :datetime, :committer, :message)
-    Tag = Struct.new(:sha, :name, :date, :message, :author, :commit) do
+    CommitInfo = Struct.new(:sha, :datetime, :committer, :message)
+    TagInfo = Struct.new(:sha, :name, :date, :message, :author, :commit) do
       def id
         Giblish.to_valid_id(name)
       end
     end
+    BranchInfo = Struct.new(:name, :latest_commit)
 
     DEFAULT_GIT_SUMMARY_TEMPLATE = "/gitsummary.erb"
 
     def initialize(repo_name)
       @index_basename = "index"
+      
       # all these are used by erb
       @repo_name = repo_name
-      @branches = []
-      @tags = []
+      @branch_info = []
+      @tag_infos = []
     end
 
     # Cache info on one tag or branch
@@ -28,11 +30,11 @@ module Giblish
     # treeish:: either a Git::Tag or a Git::Branch object
     def cache_info(repo, treeish)
       if treeish.respond_to?(:tag?) && treeish.tag?
-        t = cache_tag_info(repo, treeish)
-        puts t
-        @tags.push(t).sort_by!(&:date).reverse!
+        @tag_infos.push(
+          cache_tag_info(repo, treeish)
+        ).sort_by!(&:date).reverse!
       else
-        @branches << treeish.name
+        @branch_info.push(cache_branch_info(repo, treeish))
       end
     end
 
@@ -56,8 +58,18 @@ module Giblish
 
       # get sha of the associated commit. (a bit convoluted...)
       c = repo.gcommit(tag.contents_array[0].split(" ")[1])
-      commit = Commit.new(c.sha, c.date, c.committer.name, c.message)
-      Tag.new(tag.sha, tag.name, tag.tagger.date, tag.message, tag.tagger.name, commit)
+      commit = CommitInfo.new(c.sha, c.date, c.committer.name, c.message)
+      TagInfo.new(tag.sha, tag.name, tag.tagger.date, tag.message, tag.tagger.name, commit)
+    end
+
+    def cache_branch_info(repo, branch)
+      # get sha of the associated commit. (a bit convoluted...)
+      c = repo.gcommit(branch)
+      commit = CommitInfo.new(c.sha, c.date, c.author.name, c.message)
+
+      # puts c.instance_variables
+
+      BranchInfo.new(branch.name, commit)
     end
   end
 end
