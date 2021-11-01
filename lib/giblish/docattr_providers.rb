@@ -67,6 +67,8 @@ module Giblish
     def document_attributes(src_node, dst_node, dst_top)
       {
         "source-highlighter" => "rouge",
+        "rouge-css" => "style",
+        "rouge-style" => "github",
         "xrefstyle" => "short"
       }
     end
