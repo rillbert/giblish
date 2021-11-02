@@ -39,7 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "thor", "~> 0.20.3"
   spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
 
-  # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
+  # Used during run-time by giblish
   spec.add_runtime_dependency "warning", "~>1.2"
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.16"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.2"]
