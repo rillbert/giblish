@@ -34,7 +34,10 @@ module Giblish
           "linkcss" => true,
           "copycss" => nil,
           "source-highlighter" => "rouge",
-          "xrefstyle" => "short"
+          "rouge-css"=>"style",
+          "rouge-style"=>"github",
+          "xrefstyle" => "short",
+          "icons"=>"font"
         },
         builder.document_attributes(nil, nil, nil)
       )

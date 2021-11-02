@@ -176,6 +176,7 @@ module Giblish
 
       # Make sure the summary page is just 'bare-bone'
       @user_opts.make_searchable = nil
+      @user_opts.copy_asset_folders = nil
       @user_opts.no_index = true
       @user_opts.resolve_docid = false
 

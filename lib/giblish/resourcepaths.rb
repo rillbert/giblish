@@ -112,4 +112,39 @@ module Giblish
       )
     end
   end
+
+  class CopyAssetDirsPostBuild
+    def initialize(cmd_opts)
+      @asset_regex = cmd_opts.copy_asset_folders
+      @srcdir = cmd_opts.srcdir
+      @dstdir = cmd_opts.dstdir
+    end
+
+    # Called from TreeConverter during post build phase
+    #
+    # copy all directories matching the regexp pattern from the
+    # src tree to the dst tree
+    def on_postbuild(src_tree, dst_tree, converter)
+      return if @asset_regex.nil?
+
+      # build a tree with all dirs matching the given regexp
+      st = PathTree.build_from_fs(@srcdir, prune: true) do |p|
+        p.directory? && @asset_regex =~ p.to_s
+      end
+
+      return if st.nil?
+
+      Giblog.logger&.info "Copy asset directories from #{@srcdir} to #{@dstdir}"
+      st.traverse_preorder do |level, node|
+        next unless node.leaf?
+
+        n = node.relative_path_from(st)
+        src = @srcdir.join(n)
+        dst = @dstdir.join(n).dirname
+        dst.mkpath
+
+        FileUtils.cp_r(src.to_s, dst.to_s)
+      end
+    end
+  end
 end

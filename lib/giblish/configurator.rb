@@ -110,6 +110,9 @@ module Giblish
         @build_options[:adoc_extensions][type] << instance
       end
 
+      # add copy of asset dirs if options stipulates this
+      @build_options[:post_builders] << CopyAssetDirsPostBuild.new(@config_opts) unless @config_opts.copy_asset_folders.nil?
+
       # TODO: Remove after testing
       # @build_options[:adoc_extensions][:preprocessor] << TestReaderProcessor
     end

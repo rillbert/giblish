@@ -8,7 +8,7 @@ module Giblish
     # accessible via the cmd line.
     class Options
       attr_accessor :format, :no_index, :index_basename, :graph_basename, :include_regex, :exclude_regex,
-        :resource_dir, :style_name, :server_css, :branch_regex, :tag_regex, :local_only, :doc_attributes,
+        :copy_asset_folders, :resource_dir, :style_name, :server_css, :branch_regex, :tag_regex, :local_only, :doc_attributes,
         :resolve_docid, :make_searchable, :search_action_path, :log_level, :srcdir, :dstdir, :web_path
 
       OUTPUT_FORMATS = ["html", "pdf"]
@@ -28,6 +28,7 @@ module Giblish
         @index_basename = "index"
         @graph_basename = "gibgraph"
         @include_regex, @exclude_regex = /.*\.(?i)adoc$/, nil
+        @copy_asset_folders = nil
         @resource_dir = nil
         @style_name = nil
         @server_css = nil
@@ -99,6 +100,14 @@ module Giblish
           "on the full path (i.e. the regex '^.*my.*' matches the path",
           "/my/file.adoc).") do |regex_str|
           @exclude_regex = Regexp.new(regex_str)
+        end
+        parser.on("--copy-asset-folders [REGEX]",
+          "copy the content of all folders matching the given regex.",
+          "The folders will be copied to the corresponding location under 'dstdir'",
+          "Default is to not copy any directories at all.",
+          "The matching is made on the full path (i.e. the regex '_assets$' matches the path",
+          "'my/subdir/doc_assets').") do |regex_str|
+          @copy_asset_folders = Regexp.new(regex_str)
         end
         parser.on("-w", "--web-path [PATH]",
           "DEPRECATED!! You should use the server-search-path and",

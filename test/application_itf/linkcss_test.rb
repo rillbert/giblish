@@ -107,10 +107,6 @@ class LinkCSSTest < Minitest::Test
         dstdir]
       Giblish.application.run args
 
-      # the link shall work when the doc is published on a web server
-      # under the given web path
-      expected_csslink = server_css
-
       dt = PathTree.build_from_fs(dstdir, prune: false)
       assert_nil(dt.match(/web_asset/))
       assert_equal(3, dt.leave_pathnames.count)
@@ -118,15 +114,21 @@ class LinkCSSTest < Minitest::Test
       tmp_docs.get_html_dom(dt) do |node, document|
         next if /index.html/.match?(node.pathname.to_s)
 
-        # we only expect a single link to our custom
-        # stylesheet path
         css_links = document.xpath("html/head/link")
-        assert_equal 1, css_links.count
+
+        # we expect a css link to our custom stylesheet path and 
+        # another to font awesome (:icons: font is a default attribute)
+        expected_links = [
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
+          server_css.to_s
+        ]
+
+        assert_equal expected_links.count, css_links.count
 
         css_links.each do |csslink|
           css_path = csslink.get("href")
           assert_equal("stylesheet", csslink.get("rel"))
-          assert_equal(expected_csslink.to_s, css_path)
+          assert(expected_links.include?(css_path))
         end
       end
     end

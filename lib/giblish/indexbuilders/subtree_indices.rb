@@ -35,7 +35,7 @@ module Giblish
         next unless node.leaf?
 
         d = node.data
-        details_str << (d.converted ? document_detail(d) : document_detail_fail(d))
+        details_str << (d.converted ? document_detail(node) : document_detail_fail(d))
       end
       details_str
     end
@@ -58,9 +58,10 @@ module Giblish
     end
 
     # Show some details about file content
-    def document_detail(node_data)
+    def document_detail(node)
+      node_data = node.data
       <<~DETAIL_SRC
-        [[#{Giblish.to_valid_id(node_data.title.encode("utf-8"), "_", "_", true)}]]
+        [[#{Giblish.to_valid_id(node.pathname.to_s, "_", "_", true)}]]
         === pass:[#{node_data.title.encode("utf-8")}]
 
         #{"Doc id::\n_#{node_data.docid}_" unless node_data.docid.nil?}

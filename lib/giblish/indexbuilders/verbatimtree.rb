@@ -70,7 +70,6 @@ module Giblish
       [doc_title, prefix_str, warning_label].each { |p| padding -= p.length }
       padding = 0 unless padding.positive?
 
-      # puts "str: #{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
       "#{prefix_str} #{doc_link}#{" " * padding}#{warning_label} #{doc_details}"
     end
 
@@ -90,7 +89,7 @@ module Giblish
       # remove html markup in the title for displaying in the tree
       stripped_title = title_ref.gsub(/<.*?>/, "")
       [stripped_title, "<<#{p}#,#{stripped_title}>>",
-        "<<#{Giblish.to_valid_id(conv_info.title, "_", "_", true)},details>>\n"]
+        "<<#{Giblish.to_valid_id(node.pathname.to_s, "_", "_", true)},details>>\n"]
     end
   end
 end

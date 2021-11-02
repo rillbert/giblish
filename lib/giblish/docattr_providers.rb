@@ -69,7 +69,8 @@ module Giblish
         "source-highlighter" => "rouge",
         "rouge-css" => "style",
         "rouge-style" => "github",
-        "xrefstyle" => "short"
+        "xrefstyle" => "short",
+        "icons" => "font"
       }
     end
   end
