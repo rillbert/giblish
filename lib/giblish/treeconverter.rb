@@ -106,7 +106,7 @@ module Giblish
 
         # create the destination node, using the correct suffix depending on conversion backend
         rel_path = n.relative_path_from(@src_tree)
-        Giblog.logger.info { "Creating dst node: #{rel_path}" }
+        Giblog.logger.debug { "Creating dst node: #{rel_path}" }
         dst_node = @dst_tree.add_descendants(rel_path)
 
         # perform the conversion

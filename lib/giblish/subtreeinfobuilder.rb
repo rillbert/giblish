@@ -50,7 +50,7 @@ module Giblish
 
         # get the relative path to the index dir from the top dir
         index_dir = dst_node.pathname.relative_path_from(dst_tree.pathname).cleanpath
-        Giblog.logger.info { "Creating #{@basename} under #{index_dir}" }
+        Giblog.logger.debug { "Creating #{@basename} under #{index_dir}" }
 
         # get the adoc source from the provider (Class or instance)
         @adoc_source = if @adoc_src_provider.is_a?(Class)

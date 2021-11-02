@@ -47,7 +47,7 @@ module Giblish
         === #{node_data.src_basename}
 
         Source file::
-        #{node_data.src_node.pathname}
+        #{node_data.src_node.segment}
 
         Error detail::
         #{node_data.error_msg}
@@ -77,7 +77,7 @@ module Giblish
         }
 
         Source file::
-        #{node_data.src_node.pathname}
+        #{node_data.src_node.segment}
 
         '''
 
