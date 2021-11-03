@@ -256,7 +256,11 @@ module Giblish
     # Raise InvalidArgument if an unsupported cmd line combo is
     # discovered
     def validate_options(opts)
-      raise OptionParser::InvalidArgument, "Could not find source path #{opts.srcdir}" unless opts.srcdir.exist?
+      unless opts.branch_regex || opts.tag_regex
+        # If git branches/tags are given, the source path might exist in the branch/tag, thus only check this
+        # for non-git executions
+        raise OptionParser::InvalidArgument, "Could not find source path #{opts.srcdir}" unless opts.srcdir.exist?
+      end
 
       if opts.web_path
         raise OptionParser::InvalidArgument, "The '-w/--web-path' flag is DEPRECATED. Use the --server-css-path and --server--search-path flags instead."

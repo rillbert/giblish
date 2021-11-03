@@ -179,6 +179,7 @@ module Giblish
       @user_opts.copy_asset_folders = nil
       @user_opts.no_index = true
       @user_opts.resolve_docid = false
+      @user_opts.doc_attributes["table-caption"] = nil
 
       # assign/setup the doc_attr and layout using the same user options as
       # for the adoc source files on each checkout
