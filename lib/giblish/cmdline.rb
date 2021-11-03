@@ -9,7 +9,7 @@ module Giblish
     class Options
       attr_accessor :format, :no_index, :index_basename, :graph_basename, :include_regex, :exclude_regex,
         :copy_asset_folders, :resource_dir, :style_name, :server_css, :branch_regex, :tag_regex, :local_only, :doc_attributes,
-        :resolve_docid, :make_searchable, :search_action_path, :log_level, :srcdir, :dstdir, :web_path
+        :resolve_docid, :make_searchable, :search_action_path, :abort_on_error, :log_level, :srcdir, :dstdir, :web_path
 
       OUTPUT_FORMATS = ["html", "pdf"]
 
@@ -40,6 +40,7 @@ module Giblish
         @resolve_docid = false
         @make_searchable = false
         @search_action_path = nil
+        @abort_on_error = true
         @log_level = "info"
       end
 
@@ -196,6 +197,9 @@ module Giblish
           "you would set this as '--server-search-path /actions/gibsearch'") do |p|
           @search_action_path = Pathname.new(p)
         end
+        parser.on("--continue", "Continue even if a conversion fails. Default is to stop") do
+          @abort_on_error = false
+        end
         parser.on("-l", "--log-level LEVEL", LOG_LEVELS,
           "set the log level explicitly. Must be one of",
           LOG_LEVELS.keys.join(",").to_s, "(default 'info')") do |level|
@@ -229,7 +233,7 @@ module Giblish
     # validation fails.
     #
     # === Returns
-    # the option instance corresponding to the given cmd line args
+    # the CmdLine::Options instance corresponding to the given cmd line args
     def parse(args)
       @cmd_opts = Options.new
       @args = OptionParser.new do |parser|

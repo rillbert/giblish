@@ -67,11 +67,11 @@ module Giblish
         setup_repo(tmp_docs, repo)
 
         expected_branches = %w[product_1 product_2]
-        GitCheckoutManager.new(
-          srcdir: repo,
-          local_only: true,
-          branch_regex: /.*product.*/
-        ).each_checkout do |treeish,|
+        opts = CmdLine::Options.new
+        opts.srcdir = repo
+        opts.local_only = true
+        opts.branch_regex = /.*product.*/
+        GitCheckoutManager.new(opts).each_checkout do |treeish|
           assert(!expected_branches.delete(treeish).nil?)
         end
         assert_equal(0, expected_branches.count)
@@ -82,13 +82,12 @@ module Giblish
       TmpDocDir.open(preserve: false) do |tmp_docs|
         # TODO: Remove the dep to this local git repo
         repo = Pathname.pwd / "../asciidoctor"
-        gm = GitCheckoutManager.new(
-          srcdir: repo,
-          local_only: true,
-          branch_regex: /main/,
-          tag_regex: /v1.5/
-        )
-        gm.each_checkout do |treeish|
+        opts = CmdLine::Options.new
+        opts.srcdir = repo
+        opts.local_only = true
+        opts.branch_regex = /main/
+        opts.tag_regex = /v1.5/
+        GitCheckoutManager.new(opts).each_checkout do |treeish|
           # TODO find good test condition
           # puts treeish
         end
@@ -110,7 +109,11 @@ module Giblish
         # 2. Convert and add index, ...
         # 3. Redo from 1.
         tc = nil
-        r = GitCheckoutManager.new(srcdir: repo, local_only: true, branch_regex: /.*product.*/)
+        opts = CmdLine::Options.new
+        opts.srcdir = repo
+        opts.local_only = true
+        opts.branch_regex = /.*product.*/
+        r = GitCheckoutManager.new(opts)
         r.each_checkout do |name|
           Giblog.logger.info { "Working on #{name}" }
 
@@ -150,7 +153,11 @@ module Giblish
         # 1. Get the src dir
         # 2. Convert and add index, ...
         # 3. Redo from 1.
-        r = GitCheckoutManager.new(srcdir: repo, local_only: true, branch_regex: /.*product.*/)
+        opts = CmdLine::Options.new
+        opts.srcdir = repo
+        opts.local_only = true
+        opts.branch_regex = /.*product.*/
+        r = GitCheckoutManager.new(opts)
         r.each_checkout do |name|
           Giblog.logger.info { "Working on #{name}" }
 

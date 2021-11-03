@@ -139,18 +139,10 @@ module Giblish
 
       @user_opts = user_opts.dup
 
-      @gm = GitCheckoutManager.new(
-        srcdir: user_opts.srcdir,
-        local_only: user_opts.local_only,
-        branch_regex: user_opts.branch_regex,
-        tag_regex: user_opts.tag_regex
-      )
-
       # cache the root dir
-      @dst_topdir = user_opts.dstdir
+      @dst_topdir = @user_opts.dstdir
 
-      # TODO: parametrize this
-      @abort_on_error = true
+      @gm = GitCheckoutManager.new(@user_opts)
     end
 
     def run
@@ -164,8 +156,8 @@ module Giblish
         DirTreeConvert.new(@user_opts).run(configurator)
       rescue => e
         Giblog.logger.error { "Conversion of #{name} failed!" }
+        raise e if @user_opts.abort_on_error
         Giblog.logger.error { e.message }
-        raise e if @abort_on_error
       end
       make_summary
     end

@@ -31,8 +31,10 @@ module Giblish
         "search-phrase" => "text"
       }
       with_search_testdata do |dsttree|
+        # NOTE: this is currently just tested by running the code to give
+        # any output. maybe good to find a way to test the actual output itself.
         rm = CGIRequestManager.new(fake_cgi, {"/" => dsttree.pathname.to_s})
-        File.write("s_result.html", rm.response)
+        File.write(dsttree.pathname.join("s_result.html"), rm.response)
       end
     end
   end

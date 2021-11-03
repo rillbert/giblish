@@ -12,30 +12,34 @@ module Giblish
   class GitCheckoutManager
     attr_reader :branches, :tags, :summary_provider, :git_repo, :repo_root
 
-    # srcdir:: Pathname to the top dir of the local git repo to work with
-    # local_only:: if true, do not try to access any remote branches or merge with any
-    # upstream changes
-    # branch_regex:: the regex for the branches to include during iteration (default: none)
-    # tag_regex:: the regex for the tags to include during iteration (default: none)
-    def initialize(srcdir:, local_only: false, branch_regex: nil, tag_regex: nil, erb_template: nil)
-      @repo_root = GitItf.find_gitrepo_root(srcdir)
-      raise ArgumentError("The path: #{srcdir} is not within a git repo!") if @repo_root.nil?
+    # cmd_opts::       a CmdLine::Options instance
+    #
+    # Required options:
+    # srcdir::         Pathname to the top dir of the local git repo to work with
+    # local_only::     if true, do not try to access any remote branches or merge with any
+    #                  upstream changes
+    # Optional options:
+    # abort_on_error:: bail out at an error or continue. Default 'true'
+    # branch_regex::   the regex for the branches to include during iteration (default: none)
+    # tag_regex::      the regex for the tags to include during iteration (default: none)
+    def initialize(cmd_opts)
+      @repo_root = GitItf.find_gitrepo_root(cmd_opts.srcdir)
+      raise ArgumentError("The path: #{cmd_opts.srcdir} is not within a git repo!") if @repo_root.nil?
 
-      @local_only = local_only
-      @git_repo = init_git_repo(@repo_root, local_only)
-      @branches = select_user_branches(branch_regex, local_only)
-      @tags = select_user_tags(tag_regex)
-      @erb_template = erb_template
+      @local_only = cmd_opts.local_only
+      @abort_on_error = cmd_opts.abort_on_error.nil? ? true : cmd_opts.abort_on_error
+
+      @git_repo = init_git_repo(@repo_root, @local_only)
+      @branches = select_user_branches(cmd_opts.branch_regex, @local_only)
+      @tags = select_user_tags(cmd_opts.tag_regex)
       @summary_provider = GitSummaryDataProvider.new(@repo_root.basename)
-      # TODO: Do not hardcode this!
-      @abort_on_error = true
     end
 
     # present each git checkout matching the init criteria to the user's code.
     #
     # === Example
     #
-    # gcm = GitCheckoutManager.new(my_repo_root, true, /release/, /final/)
+    # gcm = GitCheckoutManager.new(opts)
     # gcm.each_checkout do |name|
     # ... do things with the currently checked out working tree ...
     # end
