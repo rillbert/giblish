@@ -5,6 +5,24 @@ require "oga"
 require "minitest/autorun"
 
 module Giblish
+  class GiblishTestBase < Minitest::Test
+    def setup
+      # create a logger that outputs messages to an in-memory string
+      @in_mem_storage = StringIO.new
+      @in_mem_logger = ::Logger.new(@in_mem_storage, formatter: Giblog::GiblogFormatter.new, level: Logger::DEBUG)
+
+      Giblog.setup(@in_mem_logger)
+    end
+
+    def teardown
+      return if @failures.empty?
+
+      # puts self.instance_variables
+      puts "Failed test: #{@NAME}"
+      puts "#{@in_mem_storage.string}"
+    end
+  end
+
   module TestUtils
     class TmpDocDir
       attr_reader :adoc_filename
@@ -65,16 +83,16 @@ module Giblish
         FileUtils.copy_entry(src_root, dst_top.to_s)
       end
 
-      def create_file(relpath, doc_str=nil)
+      def create_file(relpath, doc_str = nil)
         # make dir if necessary
-        dst  = Pathname.new(@dir.to_s).realpath.join(relpath)
+        dst = Pathname.new(@dir.to_s).realpath.join(relpath)
         FileUtils.mkdir_p(dst.dirname.to_s)
-        
+
         # find doc source
         doc_src = doc_str || CreateAdocDocSrc.new.source
-      
+
         # write the file
-        File.write(dst.to_s,doc_src)
+        File.write(dst.to_s, doc_src)
       end
 
       # create an asciidoc file from the given string. If user supplies

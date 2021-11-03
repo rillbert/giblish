@@ -3,7 +3,7 @@ require_relative "../../lib/giblish"
 
 module Giblish
   # tests the basic functionality of giblish as run via a terminal
-  class ApplicationTest < Minitest::Test
+  class ApplicationTest < GiblishTestBase
     include Giblish::TestUtils
 
     ADOC_STR = <<~HELLO_WORLD
@@ -13,11 +13,6 @@ module Giblish
 
       A paragraph.
     HELLO_WORLD
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def test_get_help_and_version_msg
       g = `lib/giblish.rb -h`

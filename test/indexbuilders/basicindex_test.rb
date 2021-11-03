@@ -5,13 +5,8 @@ require_relative "../../lib/giblish/subtreeinfobuilder"
 require_relative "../../lib/giblish/indexbuilders/subtree_indices"
 
 module Giblish
-  class BasicIndexTest < Minitest::Test
+  class BasicIndexTest < GiblishTestBase
     include Giblish::TestUtils
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def teardown
       # need to unregister the docid extension between subsequent tests

@@ -3,7 +3,7 @@ require_relative "../../lib/giblish/cmdline"
 require_relative "../test_helper"
 
 module Giblish
-  class CmdLineTest < Minitest::Test
+  class CmdLineTest < GiblishTestBase
     include Giblish::TestUtils
 
     def test_require_src_dst

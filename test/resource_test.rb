@@ -2,13 +2,8 @@ require_relative "test_helper"
 require_relative "../lib/giblish/resourcepaths"
 
 module Giblish
-  class ResourceTests < Minitest::Test
+  class ResourceTests < GiblishTestBase
     include Giblish::TestUtils
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def create_resource_dir resource_topdir
       Dir.exist?(resource_topdir) || FileUtils.mkdir_p(resource_topdir)

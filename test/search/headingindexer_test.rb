@@ -2,7 +2,7 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/search/headingindexer"
 
 module Giblish
-  class TestHeadingIndexer < Minitest::Test
+  class TestHeadingIndexer < GiblishTestBase
     include Giblish::TestUtils
 
     @@doc_1 = <<~EOF
@@ -32,10 +32,6 @@ module Giblish
 
       Obsesses around yatches, steam boats and motor boats.
     EOF
-
-    def setup
-      Giblog.setup
-    end
 
     def setup_directories
       TmpDocDir.open do |tmp_doc_dir|

@@ -13,7 +13,8 @@ class Giblog
   end
 
   # bootstrap the application-wide logger object
-  def self.setup
+  def self.setup(logger = nil)
+    @logger = logger unless logger.nil?    
     return if defined? @logger
 
     @logger = Logger.new($stdout)

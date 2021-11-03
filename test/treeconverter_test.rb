@@ -3,13 +3,8 @@ require_relative "../lib/giblish/treeconverter"
 require_relative "../lib/giblish/pathtree"
 
 module Giblish
-  class TreeConverterTest < Minitest::Test
+  class TreeConverterTest < GiblishTestBase
     include Giblish::TestUtils
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def tree_from_src_dir(top_dir)
       src_tree = PathTree.build_from_fs(top_dir, prune: false) do |pt|

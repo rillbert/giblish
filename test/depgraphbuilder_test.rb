@@ -5,7 +5,7 @@ require_relative "../lib/giblish/indexbuilders/d3treegraph"
 require_relative "../lib/giblish/indexbuilders/depgraphbuilder"
 
 module Giblish
-  class DepGraphBuilderTest < Minitest::Test
+  class DepGraphBuilderTest < GiblishTestBase
     include Giblish::TestUtils
 
     TEST_STR_BASIC = <<~DOT_STR
@@ -38,11 +38,6 @@ module Giblish
       ....
 
     DOT_STR
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     # mockup for a ConversionInfo instance
     FakeConvInfo = Struct.new(:title, :docid, :dst_rel_path, :converted)

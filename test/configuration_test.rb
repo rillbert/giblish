@@ -3,7 +3,7 @@ require_relative "../lib/giblish/config_utils"
 require_relative "../lib/giblish/docattr_providers"
 
 module Giblish
-  class ConfigurationTest < Minitest::Test
+  class ConfigurationTest < GiblishTestBase
     include Giblish::TestUtils
 
     def test_merge_doc_attribs

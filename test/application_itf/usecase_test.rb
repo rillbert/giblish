@@ -2,7 +2,7 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/resourcepaths"
 
 module Giblish
-  class UseCaseTests < Minitest::Test
+  class UseCaseTests < GiblishTestBase
     include Giblish::TestUtils
 
     TEST_DOCS = [
@@ -32,11 +32,6 @@ module Giblish
           text: "More random text"}],
        subdir: "subdir1"}
     ]
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def create_resource_dir resource_topdir
       Dir.exist?(resource_topdir) || FileUtils.mkdir_p(resource_topdir)

@@ -2,13 +2,8 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/resourcepaths"
 
 module Giblish
-  class UseCaseTests < Minitest::Test
+  class UseCaseTests < GiblishTestBase
     include Giblish::TestUtils
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def test_giberish_file
       TmpDocDir.open(preserve: false) do |tmp_docs|

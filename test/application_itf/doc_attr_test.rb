@@ -6,7 +6,7 @@ require_relative "../test_helper"
 module Giblish
   # tests that asciidoctor document attributes can be set via the -a or
   # --attributes flag at invocation.
-  class DocAttrTest < Minitest::Test
+  class DocAttrTest < GiblishTestBase
     include Giblish::TestUtils
 
     IDPREFIX_DEFAULT = <<~ID_SOURCE
@@ -53,11 +53,6 @@ module Giblish
 
       NOTE: This is to test the note-caption attrib
     XREF_TEST
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def convert(src_tree, configurator)
       data_provider = DataDelegator.new(SrcFromFile.new, configurator.doc_attr)

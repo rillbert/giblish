@@ -4,13 +4,8 @@ require_relative "../../lib/giblish/docid/docid"
 require_relative "../../lib/giblish/pathtree"
 
 module Giblish
-  class DocidTest < Minitest::Test
+  class DocidTest < GiblishTestBase
     include Giblish::TestUtils
-
-    def setup
-      # setup logging
-      Giblog.setup
-    end
 
     def teardown
       # need to unregister the docid extension between subsequent tests

@@ -2,14 +2,10 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/search/searchquery"
 
 module Giblish
-  class TestSearchQuery < Minitest::Test
+  class TestSearchQuery < GiblishTestBase
     include Giblish::TestUtils
 
     TEST_DOC_DIR = "data/testdocs/wellformed/search"
-
-    def setup
-      Giblog.setup
-    end
 
     def test_from_uri
       uris = {
@@ -47,7 +43,7 @@ module Giblish
         "&as-regexp=true"
       }
       q = SearchQuery.new(uri: uri_some_opts[:ok])
-      assert_equal(nil, q.css_path)
+      assert_nil(q.css_path)
       assert_equal(false, q.consider_case?)
       assert_equal(true, q.as_regexp?)
     end

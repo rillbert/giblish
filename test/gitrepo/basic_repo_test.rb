@@ -7,14 +7,8 @@ require_relative "../../lib/giblish/gitrepos/history_pb"
 require_relative "../../lib/giblish/gitrepos/checkoutmanager"
 
 module Giblish
-  class BasicRepoTest < Minitest::Test
+  class BasicRepoTest < GiblishTestBase
     include Giblish::TestUtils
-
-    def setup
-      # setup logging
-      Giblog.setup
-      Giblog.logger.level = Logger::INFO
-    end
 
     def tree_from_src_dir(top_dir)
       src_tree = PathTree.build_from_fs(top_dir, prune: false) do |pt|
@@ -95,10 +89,11 @@ module Giblish
           tag_regex: /v1.5/
         )
         gm.each_checkout do |treeish|
-          puts treeish
+          # TODO find good test condition
+          # puts treeish
         end
-        str = GitSummaryDataProvider.new("testrepo").source
-        File.write("testtags.adoc", str)
+        # str = GitSummaryDataProvider.new("testrepo").source
+        # File.write("testtags.adoc", str)
       end
     end
 

@@ -2,14 +2,10 @@ require_relative "../test_helper"
 require_relative "../../lib/giblish/search/request_manager"
 
 module Giblish
-  class CGIRequestManagerTest < Minitest::Test
+  class CGIRequestManagerTest < GiblishTestBase
     include Giblish::TestUtils
 
     TEST_DOC_DIR = "data/testdocs/wellformed/search"
-
-    def setup
-      Giblog.setup
-    end
 
     # The test data is stored as
     # |- dst
