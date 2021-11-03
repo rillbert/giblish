@@ -165,7 +165,7 @@ module Giblish
       # eruby:
       # ignore extention stuff
       header_only: false,
-      logger: Giblish::AsciidoctorLogger.new(Logger::Severity::WARN),
+      # logger: 
       mkdirs: false,
       parse: true,
       safe: :unsafe,
@@ -221,11 +221,11 @@ module Giblish
       api_opts[:attributes].merge!(src_node.document_attributes(src_node, dst_node, dst_top)) if src_node.respond_to?(:document_attributes)
 
       # use a new logger instance for each conversion
-      adoc_logger = Giblish::AsciidoctorLogger.new(@adoc_log_level)
+      adoc_logger = Giblish::AsciidoctorLogger.new(@logger, @adoc_log_level)
 
       begin
-        # load the source and parse it to enable access to doc
-        # properties
+        # load the source to enable access to doc properties
+        #
         # NOTE: the 'parse: false' is needed to prevent preprocessor extensions to be run as part
         # of loading the document. We want them to run during the 'convert' call later when
         # doc attribs have been amended.

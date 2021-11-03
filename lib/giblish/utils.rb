@@ -3,7 +3,7 @@ require "pathname"
 require "fileutils"
 require "find"
 
-# The logger used from within giblishd 
+# The logger used from within giblish
 class Giblog
   # Defines the format for log messages from giblish.
   class GiblogFormatter
@@ -14,7 +14,7 @@ class Giblog
 
   # bootstrap the application-wide logger object
   def self.setup(logger = nil)
-    @logger = logger unless logger.nil?    
+    @logger = logger unless logger.nil?
     return if defined? @logger
 
     @logger = Logger.new($stdout)
@@ -49,6 +49,10 @@ module Giblish
     class UserInfoFormatter
       SEVERITY_LABELS = {"WARN" => "WARNING", "FATAL" => "FAILED"}.freeze
 
+      def call(severity, datetime, progname, msg)
+        %(#{datetime.strftime("%H:%M:%S")} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{UserInfoFormatter.adoc_to_message(msg)}\n)
+      end
+
       # The hash that can be emitted as the msg from asciidoctor have the
       # following format:
       # {:text=>"...",
@@ -58,27 +62,26 @@ module Giblish
       #          @path="<only file name>",
       #          @lineno=<src line no>
       # }
-      def call(severity, datetime, progname, msg)
-        message = case msg
-                  when ::String
-                    msg
-                  when ::Hash
-                    # asciidoctor seem to emit a hash with the following structure on errors:
-                    # :text => String
-                    # :source_location => Reader::Cursor with the following props:
-                    #   dir, file, lineno, path
-                    # Only the lineno prop can be trusted when Asciidoctor is used via Giblish
-                    #
-                    src_loc = msg.fetch(:source_location, nil)
-                    err_txt = msg.fetch(:text, "")
-                    str = +""
-                    str << "Line #{src_loc.lineno} - " if src_loc.lineno
-                    str << err_txt
-                    str
-                  else
-                    msg.inspect
+      def self.adoc_to_message(msg)
+        case msg
+        when ::String
+          msg
+        when ::Hash
+          # asciidoctor seem to emit a hash with the following structure on errors:
+          # :text => String
+          # :source_location => Reader::Cursor with the following props:
+          #   dir, file, lineno, path
+          # Only the lineno prop can be trusted when Asciidoctor is used via Giblish
+          #
+          src_loc = msg.fetch(:source_location, nil)
+          err_txt = msg.fetch(:text, "")
+          str = ""
+          str << "Line #{src_loc.lineno} - " if src_loc.lineno
+          str << err_txt
+          str
+        else
+          msg.inspect
         end
-        %(#{datetime.strftime("%H:%M:%S")} #{progname}: #{SEVERITY_LABELS[severity] || severity}: #{message}\n)
       end
     end
 
@@ -87,24 +90,30 @@ module Giblish
     # stdout_level:: the log level to use for gating the messages to stdout
     # string_level:: the log level to use for gating the messages to the in-memory string.
     # defaults to 'stdout_level' if not set.
-    def initialize(stdout_level, string_level = nil)
-      super($stdout, progname: "(asciidoctor)", formatter: UserInfoFormatter.new, level: stdout_level)
+    def initialize(user_logger, string_level = nil)
+      # def initialize(stdout_level, string_level = nil)
       string_level = stdout_level if string_level.nil?
+      @user_logger = user_logger
 
       @max_severity = UNKNOWN
 
       # create a new, internal logger that echos messages to an in-memory string
       @in_mem_storage = StringIO.new
-      @in_mem_logger = ::Logger.new(@in_mem_storage, formatter: UserInfoFormatter.new, level: string_level)
+      # @in_mem_logger = ::Logger.new(@in_mem_storage, formatter: UserInfoFormatter.new, level: string_level)
+      super(@in_mem_storage, progname: "(asciidoctor)", formatter: UserInfoFormatter.new, level: string_level)
     end
 
-    def add(severity, message = nil, progname = nil)
+    def add(severity, message = nil, progname = nil, &block)
+      # add message to adoc log
+      super(severity, message.dup, progname)
+
+      # add message to user log (wierd interface... see Logger::add(...))
+      message = yield if block_given?
+      message = progname unless message
+      @user_logger&.add(severity, "(asciidoctor) #{UserInfoFormatter::adoc_to_message(message)}")
+
       # update the maximum severity received by this logger
       @max_severity = severity if severity != UNKNOWN && severity > @max_severity
-
-      # write the log message to both channels
-      @in_mem_logger.add(severity, message, progname)
-      super
     end
   end
 
@@ -173,7 +182,7 @@ module Giblish
   # compatible with asciidoctor's generated ids
   def to_valid_id(input_str, id_prefix = "_", id_separator = "_", use_checksum = false)
     # use a basic checksum to reduce the risk for duplicate ids
-    check_sum = use_checksum ? input_str.chars().reduce(0) { |sum,c| sum + c.ord} : ""
+    check_sum = use_checksum ? input_str.chars.reduce(0) { |sum, c| sum + c.ord } : ""
 
     id_str = input_str.strip.downcase.gsub(/[^a-z0-9]+/, id_separator)
     id_str = "#{id_prefix}#{check_sum}#{id_prefix}#{id_str}"
@@ -250,7 +259,7 @@ module Giblish
 
       # shall we split word or just move it to next row?
       if (row_space == max_length && word.length > row_space) ||
-         (word.length > too_short && (row_space > too_short) && (word.length - row_space).abs > too_short)
+          (word.length > too_short && (row_space > too_short) && (word.length - row_space).abs > too_short)
         # we will split the word, using a '-'
         first_part = word[0..row_space - (1 + sep.length)]
         row = "#{row}#{sep}#{first_part}-"

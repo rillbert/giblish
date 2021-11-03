@@ -3,7 +3,6 @@
 == v1.0.0
 
 Things to do::
- * Fix logging from test cases to be less verbose
  * Maybe put some effort into ConversionInfo hierarchy
 
 This release includes a coplete refactoring of almost the entire codebase.
@@ -18,7 +17,7 @@ Breaking changes::
  * The source highlighter attributes are now set as follows by default:
  ** :source-highlighter: rouge  :rouge-css: style  :rouge-style: github
  * The format of the index pages has been updated
- 
+
 Changes/New functionality::
  * Rouge is used as source highlighter and the default is to use the following attributes:
  ** :rouge-css: style
