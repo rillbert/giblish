@@ -1,25 +1,20 @@
 = Publish asciidoc docs in git repos using giblish
 :imagesdir: setup_server_assets
 :numbered:
-:toc:
+:docid: G-003
+:toc: left
 
 == Purpose
 
-To describe how to use giblish as a tool for creating a static web site with documents that are automatically generated each time a contributer push changes to a git repo.
+To describe how to use `giblish` as a tool for creating a static web site with documents that are automatically generated each time a contributer push changes to a git repo.
 
 If you want to dive straight in and setup one of the scenarios below, jump to <<setup_instructions>>, otherwise read on for some examples and considerations.
-
-=== Example usages
-
-TBD
-
-== Two deployment scenarios
 
 This text covers two deployment scenarios; one using a git hook together with a simple (well) shell script, and one using a git hook together with Jenkins.
 
 They have both been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
 
-=== Git hook and shell script
+== Git hook and shell script
 
 This requires the least number of installed components to work. An overview of the scenario is given below.
 
@@ -28,19 +23,19 @@ image::deploy_with_hooks.svg[]
 
 The components needed on the server are:
 
-Master Repo::
-The common (bare) git repo used by all content writers to push updates to. This repo needs to be setup with a server-side hook (_post-receive_) that are executed by git after each push to the repository.
+Master Repo with `post-receive` hook::
+The common (bare) git repo used by all content writers to push updates to. This repo shall be setup with a server-side hook (_post-receive_) that initiates the html generation and is triggered by each push to the repo.
 
 Staging Repo::
-A git repo that mirrors the _Master Repo_ and fulfills two functions:
+A mirror of the _Master Repo_ that fulfills two functions:
 
- . provide a checked-out working tree with the source files (adoc files).
- . provide a script that uses giblish to publish the adoc files in the working tree as HTML files that reside at a place in the file system where the web server can access them.
+ . to provide a checked-out working tree with the source files (adoc files).
+ . to provide a script that uses giblish to generate html documents and publish those docs to a location where a web server can access them.
 
 Web Server::
 Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (eg under /var/www/... )
 
-==== Considerations
+=== Considerations
 
 Possible advantages::
  * it has few dependencies on external tools, only git, giblish and a web server are needed for this to work.

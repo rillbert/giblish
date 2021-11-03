@@ -1,4 +1,5 @@
-= Text search spec
+= Text search spec for giblish
+:docid: G-002
 
 == File system when deployed
 
