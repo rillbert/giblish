@@ -24,7 +24,7 @@ module Giblish
     # tag_regex::      the regex for the tags to include during iteration (default: none)
     def initialize(cmd_opts)
       @repo_root = GitItf.find_gitrepo_root(cmd_opts.srcdir)
-      raise ArgumentError("The path: #{cmd_opts.srcdir} is not within a git repo!") if @repo_root.nil?
+      raise ArgumentError, "The path: #{cmd_opts.srcdir} is not within a git repo!" if @repo_root.nil?
 
       @local_only = cmd_opts.local_only
       @abort_on_error = cmd_opts.abort_on_error.nil? ? true : cmd_opts.abort_on_error
@@ -85,7 +85,7 @@ module Giblish
 
     def init_git_repo(git_repo_root, local_only)
       # Sanity check git repo root
-      git_repo_root || raise(ArgumentError("No git repo root dir given"))
+      raise ArgumentError, "No git repo root dir given" unless git_repo_root
 
       msg = "Could not find a git repo at #{git_repo_root} !"
       begin

@@ -93,6 +93,7 @@ module Giblish
 
       # The regex that matches docid references in files
       DOCID_REF_REGEX = /<<\s*:docid:\s*(.*?)>>/.freeze
+      PASS_MACRO_REGEX = /pass:\[.*\]/
 
       # This hook is called by Asciidoctor once for each document _before_
       # Asciidoctor processes the adoc content.
@@ -111,6 +112,9 @@ module Giblish
 
         # Convert all docid refs to valid relative refs
         reader.lines.each do |line|
+          # remove commented lines
+          next if line.start_with?("//")
+
           @node_2_ids[src_node] += parse_line(line, src_node)
         end
 
@@ -129,6 +133,9 @@ module Giblish
       # returns:: Array of found docid references
       def parse_line(line, src_node)
         refs = []
+        # remove all content within a 'pass:[]' macro from the parser
+        line.gsub!(PASS_MACRO_REGEX)
+        
         line.gsub!(DOCID_REF_REGEX) do |_m|
           # parse the ref
           target_id, section, display_str = parse_doc_id_ref(Regexp.last_match(1))
