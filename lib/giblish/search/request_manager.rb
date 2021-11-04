@@ -1,3 +1,4 @@
+require "asciidoctor"
 require_relative "textsearcher"
 
 module Giblish
@@ -65,6 +66,30 @@ module Giblish
     end
   end
 
+  class RequestManager
+    class << self
+      def searcher
+        @searcher ||= TextSearcher.new(SearchRepoCache.new)
+      end
+    end
+
+    def searcher
+      RequestManager.searcher
+    end
+
+    def initialize(uri_mappings)
+      @uri_mappings = uri_mappings || {"/" => "/var/www/html/"}
+
+      @html_generator = DefaultHtmlGenerator.new
+    end
+
+    def response(search_params)
+      sp = SearchParameters.from_hash(search_params, uri_mappings: @uri_mappings)
+      @html_generator.response(searcher.search(sp), sp.css_path)
+    end
+  end
+
+  # Implements a search given a CGI object
   class CGIRequestManager
     REQUIRED_PARAMS = %w[calling-url search-assets-top-rel search-phrase]
     OPTIONAL_PARAMS = %w[css-path consider-case as-regexp]
@@ -76,8 +101,6 @@ module Giblish
     end
 
     def initialize(cgi, uri_mappings = nil, html_generator = nil)
-      validate_request(cgi)
-
       @cgi = cgi
       @uri_mappings = uri_mappings || {"/" => "/var/www/html/"}
       @html_generator = html_generator || DefaultHtmlGenerator.new
@@ -94,23 +117,10 @@ module Giblish
       CGIRequestManager.searcher
     end
 
-    def validate_request(cgi)
-      REQUIRED_PARAMS.each { |p| raise ArgumentError, "Missing parameter: #{p}" unless cgi.key?(p) }
-    end
-
     # put together a complete uri from the cgi parameters relevant to a search
     def assemble_uri(cgi)
       uri = cgi["calling-url"] + "?" + REQUIRED_PARAMS.collect { |p| "#{p}=#{cgi[p]}" }.join("&")
       uri + OPTIONAL_PARAMS.collect { |p| "#{p}=#{cgi[p]}" if cgi.key?(p) }.join("&")
-    end
-
-    def encode_query(cgi)
-      query = URI.encode_www_form(
-        REQUIRED_PARAMS.collect { |p| [p, cgi[p]] }.concat(
-          OPTIONAL_PARAMS.collect { |p| [p, cgi[p]] if cgi.key?(p) }
-        )
-      )
-      uri.query = query
     end
   end
 end

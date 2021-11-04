@@ -164,7 +164,7 @@ module Giblish
       @uri_mappings.each do |k, v|
         raise ArgumentError, "The uri path in the uri_mapping must be absolute, found: '#{k}'" unless k.absolute?
         raise ArgumentError, "The file system directory path must be absolute, found: '#{v}'" unless v.absolute?
-        raise ArgumentError, "The file system diretory does not exist, found: '#{v}'" unless v.exist?
+        raise ArgumentError, "The file system diretory does not exist: '#{v}'" unless v.exist?
         raise ArgumentError, "The uri_mapping must be a directory, found file: '#{v}'" unless v.directory?
       end
     end
