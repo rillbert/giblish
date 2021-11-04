@@ -66,61 +66,45 @@ module Giblish
     end
   end
 
+  # A gateway class that implements everything needed to produce
+  # an html page with search results given a search request.
+  # 
+  # The class implements internal caching for better performance. It
+  # is thus probably wise to instantiate this class once and then use
+  # that instance for all subsequent search queries.
   class RequestManager
-    class << self
-      def searcher
-        @searcher ||= TextSearcher.new(SearchRepoCache.new)
-      end
-    end
-
-    def searcher
-      RequestManager.searcher
-    end
-
-    def initialize(uri_mappings)
+    # url_path_mappings:: a Hash with mappings from url paths to
+    # local file system directories.
+    # html_generator:: an object that generates html by implementing
+    # the method 'def response(search_result, css_path = nil)'. See
+    # eg DefaultHtmlGenerator. If nil, a DefaultHtmlGenerator is used.
+    def initialize(uri_mappings, html_generator = nil)
       @uri_mappings = uri_mappings || {"/" => "/var/www/html/"}
 
-      @html_generator = DefaultHtmlGenerator.new
+      @html_generator = html_generator || DefaultHtmlGenerator.new
     end
 
+    # Return an html page with the search result from the given query.
+    #
+    # search_params:: a Hash containing the parameters of the search query.
     def response(search_params)
       sp = SearchParameters.from_hash(search_params, uri_mappings: @uri_mappings)
       @html_generator.response(searcher.search(sp), sp.css_path)
     end
-  end
 
-  # Implements a search given a CGI object
-  class CGIRequestManager
-    REQUIRED_PARAMS = %w[calling-url search-assets-top-rel search-phrase]
-    OPTIONAL_PARAMS = %w[css-path consider-case as-regexp]
+    private 
 
+    # a convenience method to give shorter access to the class-wide
+    # TextSearcher instance.
+    def searcher
+      RequestManager.searcher
+    end
+
+    # provide a class-wide TextSearcher instance
     class << self
       def searcher
         @searcher ||= TextSearcher.new(SearchRepoCache.new)
       end
-    end
-
-    def initialize(cgi, uri_mappings = nil, html_generator = nil)
-      @cgi = cgi
-      @uri_mappings = uri_mappings || {"/" => "/var/www/html/"}
-      @html_generator = html_generator || DefaultHtmlGenerator.new
-    end
-
-    def response
-      sp = SearchParameters.from_hash(@cgi, uri_mappings: @uri_mappings)
-      @html_generator.response(searcher.search(sp), sp.css_path)
-    end
-
-    private
-
-    def searcher
-      CGIRequestManager.searcher
-    end
-
-    # put together a complete uri from the cgi parameters relevant to a search
-    def assemble_uri(cgi)
-      uri = cgi["calling-url"] + "?" + REQUIRED_PARAMS.collect { |p| "#{p}=#{cgi[p]}" }.join("&")
-      uri + OPTIONAL_PARAMS.collect { |p| "#{p}=#{cgi[p]}" if cgi.key?(p) }.join("&")
     end
   end
 end

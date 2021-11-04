@@ -38,8 +38,12 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "standard", "~> 1.1"
   spec.add_development_dependency "thor", "~> 0.20.3"
   spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
+  # needed for the sinatra-based apps
   spec.add_development_dependency "sinatra"
   spec.add_development_dependency "thin"
+  spec.add_development_dependency "rack"
+  spec.add_development_dependency "rack-test"
+  
 
   # Used during run-time by giblish
   spec.add_runtime_dependency "warning", "~>1.2"

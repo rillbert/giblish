@@ -244,6 +244,7 @@ module Giblish
 
       # check if we shall read a new repo from disk
       if !@repos.key?(ap) || @repos[ap].is_stale
+        # Uncomment for debugging...
         # puts "read from disk for ap: #{ap}.."
         # puts "is stale" if @repos.key?(ap) && @repos[ap].is_stale
         @repos[ap] = SearchDataRepo.new(ap)
