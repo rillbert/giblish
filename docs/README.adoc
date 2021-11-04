@@ -11,28 +11,93 @@ giblish converts a source directory tree containing AsciiDoc files to a destinat
 
 == Examples
 
-NOTE: The examples below are *not* the official documentation for the corresponding projects.
+IMPORTANT: The examples below are *not* the official documentation for the corresponding projects.
 
- . Create a main repo that is a 'bare' version of your repo and place it on your server.
- . Create a staging repo by cloning the main repo to another location on the same server but do *not* use the `--bare` flag. It is important that the staging repo has a working directory.
- . Copy the `post-receive` git hook teplate from the giblish gem to the `hook` directory on your main repo.
- . Update the `post-receive` hook so the configuration matches your use case.
-
-Search::
- . Copy the gibsearch.rb file from the gem to the cgi-bin dir of the web server
- . Update the following in the file:
- .. the URI_MAPPING
 |===
 |Project |Comment |Link to example
 
 |Raspberry Pi documentation
-|The original documentation site uses Jekyl for site generation, the link above points to a mirror where some small tweaks to the docs were made to make them suitable for generation with giblish.
+|The original documentation site uses Jekyl for site generation, the link points to a mirror where some small tweaks to the docs were made to make them suitable for generation with giblish.
+|https://www.rillbert.se/giblish_examples/rpi_docs/giblish_example/index.html[example]
+
 |
+|An example of how giblish can generate the master branch of the official asciidoc.org documentation git repo can be found at
+|https://www.rillbert.se/asciidoctor_docs/master/myindex.html[example]
 
 |===
- * giblish -l warn -r data/resources/ -s giblish -f html -m --server-search-path /search/gibsearch.cgi -g 'develop' -d -c -j '/(accessories|computers|microcontrollers)/.*/' ../raspberry_doc/documentation/asciidoc ../gendocs/docs/blah
 
-An example of how giblish can generate the master branch of the official asciidoc.org documentation git repo can be found at https://www.rillbert.se/asciidoctor_docs/master/myindex.html
+=== Setup document generation using a server-side git hook
+
+ . Create a _main repo_ which will receive pushes from the contributers.
+ .. This is typically a '--bare' version of your repo, placed on a central server. This is the repo that contributors clone to pull/push from/to.
+ . Create a _staging repo_ by cloning the _main repo_ to another location on the same server as the _main repo_.
+ .. The _staging_repo_ must be a full clone (with a working directory). Do *not* use the `--bare` flag when cloning. 
+ . Copy the `post-receive` git hook teplate from the giblish gem to the `hook` directory on your _main repo_.
+ . Update the `post-receive` hook so the configuration matches your use case.
+
+=== Setup giblish text search using CGI
+
+ . Copy the gibsearch.rb file from the gem to the cgi-bin dir of the web server
+ . Update the following in the file:
+ .. the URI_MAPPING
+
+=== Setup a sinatra app under apache
+
+https://www.phusionpassenger.com/library/walkthroughs/deploy/ruby/ownserver/apache/oss/bionic/deploy_app.html#nonrails_preparing-the-app-s-environment[Passenger doc]
+
+# list available modules
+anders@srv1:~$ sudo apachectl -M
+# install apache passenger module
+anders@srv1:~$ sudo apt install libapache2-mod-passenger 
+# check passanger is running
+anders@srv1:~$ sudo /usr/sbin/passenger-memory-stats 
+# determining ruby command for passenger (Ex: /usr/bin/ruby2.7)
+passenger-config about ruby-command
+# install sinatra
+anders@srv1:~$ sudo gem install sinatra --no-document
+# add an apache 'site-available' config file for your app
+anders@srv1:~$ sudo nano /etc/apache2/sites-available/100-gibsearch.conf
+
+Content:
+<VirtualHost *:1233>
+    ServerName rillbert.se
+
+    # Tell Apache and Passenger where your app's 'public' directory is
+    DocumentRoot /var/www/rillbert_se/apps/gibsearch/public
+
+    PassengerRuby /usr/bin/ruby2.7
+
+    # Relax Apache security settings
+    <Directory /var/www/rillbert_se/apps/gibsearch/public>
+      Allow from all
+      Options -MultiViews
+      Require all granted
+    </Directory>
+</VirtualHost>
+
+# add an entry in ports.conf
+anders@srv1:/etc/apache2/sites-enabled$ sudo nano ports.conf 
+# symlink site-available to sites-enabled
+anders@srv1:/etc/apache2/sites-enabled$ sudo ln -s /etc/apache2/sites-available/100-gibsearch.conf .
+# restart apache
+anders@srv1:/etc/apache2/sites-enabled$ sudo apache2ctl restart 
+
+# deploy your app
+Content taken from https://newbedev.com/how-do-i-set-up-a-sinatra-app-under-apache-with-passenger[here]
+
+anders@srv1:/var/www/rillbert_se/apps$ tree .
+.
+└── gibsearch
+    ├── config.ru
+    ├── hello-app.rb
+    ├── public
+    └── tmp
+        └── restart.txt
+
+3 directories, 3 files
+
+
+
 
 The added tools include:
 
