@@ -1,8 +1,11 @@
-require_relative "test_helper"
-require_relative "../lib/giblish/github_trigger/webhook_manager"
+require "json"
+require_relative "../test_helper"
+require_relative "../../lib/giblish/github_trigger/webhook_manager"
 
 module Giblish
   class WebHookTest < GiblishTestBase
+    include Giblish::TestUtils
+
     # an example payload from github as read by
     # 'request.body.read'
     GH_PUSH_JSON = <<~GH_JSON
@@ -205,9 +208,33 @@ module Giblish
     GH_JSON
 
     def test_get_ref
+      no_trig_push = {
+        ref: "refs/heads/master"
+      }
+      trig_push = {
+        ref: "refs/heads/svg_index"
+      }
       TmpDocDir.open(preserve: false) do |tmp_docs|
-        assert(r.node("dst/web_assets/dir1"))
-        assert(r.node("dst/web_assets/dir1/custom.css"))
+        topdir = Pathname.new(tmp_docs.dir)
+        dstdir = topdir.join("html")
+
+        wm = WebhookManager.new(
+          /svg/,
+          "https://github.com/rillbert/giblish.git",
+          topdir,
+          "giblish",
+          "docs",
+          dstdir,
+          Giblog.logger
+        )
+        wm.run(no_trig_push)
+        assert(!dstdir.exist?)
+
+        wm.run(trig_push)
+        result = PathTree.build_from_fs(dstdir, prune: true)
+        assert(result.node("index.html"))
+        assert(result.node("personal_rillbert_svg_index"))
+        assert(result.node("personal_rillbert_svg_index/README.html"))
       end
     end
   end
