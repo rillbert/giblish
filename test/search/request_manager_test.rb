@@ -24,7 +24,7 @@ module Giblish
       end
     end
 
-    def test_basic_search_info
+    def test_basic_search_result
       fake_cgi = {
         "calling-url" => "http://www.example.com/file1.html",
         "search-assets-top-rel" => "./gibsearch_assets",
@@ -33,8 +33,8 @@ module Giblish
       with_search_testdata do |dsttree|
         # NOTE: this is currently just tested by running the code to give
         # any output. maybe good to find a way to test the actual output itself.
-        rm = CGIRequestManager.new(fake_cgi, {"/" => dsttree.pathname.to_s})
-        File.write(dsttree.pathname.join("s_result.html"), rm.response)
+        rm = RequestManager.new({"/" => dsttree.pathname.to_s})
+        File.write(dsttree.pathname.join("s_result.html"), rm.response(fake_cgi))
       end
     end
   end
