@@ -1,57 +1,51 @@
 #!/bin/bash
 #
-# this hook runs the publish_html.sh script which, in turn,
-# publishes html versions of adoc files to the desired
-# destination.
+# this hook runs a script which, in turn, generates html documentation
+# and publishes them to the given destination.
 #
-#
-# Adjust the WORKING_TREE_ROOT, DST_DIR and SRC_DIR below to
-# locations suitable for your setup
 
-### config section
-# set this to the repo root where the working tree exists
-WORKING_TREE_ROOT="/the/path/to/the/stage/repo"
+# the git refs that should trigger a doc generation at update
+TRIGGERING_REFS_REGEX=$'main'
 
-# set this to the publish root dir served by a web server
-DST_DIR="/the/path/to/webserver/directory/root"
+# the staging repo root (where the working tree exists)
+STAGING_REPO="/usr/local/git_staging/rillbert_se_staging"
 
-# set this to "true" if you want to force an 'rm -rf'of
-# the destination dir before generating new htmls
-CLEAR_DST=""
+# The web-server top dir for the published documents
+DST_DIR="/var/www/rillbert_se/html/public/docs"
 
-# set this to the top dir to look for docs under in the
-# staging repo. This shall be given as a relative path
-# from the top dir of the git repo.
-SRC_DIR="."
+# "true" runs an 'rm -rf' of the destination dir before generating new htmls
+CLEAR_DST="true"
 
-# Make config available in subshell
-export WORKING_TREE_ROOT
-export DST_DIR
-export SRC_DIR
-export CLEAR_DST
+echo "post-receive hook running..."
 
-# read the input from git...not currently used.
-# it could for example be used to filter on git branches
-#
-# while read line
-# do
-#   echo "git ref: $line"
-# done < /dev/stdin
+# read the input that git sends to this hook
+read oldrev newrev ref
 
-echo "Post update hook running..."
+# remove the 'refs/heads/' prefix from the git ref
+ref="${ref/refs\/heads\//}"
+
+# filter out refs that are irrelevant for doc generation
+if [[ ! "${ref}" =~ "${TRIGGERING_REFS_REGEX}" ]]; then
+  echo "Ref '${ref}' received. Doing nothing: only refs matching the regex: /${TRIGGERING_REFS_REGEX}/ will trigger a doc generation."
+  exit 0
+fi
+
+echo "Document generation triggered by an update to ${ref}."
+echo ""
+
+# use a subshell with the correct working dir for the actual doc generation
 (
-  cd "${WORKING_TREE_ROOT}"
+  cd "${STAGING_REPO}"
 
-  # need to unset the GIT_DIR env set by the invoking hook...
+  # need to unset the GIT_DIR env set by the invoking hook for giblish to work correctly
   unset GIT_DIR
 
-  # Run the publish script
-  PUBLISH_SCRIPT="scripts/publish_html.sh"
-  echo "invoking publish script at ${WORKING_TREE_ROOT}/${PUBLISH_SCRIPT}"
-  if [[ -z "${CLEAR_DST}" ]]; then
-    "${PUBLISH_SCRIPT}" "${DST_DIR}" "${SRC_DIR}"
-  else
-    "${PUBLISH_SCRIPT}" -f "${DST_DIR}" "${SRC_DIR}"
+  if [[ "${CLEAR_DST}" -eq "true" ]]; then
+    echo "Remove everything under ${DST_DIR}/"
+    rm -rf ${DST_DIR}/*
   fi
 
+  # Generate html docs
+  echo "running: giblish -a xrefstyle=basic --copy-asset-folders _assets$ -g ${TRIGGERING_REFS_REGEX} -r scripts/resources -s giblish docs ${DST_DIR}"
+  giblish -a xrefstyle=basic --copy-asset-folders "_assets$" -g "${TRIGGERING_REFS_REGEX}" -r scripts/resources -s giblish docs "${DST_DIR}"
 )
