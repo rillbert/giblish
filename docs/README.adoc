@@ -41,7 +41,7 @@ IMPORTANT: The examples below are *not* the official documentation for the corre
  . Update the following in the file:
  .. the URI_MAPPING
 
-=== Setup a sinatra app under apache
+=== Setup a sinatra app under apache/passenger
 
 https://www.phusionpassenger.com/library/walkthroughs/deploy/ruby/ownserver/apache/oss/bionic/deploy_app.html#nonrails_preparing-the-app-s-environment[Passenger doc]
 
@@ -63,6 +63,7 @@ Content:
     ServerName rillbert.se
 
     # Tell Apache and Passenger where your app's 'public' directory is
+    # NOTE: Passenger requires a 'public' dir even if it is empty
     DocumentRoot /var/www/rillbert_se/apps/gibsearch/public
 
     PassengerRuby /usr/bin/ruby2.7
