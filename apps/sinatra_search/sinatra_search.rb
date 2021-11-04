@@ -9,7 +9,7 @@ require "giblish"  # used when deploying
 # Provide the mappings of URI paths that apply to the specific deployment 
 # setup.
 #
-# The below example maps the URI www.exaple.com/ to the local directory
+# The below example maps the URL www.exaple.com/ to the local directory
 # /home/andersr/repos/gendocs on the web server.
 URL_PATH_MAPPINGS = {
   "/" => "/home/andersr/repos/gendocs/"
