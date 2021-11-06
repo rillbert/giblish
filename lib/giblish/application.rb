@@ -129,8 +129,8 @@ module Giblish
 
   # Converts a number of branches/tags in a gitrepo according to the given
   # options.
-  # 
-  # Each branch/tag is converted into a subdir of the given root dir and a 
+  #
+  # Each branch/tag is converted into a subdir of the given root dir and a
   # summary page with links to the converted docs for each branch/tag is
   # generated within the root dir.
   class GitRepoConvert
@@ -188,12 +188,12 @@ module Giblish
   end
 
   class EntryPoint
-    def initialize(args)
+    def initialize(args, logger = nil)
       # force immediate output
       # $stdout.sync = true
 
       # setup logging
-      Giblog.setup
+      Giblog.setup(logger)
       Giblog.logger.level = Logger::INFO
 
       # Parse cmd line
@@ -210,8 +210,8 @@ module Giblish
       @converter.run
     end
 
-    def self.run(args)
-      EntryPoint.new(args).run
+    def self.run(args, logger = nil)
+      EntryPoint.new(args, logger).run
     end
 
     # does not return, exits with status code

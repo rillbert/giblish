@@ -4,9 +4,9 @@
 
 Things to do::
  * Write docs for giblish.
+ * Publish the giblish docs via github webhooks using scripts included in the gem.
  * Clean up the files included in the gem
  * Update the asciidoctor docs example
- * Publish the giblish docs via github webhooks using scripts included in the gem.
  * Test against ruby 3.0
  * Update the default css for giblish html generation.
  * Maybe put some effort into the ConversionInfo hierarchy

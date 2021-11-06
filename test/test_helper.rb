@@ -12,6 +12,8 @@ module Giblish
       @in_mem_logger = ::Logger.new(@in_mem_storage, formatter: Giblog::GiblogFormatter.new, level: Logger::DEBUG)
 
       Giblog.setup(@in_mem_logger)
+      # To see all log messages in the console, uncomment this instead of the row above
+      # Giblog.setup
     end
 
     def teardown
