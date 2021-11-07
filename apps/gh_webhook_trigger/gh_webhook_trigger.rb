@@ -21,7 +21,7 @@ giblish_doc_generator = Giblish::WebhookManager.new(/svg/, "https://github.com/r
 
 post "/" do
   gh_data = JSON.parse(request.body.read, symbolize_names: true)
-  access_logger.info { "Calling webhook manager with data: #{gh_data}" }
+  # access_logger.info { "Calling webhook manager with data: #{gh_data}" }
   giblish_doc_generator.run(gh_data)
 end
 
