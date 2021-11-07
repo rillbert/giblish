@@ -4,6 +4,7 @@ require "sinatra"
 require "json"
 require "pathname"
 require "logger"
+# uncomment the below when developing this code.
 # require_relative "../../lib/giblish/github_trigger/webhook_manager"
 require "giblish"
 
