@@ -5,7 +5,7 @@ require "logger"
 # require_relative "../../lib/giblish/github_trigger/webhook_manager"
 require "giblish"
 
-accesslog_path = Pathname.new(__dir__).join("../log/access.log")
+accesslog_path = Pathname.new(__dir__).join("log/access.log")
 accesslog_path.dirname.mkpath
 access_logger = ::Logger.new(accesslog_path.to_s)
 

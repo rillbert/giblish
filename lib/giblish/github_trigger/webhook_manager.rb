@@ -50,6 +50,7 @@ module Giblish
       srcdir = @repo_root.join(@doc_src_rel)
       args = STANDARD_GIBLISH_FLAGS + %W[-g #{@ref_regexp} #{srcdir} #{@dstdir}]
 
+      @logger&.info { "Generate docs using parameters: #{args}" }
       # run giblish with all args
       EntryPoint.run(args, @logger)
     end
