@@ -39,12 +39,11 @@ Apache, Ngnix or other web server that provides clients with HTML pages located 
 
 Possible advantages::
  * it has few dependencies on external tools, only git, giblish and a web server are needed for this to work.
- * giblish provides templates for both the `post-receive` hook and the `publish_html` script that can be tailored to your specific setup quite easily.
+ * giblish provides templates for the `post-receive` hook.
 
 Possible drawbacks::
  * The hook and publish scripts provided with giblish runs syncronously at each push from a _Doc Writer_ to the _Master Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Master Repo_.
  * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool implement a proper 'build' of your documents. You might for example end up with race conditions if two pushes to the _Master Repo_ are done close in time.
- * The `publish_html` script provided with giblish only uses the currently checked-out branch on the _Staging Repo_ (typically 'master') to generate the HTML docs. It is non-trivial to add multiple-branch generation to the provided script.
 
 === Using Jenkins / git hook combo
 
@@ -117,7 +116,7 @@ NOTE: If you start with an empty, bare, _Master Repo_ on the _Server_, it is a g
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
 script setup::
- . Find out where the template scripts for the `post-receive` and the `publish_html.sh` scripts are located by running `gem which giblish`. Strip of the `lib/giblish.rb` from the end of the returned path and `cd` to the resulting folder. There should be a subfolder named `scripts` under which you can find the template scripts somewhere.
+ . Find out where the template scripts for the `post-receive` hook by running `gem which giblish`. Strip of the `lib/giblish.rb` from the end of the returned path and `cd` to the resulting folder. There should be a subfolder named `scripts` under which you can find the template scripts somewhere.
 +
 .Installation on Ubuntu 16.04
 ====
@@ -130,18 +129,11 @@ and the template scripts can thus be found somewhere under
  /var/lib/gems/2.6.0/gems/giblish-0.7.0/scripts
 ====
 
- . Copy the `publish_html.sh` script to a suitable folder in your _local repo_ on your _local machine_ (e.g. under `<your_local_repo_root>/scripts`).
- . Tweak the configuration variables in the script to fit your use case.
- . Commit and push script to the _Master Repo_ on the _Server_.
- . Copy the `post-receive` script to the `hooks` folder in your bare _Master Repo_.
  . Tweak the configuration variables of the copy to suite your use case.
  . Set the execute permission using `chmod +x post-receive`
 
 stylesheet setup::
 The template scripts assume that the the css used to style the generated HTML is located under `<repo_root>/scripts/resources/css` and is called `giblish.css`. To enable a styling of your liking, either create this folder/css file in your repo at that exact place or tweak the `html_publish.sh` script to use another location/css file name for the styling.
-
-other tweaking::
-You can tweak the `publish_html.sh` script to use other features of giblish/asciidoctor, such as docid's, docinfo support and others. To do this, change the flags and arguments used to invoke giblish from the `publish_html.sh` script accordingly.
 
 === Setup the git hook and Jenkins scenario
 
@@ -157,16 +149,7 @@ The following image shows how the sequence from user commit to generated documen
 image::Render Documents.png[]
 
 [appendix]
-== Scripts
-
-.The giblish `publish_html.sh` template script
-[%collapsible]
-====
-[source,bash]
-----
-include::../scripts/publish_html.sh[]
-----
-====
+== Template scripts
 
 .The giblish `post-receive` template git hook
 [%collapsible]
