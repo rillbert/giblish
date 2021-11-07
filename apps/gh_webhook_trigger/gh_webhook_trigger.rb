@@ -1,3 +1,5 @@
+# This app will trigger a document generation from a github webhook
+# POST.
 require "sinatra"
 require "json"
 require "pathname"
