@@ -9,6 +9,7 @@ end
 require_relative "giblish/version"
 require_relative "giblish/application"
 require_relative "giblish/search/request_manager"
+require_relative "giblish/github_trigger/webhook_manager"
 
 module Giblish
   # The main entry point to the giblish application
