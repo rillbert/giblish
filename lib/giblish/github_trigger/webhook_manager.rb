@@ -40,9 +40,11 @@ module Giblish
     def clone(doc_repo_url, dst_dir, clone_name)
       p = Pathname.new(dst_dir).join(clone_name)
 
+      @logger&.info { "Cloning #{doc_repo_url} to #{dst_dir.join(clone_name)}..." }
       repo = Git.clone(doc_repo_url, clone_name, path: dst_dir.to_s, logger: @logger)
       repo.config("user.name", "Giblish Webhook Manager")
       repo.config("user.email", "dummy@giblish.com")
+      @logger&.info { "Cloning done"}
       p
     end
 

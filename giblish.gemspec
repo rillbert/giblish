@@ -41,7 +41,7 @@ Gem::Specification.new do |spec|
   # needed for the sinatra-based apps
   spec.add_development_dependency "sinatra", "~>2.1"
   spec.add_development_dependency "thin", "~>1.8"
-  spec.add_development_dependency "rack", "2.2"
+  spec.add_development_dependency "rack", "2.2.3"
   spec.add_development_dependency "rack-test", "1.1"
   
 
