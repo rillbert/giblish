@@ -5,13 +5,14 @@ require "logger"
 # require_relative "../../lib/giblish/github_trigger/webhook_manager"
 require "giblish"
 
+# setup a specific logger for requests
 accesslog_path = Pathname.new(__dir__).join("log/access.log")
 accesslog_path.dirname.mkpath
 access_logger = ::Logger.new(accesslog_path.to_s)
 
-dstdir = "/var/www/rillbert_se/html/public/docs/giblish"
 
 # instantiate the one-and-only web-hook-manager
+dstdir = "/var/www/rillbert_se/html/public/docs/giblish"
 giblish_doc_generator = Giblish::WebhookManager.new(/svg/, "https://github.com/rillbert/giblish.git", Dir.mktmpdir, "giblish", "docs", dstdir, access_logger)
 
 post "/" do
