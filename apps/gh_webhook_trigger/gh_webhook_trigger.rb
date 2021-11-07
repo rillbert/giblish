@@ -15,7 +15,8 @@ access_logger = ::Logger.new(accesslog_path.to_s)
 
 # instantiate the one-and-only web-hook-manager
 DSTDIR = "/var/www/rillbert_se/html/public/docs/giblish"
-clone_dir = Dir.mktmpdir
+# clone_dir = Dir.mktmpdir
+clone_dir = "/tmp/giblish_staging"
 giblish_doc_generator = Giblish::WebhookManager.new(/svg/, "https://github.com/rillbert/giblish.git", clone_dir, "giblish", "docs", DSTDIR, access_logger)
 
 post "/" do
