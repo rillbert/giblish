@@ -112,6 +112,7 @@ class CmdLineParser
                              this is what you shall set the path to.
   --log-level                set the log level explicitly. Must be one of
                              debug, info (default), warn, error or fatal.
+  -p --product-name <product-name> Optional product-name that appears in the Document index page.
 ENDHELP
 
   def initialize(cmdline_args)
@@ -174,6 +175,7 @@ ENDHELP
       flatten: false,
       suppressBuildRef: false,
       indexBaseName: "index",
+      productName: "",
       localRepoOnly: false,
       resolveDocid: false,
       makeSearchable: false,
@@ -208,6 +210,7 @@ ENDHELP
       when "-mp", "--search-assets-deploy" then next_arg = :searchAssetsDeploy
       when "-s", "--style"        then next_arg = :userStyle
       when "-w", "--web-path"     then next_arg = :webPath
+      when "-p", "--product-name" then next_arg = :productName
       when "--log-level"          then next_arg = :logLevel
       else
         if next_arg

@@ -135,7 +135,7 @@ module Giblish
       raise "Internal logic error!" if @options[:suppressBuildRef]
 
       SimpleIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
-                             @options[:resolveDocid])
+                             @options[:resolveDocid], @options[:productName])
     end
 
     def graph_builder_factory
@@ -338,7 +338,7 @@ module Giblish
 
     def index_factory
       GitRepoIndexBuilder.new(@processed_docs, @converter, @paths, @deploy_info,
-                              @options[:resolveDocid], @options[:gitRepoRoot])
+                              @options[:resolveDocid], @options[:gitRepoRoot], @options[:productName])
     end
 
     def graph_builder_factory

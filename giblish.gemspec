@@ -43,7 +43,7 @@ Gem::Specification.new do |spec|
   # Usage: spec.add_runtime_dependency "[gem name]", [[version]]
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.16"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.1"]
-  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.6", ">= 1.6.0"]
+  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.5", ">= 1.5.4"]
   spec.add_runtime_dependency "git", "~> 1.9"
   spec.add_runtime_dependency "rouge", "~> 3.0"
   spec.add_runtime_dependency "prawn-svg", "~> 0.32.0"

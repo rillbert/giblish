@@ -9,7 +9,7 @@ module Giblish
   # Base class with common functionality for all index builders
   class BasicIndexBuilder
     # set up the basic index building info
-    def initialize(processed_docs, converter, path_manager, deployment_info, handle_docid = false)
+    def initialize(processed_docs, converter, path_manager, deployment_info, handle_docid = false, product_name = "")
       @paths = path_manager
       @deployment_info = deployment_info
       @nof_missing_titles = 0
@@ -21,6 +21,10 @@ module Giblish
         web_assets_top: @deployment_info.web_path,
         search_assets_top: @deployment_info.search_assets_path
       }
+      if !product_name.empty?
+        product_name = product_name + " "
+      end
+      @product_name = product_name
     end
 
     def source(dep_graph_exists: false, make_searchable: false)
@@ -51,7 +55,7 @@ module Giblish
 
     def generate_title_and_header
       <<~DOC_HEADER
-        = Document index
+        = #{@product_name}Document index
         from #{source_root}
         :icons: font
       DOC_HEADER
@@ -301,16 +305,16 @@ module Giblish
 
   # A simple index generator that shows a table with the generated documents
   class SimpleIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid = false)
-      super processed_docs, converter, path_manager, deployment_info, manage_docid
+    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid = false, product_name = "")
+      super processed_docs, converter, path_manager, deployment_info, manage_docid, product_name
     end
   end
 
   # Builds an index of the generated documents and includes some git metadata
   # from the repository
   class GitRepoIndexBuilder < BasicIndexBuilder
-    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid, git_repo_root)
-      super processed_docs, converter, path_manager, deployment_info, manage_docid
+    def initialize(processed_docs, converter, path_manager, deployment_info, manage_docid, git_repo_root, product_name = "")
+      super processed_docs, converter, path_manager, deployment_info, manage_docid, product_name
 
       # no repo root given...
       return unless git_repo_root
