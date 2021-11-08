@@ -46,5 +46,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.5", ">= 1.5.4"]
   spec.add_runtime_dependency "git", "~> 1.9"
   spec.add_runtime_dependency "rouge", "~> 3.0"
-  spec.add_runtime_dependency "prawn-svg", "~> 0.32.0"
+  spec.add_runtime_dependency "prawn-svg", "~> 0.31.0"
 end
