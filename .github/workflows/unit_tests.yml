@@ -2,9 +2,7 @@ name: Giblish CI checks
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ personal/rillbert/svg_index ]
 
 jobs:
   test:
@@ -14,8 +12,6 @@ jobs:
         ruby-version: ['2.7', '3.0']
 
     steps:
-    # - name: Install GCC
-    #   uses: egor-tensin/setup-gcc@v1
     - name: Install binutils
       run: |
         sudo apt -y install binutils
