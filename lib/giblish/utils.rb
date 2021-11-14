@@ -344,9 +344,9 @@ module Giblish
   #      nil
   #   end
   # end
-  def process_header_lines_from_file(path)
+  def process_header_lines_from_file(path,&block)
     lines = File.readlines(path)
-    process_header_lines(lines, &Proc.new)
+    process_header_lines(lines, &Proc.new(&block))
   end
   module_function :process_header_lines_from_file
 
