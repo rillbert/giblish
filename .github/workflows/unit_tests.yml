@@ -1,0 +1,34 @@
+name: Giblish CI checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby-version: ['2.7', '3.0']
+
+    steps:
+    # - name: Install GCC
+    #   uses: egor-tensin/setup-gcc@v1
+    - name: Install binutils
+      run: |
+        sudo apt -y install binutils
+    - name: Install package
+      run: |
+        sudo apt -y install libpango1.0-dev
+    - name: Checkout Giblish
+      uses: actions/checkout@v2
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: Run tests
+      run: |
+        bundle exec rake
