@@ -135,7 +135,7 @@ module Giblish
         refs = []
         # remove all content within a 'pass:[]' macro from the parser
         line.gsub!(PASS_MACRO_REGEX)
-        
+
         line.gsub!(DOCID_REF_REGEX) do |_m|
           # parse the ref
           target_id, section, display_str = parse_doc_id_ref(Regexp.last_match(1))

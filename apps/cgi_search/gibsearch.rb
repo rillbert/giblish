@@ -3,10 +3,10 @@
 require "cgi"
 # Toggle the below requires for deployment or development of this script
 # respectively
-require "giblish"  # used when deploying
+require "giblish" # used when deploying
 # require_relative "../gh_giblish/lib/giblish/search/request_manager"  # used when developping this script
 
-# Provide the mappings of URL paths that apply to the specific deployment 
+# Provide the mappings of URL paths that apply to the specific deployment
 # setup.
 #
 # The below example maps the URI www.exaple.com/ to the local directory
@@ -19,7 +19,7 @@ URL_PATH_MAPPINGS = {
 #
 # Exits with 0 for success, 1 for failure
 if __FILE__ == $PROGRAM_NAME
-  STDOUT.sync = true
+  $stdout.sync = true
 
   begin
     cgi = CGI.new

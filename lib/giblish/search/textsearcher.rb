@@ -64,11 +64,11 @@ module Giblish
 
       return @query.css_path if @query.css_path.absolute?
 
-      # css paths from the query is relative, add it to the 
+      # css paths from the query is relative, add it to the
       @css_path ||= Pathname.new(uri_path).dirname.join(@query.css_path).cleanpath
-      @css_path            
+      @css_path
     end
-    
+
     # return:: the uri path pointing to the doc repo top dir
     def uri_path_repo_top
       Pathname.new(uri_path).join(search_assets_top_rel.dirname).dirname

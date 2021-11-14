@@ -13,7 +13,6 @@ accesslog_path = Pathname.new(__dir__).join("log/access.log")
 accesslog_path.dirname.mkpath
 access_logger = ::Logger.new(accesslog_path.to_s)
 
-
 # instantiate the one-and-only web-hook-manager
 DSTDIR = "/var/www/rillbert_se/html/public/docs/giblish"
 clone_dir = Dir.mktmpdir

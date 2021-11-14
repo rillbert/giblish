@@ -165,7 +165,7 @@ module Giblish
       # eruby:
       # ignore extention stuff
       header_only: false,
-      # logger: 
+      # logger:
       mkdirs: false,
       parse: true,
       safe: :unsafe,

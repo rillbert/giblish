@@ -1,2 +1,2 @@
-require './sinatra_search'
+require "./sinatra_search"
 run Sinatra::Application

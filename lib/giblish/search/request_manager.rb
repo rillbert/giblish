@@ -68,7 +68,7 @@ module Giblish
 
   # A gateway class that implements everything needed to produce
   # an html page with search results given a search request.
-  # 
+  #
   # The class implements internal caching for better performance. It
   # is thus probably wise to instantiate this class once and then use
   # that instance for all subsequent search queries.
@@ -92,7 +92,7 @@ module Giblish
       @html_generator.response(searcher.search(sp), sp.css_path)
     end
 
-    private 
+    private
 
     # a convenience method to give shorter access to the class-wide
     # TextSearcher instance.

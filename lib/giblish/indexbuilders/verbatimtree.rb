@@ -60,7 +60,6 @@ module Giblish
     # Where the DocTitle and details are links to the doc itself and a section
     # identified with the doc's title respectively.
     def tree_entry_converted(prefix_str, node)
-
       # Get the elements of the entry
       doc_title, doc_link, doc_details = format_title_and_ref(node)
       warning_label = node.data.stderr.empty? ? "" : "(conv issues)"

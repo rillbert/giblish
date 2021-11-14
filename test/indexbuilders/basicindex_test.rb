@@ -73,7 +73,7 @@ module Giblish
         index_builder = SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
         tc = TreeConverter.new(src_tree, dstdir, {post_builders: index_builder})
         tc.run
-        
+
         # get the node in the dst tree that points to .../dst
         dt = tc.dst_tree.node(dstdir, from_root: true)
 

@@ -5,7 +5,7 @@
 # A typical dev flow:
 #
 # 1. Create your html docs using giblish
-# 2. If you want to enable text search, copy or symlink the `gibsearch.rb` script 
+# 2. If you want to enable text search, copy or symlink the `gibsearch.rb` script
 # from the giblish gem to the correct location under the target tree.
 # 3. Run this script to kick-off a web server that serves your html docs.
 
@@ -15,7 +15,6 @@ require "webrick"
 web_root = "/home/andersr/development/generated_docs"
 # the port the web server listens to
 port = 8000
-
 
 puts "Trying to start a WEBrick instance at port #{port} serving files from #{web_root}..."
 server = WEBrick::HTTPServer.new(

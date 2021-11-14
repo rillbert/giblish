@@ -44,9 +44,9 @@ module Giblish
 
     def test_create_dot_digraph
       info_2_ids = {
-        FakeConvInfo.new("Doc 1", "D-1", Pathname.new("my/subdir/file1.html"),true) => ["D-2", "D-3"],
-        FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html"),true) => ["D-1"],
-        FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html"),true) => []
+        FakeConvInfo.new("Doc 1", "D-1", Pathname.new("my/subdir/file1.html"), true) => ["D-2", "D-3"],
+        FakeConvInfo.new("Doc 2", "D-2", Pathname.new("my/file2.html"), true) => ["D-1"],
+        FakeConvInfo.new("Doc 3 - longlonglonglonglonglonglong long title", "D-3", Pathname.new("./file3.html"), true) => []
       }
       dg = DotDigraphAdoc.new(info_2_ids: info_2_ids,
         opts: {"svg-type" => "inline", "cachedir" => "/my/temp/dir"})
@@ -63,7 +63,7 @@ module Giblish
       end
 
       def converted
-        return true
+        true
       end
     end
 

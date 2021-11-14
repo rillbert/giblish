@@ -55,13 +55,12 @@ module Giblish
     end
 
     def source
-      str = <<~DOC_STR
+      <<~DOC_STR
         #{graph_header}
         #{generate_labels}
         #{generate_deps}
         #{graph_footer}
       DOC_STR
-      str
     end
 
     private
@@ -96,8 +95,8 @@ module Giblish
         ""
       else
         # remove html markup in the title for displaying in the tree
-        stripped_title = conv_info.title.gsub(/<.*?>/,"")
-        stripped_title.gsub!(/"/,"'")
+        stripped_title = conv_info.title.gsub(/<.*?>/, "")
+        stripped_title.tr!('"', "'")
         Giblish.break_line(stripped_title, 16).join("\n")
       end
 
@@ -123,7 +122,7 @@ module Giblish
       end
       doc_dict[doc_id] = dot_entry
     end
-    
+
     # create an entry in the 'dot' description for each
     # document, sort them according to descending doc id to
     # get them displayed in the opposite order in the graph
@@ -131,7 +130,7 @@ module Giblish
       node_dict = {}
       @info_2_ids.each_key do |conv_info|
         next unless conv_info.converted
-        
+
         make_dot_entry node_dict, conv_info
       end
       # sort the nodes by reverse doc id

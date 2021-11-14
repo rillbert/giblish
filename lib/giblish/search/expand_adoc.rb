@@ -9,11 +9,11 @@ module Giblish
   # NOTE: Only includes of asciidoc files are supported, other includes (eg url)
   # are silently dropped.
   class ExpandAdoc
-    IncludeDirectiveRx = /^(\\)?include::([^\[][^\[]*)\[(.+)?\]$/
+    INCLUDE_DIRECTIVE_REGEX = /^(\\)?include::([^\[][^\[]*)\[(.+)?\]$/
     def initialize(document, target_lines, max_depth = 3)
       source_lines = document.reader.source_lines
       source_lines.each do |line|
-        if IncludeDirectiveRx =~ line
+        if INCLUDE_DIRECTIVE_REGEX =~ line
           next unless max_depth > 0
 
           p = resolve_include_path(document, $2, $3)

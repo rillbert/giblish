@@ -234,7 +234,7 @@ module Giblish
         result = PathTree.build_from_fs(dstdir, prune: true)
         assert(result.node("index.html"))
         assert(result.node("personal_rillbert_svg_index"))
-        assert(result.node("personal_rillbert_svg_index/README.html"))
+        assert(result.node("personal_rillbert_svg_index/search_spec.html"))
       end
     end
   end

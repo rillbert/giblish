@@ -108,9 +108,9 @@ module Giblish
       super(severity, message.dup, progname)
 
       # add message to user log (wierd interface... see Logger::add(...))
-      message = yield if block_given?
-      message = progname unless message
-      @user_logger&.add(severity, "(asciidoctor) #{UserInfoFormatter::adoc_to_message(message)}")
+      message = yield if block
+      message ||= progname
+      @user_logger&.add(severity, "(asciidoctor) #{UserInfoFormatter.adoc_to_message(message)}")
 
       # update the maximum severity received by this logger
       @max_severity = severity if severity != UNKNOWN && severity > @max_severity

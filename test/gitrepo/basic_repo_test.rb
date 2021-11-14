@@ -22,6 +22,8 @@ module Giblish
       src_tree
     end
 
+    # Create test repo with two branches:
+    # `main`, `product_1` and `product_2`
     def setup_repo(tmp_docs, repo_root)
       # init new repo
       g = Git.init(repo_root.to_s) # , {log: Giblog.logger})
@@ -40,6 +42,7 @@ module Giblish
       end
       g.add(all: true)
       g.commit("add three files to product_1 branch")
+      g.add_tag("v1.0", g.branch("product_1"), {annotate: true, message: "a test tag"})
 
       # checkout the main branch again
       g.checkout(g.branch("main"))
@@ -78,21 +81,29 @@ module Giblish
       end
     end
 
-    def test_gitdata_provider
+    def test_git_summary_data_provider
       TmpDocDir.open(preserve: false) do |tmp_docs|
-        # TODO: Remove the dep to this local git repo
-        repo = Pathname.pwd / "../asciidoctor"
+        root = Pathname.new(tmp_docs.dir)
+
+        # setup test repo
+        repo = root / "tstrepo"
+        setup_repo(tmp_docs, repo)
+
         opts = CmdLine::Options.new
         opts.srcdir = repo
         opts.local_only = true
-        opts.branch_regex = /main/
-        opts.tag_regex = /v1.5/
+        opts.branch_regex = /product/
+        opts.tag_regex = /v1/
+        expected_treeish = %w[product_1 product_2 v1.0]
+        count = matches = 0
         GitCheckoutManager.new(opts).each_checkout do |treeish|
-          # TODO find good test condition
-          # puts treeish
+          count += 1
+          if expected_treeish.include?(treeish)
+            matches += 1
+          end
         end
-        # str = GitSummaryDataProvider.new("testrepo").source
-        # File.write("testtags.adoc", str)
+        assert_equal(3, count)
+        assert_equal(3, matches)
       end
     end
 

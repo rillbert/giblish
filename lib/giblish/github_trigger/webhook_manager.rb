@@ -2,11 +2,11 @@ require "git"
 require_relative "../application"
 
 module Giblish
-  # Generate documentation using giblish when triggered by matching refs given to the 'run' method 
+  # Generate documentation using giblish when triggered by matching refs given to the 'run' method
   class WebhookManager
     STANDARD_GIBLISH_FLAGS = %W[-f html -m --copy-asset-folders "_assets$" --server-search-path "/gibsearch"]
 
-    # ref_regexp:: a regexp that both defines what git refs that trigger a document generation and what refs will be 
+    # ref_regexp:: a regexp that both defines what git refs that trigger a document generation and what refs will be
     # generated.
     # doc_repo_url:: the url of the repo hosting the docs to be generated
     # clone_dir_parent:: path to the local directory under which the doc_repo_url will be cloned.
@@ -44,7 +44,7 @@ module Giblish
       repo = Git.clone(doc_repo_url, clone_name, path: dst_dir.to_s, logger: @logger)
       repo.config("user.name", "Giblish Webhook Manager")
       repo.config("user.email", "dummy@giblish.com")
-      @logger&.info { "Cloning done"}
+      @logger&.info { "Cloning done" }
       p
     end
 

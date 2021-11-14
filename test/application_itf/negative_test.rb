@@ -11,7 +11,7 @@ module Giblish
         src_top = topdir / "src"
         src_top.mkpath
         dst_top = topdir / "dst"
-        File.open("#{src_top}/test.bin", mode = "wb") { [1, 2, 3].pack("LLL") }
+        File.open("#{src_top}/test.bin", "wb") { [1, 2, 3].pack("LLL") }
 
         opts = CmdLine.new.parse(%W[-f html -i "*.bin" #{src_top} #{dst_top}])
 
