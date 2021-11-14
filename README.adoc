@@ -3,7 +3,8 @@
 :idprefix:
 :numbered:
 
-image::https://travis-ci.org/rillbert/giblish.svg?branch=master["Build Status", link="https://travis-ci.org/rillbert/giblish"]
+pass:[![example workflow](https://github.com/rillbert/giblish/actions/workflows/unit_tests.yml/badge.svg)]
+// image::https://travis-ci.org/rillbert/giblish.svg?branch=master["Build Status", link="https://travis-ci.org/rillbert/giblish"]
 
 == Purpose
 
