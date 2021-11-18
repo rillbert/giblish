@@ -2,7 +2,7 @@ require "minitest"
 require "minitest/autorun"
 require "rack/test"
 require "sinatra/base"
-require_relative "../sinatra_search/sinatra_search"
+require_relative "../../web_apps/sinatra_search/sinatra_search"
 
 class SearchAppTest < MiniTest::Test
   include Rack::Test::Methods
