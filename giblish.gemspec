@@ -1,26 +1,26 @@
-lib = File.expand_path("../lib", __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-
-require "giblish/version"
+begin
+  require_relative 'lib/giblish/version'
+rescue LoadError
+  require "giblish/version"
+end
 
 Gem::Specification.new do |spec|
   spec.name = "giblish"
   spec.version = Giblish::VERSION
-  spec.authors = ["Anders Rillbert"]
-  spec.email = ["anders.rillbert@kutso.se"]
-
   spec.summary = "A tool for publishing asciidoc docs stored in git repos"
   spec.description = <<~EOF
     giblish generates indexed and searchable documents from a tree of
     asciidoc files.
   EOF
+  spec.authors = ["Anders Rillbert"]
+  spec.email = ["anders.rillbert@kutso.se"]
   spec.homepage = "https://github.com/rillbert/giblish"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 2.7"
+  # NOTE required ruby version is informational only; it's not enforced since it can't be overridden and can cause builds to break
+  # spec.required_ruby_version = ">= 2.7"
 
   spec.metadata = {
     "bug_tracker_uri" => "https://github.com/rillbert/giblish/issues",
-    # 'changelog_uri' => 'https://github.com/asciidoctor/asciidoctor/blob/master/CHANGELOG.adoc',
     "source_code_uri" => "https://github.com/rillbert/giblish"
   }
 
@@ -32,27 +32,19 @@ Gem::Specification.new do |spec|
   #   raise "RubyGems 2.0 or newer is required to protect against public gem pushes."
   # end
 
+  # filter out files not included in the shipped gem
   spec.files = `git ls-files -z`.split("\x0").reject do |f| 
     skip_dirs = %r{^(data|bin|test|spec|features)/}
     skip_files = %r{^(Rakefile|Gemfile)}
     f.match(skip_dirs) || f.match(skip_files)
   end
 
-  # TODO: Improve file selection
-  # files = begin
-  #   `git ls-files -z`.split("\x0")
-  # rescue
-  #   Dir['**/*']
-  # end
-  # s.files = files.grep %r/^(?:(?:data|lib|man)\/.+|LICENSE|(?:CHANGELOG|README(?:-\w+)?)\.adoc|\.yardopts|#{s.name}\.gemspec)$/
-  # s.executables = (files.grep %r/^bin\//).map {|f| File.basename f }
-  # s.require_paths = ['lib']
-  # s.test_files = files.grep %r/^(?:features|test)\/.+$/
-
+  # Follow the bundler convention to have the exe:s in "exe" instead of 'bin'
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  # Development deps
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "standard", "~> 1.1"
   spec.add_development_dependency "rake", "~> 13.0"
@@ -65,7 +57,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rack", "2.2.3"
   spec.add_development_dependency "rack-test", "1.1"
 
-  # Used during run-time by giblish
+  # Run-time deps
   spec.add_runtime_dependency "warning", "~>1.2"
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.16"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.2"]
