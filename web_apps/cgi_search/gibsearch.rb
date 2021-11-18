@@ -1,10 +1,13 @@
 #!/usr/bin/env ruby
 
 require "cgi"
-# Toggle the below requires for deployment or development of this script
-# respectively
-require "giblish" # used when deploying
-# require_relative "../gh_giblish/lib/giblish/search/request_manager"  # used when developping this script
+begin
+  # used when developping this script
+  require_relative "../gh_giblish/lib/giblish/search/request_manager"
+rescue LoadError
+  # used in deployment
+  require "giblish"
+end
 
 # Provide the mappings of URL paths that apply to the specific deployment
 # setup.

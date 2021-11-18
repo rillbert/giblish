@@ -4,9 +4,14 @@ require "sinatra"
 require "json"
 require "pathname"
 require "logger"
-# uncomment the below when developing this code.
-# require_relative "../../lib/giblish/github_trigger/webhook_manager"
-require "giblish"
+
+begin
+  # used during development/testing
+  require_relative "../../lib/giblish/github_trigger/webhook_manager"
+rescue LoadError
+  # used in production
+  require "giblish"
+end
 
 # setup a specific logger for requests
 accesslog_path = Pathname.new(__dir__).join("log/access.log")
@@ -16,12 +21,22 @@ access_logger = ::Logger.new(accesslog_path.to_s)
 # instantiate the one-and-only web-hook-manager
 DSTDIR = "/var/www/rillbert_se/html/public/docs/giblish"
 clone_dir = Dir.mktmpdir
-giblish_doc_generator = Giblish::WebhookManager.new(/svg/, "https://github.com/rillbert/giblish.git", clone_dir, "giblish", "docs", DSTDIR, access_logger)
+
+# setup the doc generation once-and-for-all
+doc_generator = Giblish::GenerateFromRefs.new(
+  "https://github.com/rillbert/giblish.git", 
+  /svg/, 
+  clone_dir, 
+  "giblish", 
+  ".", 
+  DSTDIR, 
+  access_logger
+)
 
 post "/" do
   gh_data = JSON.parse(request.body.read, symbolize_names: true)
-  # access_logger.info { "Calling webhook manager with data: #{gh_data}" }
-  giblish_doc_generator.run(gh_data)
+  access_logger.debug { "Calling webhook manager with data: #{gh_data}" }
+  doc_generator.docs_from_gh_webhook(gh_data)
 end
 
 get "/" do

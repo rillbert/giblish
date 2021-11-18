@@ -2,21 +2,21 @@ require "git"
 require_relative "../application"
 
 module Giblish
-  # Generate documentation using giblish when triggered by matching refs given to the 'run' method
-  class WebhookManager
+  # Generate documentation using giblish based on the supplied parameters
+  class GenerateFromRefs
     STANDARD_GIBLISH_FLAGS = %W[-f html -m --copy-asset-folders "_assets$" --server-search-path "/gibsearch"]
 
+    # doc_repo_url:: the url of the repo hosting the docs to be generated. this repo will be cloned
     # ref_regexp:: a regexp that both defines what git refs that trigger a document generation and what refs will be
     # generated.
-    # doc_repo_url:: the url of the repo hosting the docs to be generated
     # clone_dir_parent:: path to the local directory under which the doc_repo_url will be cloned.
     # clone_name:: the name of the local clone of the doc_repo_url
     # doc_src_rel:: the relative path from the repo root to the directory where the docs reside
     # doc_dst_abs:: the absolute path to the target location for the generated docs
     # logger:: a ruby Logger instance that will receive log messages
-    def initialize(ref_regexp, doc_repo_url, clone_dir_parent, clone_name, doc_src_rel, doc_dst_abs, logger)
-      @ref_regexp = ref_regexp
+    def initialize(doc_repo_url, ref_regexp, clone_dir_parent, clone_name, doc_src_rel, doc_dst_abs, logger)
       @doc_repo_url = doc_repo_url
+      @ref_regexp = ref_regexp
       @doc_src_rel = doc_src_rel
       @dstdir = doc_dst_abs
       @logger = logger
@@ -24,7 +24,9 @@ module Giblish
       @repo_root = clone(doc_repo_url, clone_dir_parent, clone_name)
     end
 
-    def run(github_hash)
+    # Generate documents from the git refs found in the GitHub
+    # webhook payload.
+    def docs_from_gh_webhook(github_hash)
       # TODO Implement support for other refs than branches
       ref = github_hash.fetch(:ref).sub("refs/heads/", "")
       if ref.empty? || !(@ref_regexp =~ ref)

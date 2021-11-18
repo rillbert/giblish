@@ -1,6 +1,5 @@
 require "pathname"
 require "json"
-# require "uri"
 require_relative "searchquery"
 require_relative "../pathtree"
 

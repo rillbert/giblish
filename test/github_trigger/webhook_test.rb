@@ -218,19 +218,19 @@ module Giblish
         topdir = Pathname.new(tmp_docs.dir)
         dstdir = topdir.join("html")
 
-        wm = WebhookManager.new(
-          /svg/,
+        wm = GenerateFromRefs.new(
           "https://github.com/rillbert/giblish.git",
+          /svg/,
           topdir,
           "giblish",
           "docs",
           dstdir,
           Giblog.logger
         )
-        wm.run(no_trig_push)
+        wm.docs_from_gh_webhook(no_trig_push)
         assert(!dstdir.exist?)
 
-        wm.run(trig_push)
+        wm.docs_from_gh_webhook(trig_push)
         result = PathTree.build_from_fs(dstdir, prune: true)
         assert(result.node("index.html"))
         assert(result.node("personal_rillbert_svg_index"))
