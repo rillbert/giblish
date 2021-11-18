@@ -1,0 +1,74 @@
+= Server-side setup
+needed for user interaction
+:imagesdir: setup_search_assets
+
+== Overview
+
+image::search_request.svg[]
+
+== Setup giblish text search using CGI
+
+ . Copy the gibsearch.rb file from the gem to the cgi-bin dir of the web server
+ . Update the following in the file:
+ .. the URI_MAPPING
+
+== Setup a sinatra app under apache/passenger
+
+https://www.phusionpassenger.com/library/walkthroughs/deploy/ruby/ownserver/apache/oss/bionic/deploy_app.html#nonrails_preparing-the-app-s-environment[Passenger doc]
+
+----
+# list available modules
+anders@srv1:~$ sudo apachectl -M
+# install apache passenger module
+anders@srv1:~$ sudo apt install libapache2-mod-passenger 
+# check passanger is running
+anders@srv1:~$ sudo /usr/sbin/passenger-memory-stats 
+# determining ruby command for passenger (Ex: /usr/bin/ruby2.7)
+passenger-config about ruby-command
+# install sinatra
+anders@srv1:~$ sudo gem install sinatra --no-document
+# add an apache 'site-available' config file for your app
+anders@srv1:~$ sudo nano /etc/apache2/sites-available/100-gibsearch.conf
+
+Content:
+<VirtualHost *:1233>
+    ServerName rillbert.se
+
+    # Tell Apache and Passenger where your app's 'public' directory is
+    # NOTE: Passenger requires a 'public' dir even if it is empty
+    DocumentRoot /var/www/rillbert_se/apps/gibsearch/public
+
+    PassengerRuby /usr/bin/ruby2.7
+
+    # Relax Apache security settings
+    <Directory /var/www/rillbert_se/apps/gibsearch/public>
+      Allow from all
+      Options -MultiViews
+      Require all granted
+    </Directory>
+</VirtualHost>
+
+# add an entry in ports.conf
+anders@srv1:/etc/apache2/sites-enabled$ sudo nano ports.conf 
+# symlink site-available to sites-enabled
+anders@srv1:/etc/apache2/sites-enabled$ sudo ln -s /etc/apache2/sites-available/100-gibsearch.conf .
+# restart apache
+anders@srv1:/etc/apache2/sites-enabled$ sudo apache2ctl restart 
+
+# deploy your app
+Content taken from https://newbedev.com/how-do-i-set-up-a-sinatra-app-under-apache-with-passenger[here]
+
+anders@srv1:/var/www/rillbert_se/apps$ tree .
+.
+└── gibsearch
+    ├── config.ru
+    ├── hello-app.rb
+    ├── public
+    └── tmp
+        └── restart.txt
+
+3 directories, 3 files
+----
+
+== Setup doc generation using a GitHub web hook
+
