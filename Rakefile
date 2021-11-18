@@ -23,3 +23,4 @@ end
 
 # task :default => :spec
 task default: :all
+task test: :all

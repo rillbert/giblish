@@ -45,6 +45,7 @@ IMPORTANT: The examples below are *not* the official documentation for the corre
 
 https://www.phusionpassenger.com/library/walkthroughs/deploy/ruby/ownserver/apache/oss/bionic/deploy_app.html#nonrails_preparing-the-app-s-environment[Passenger doc]
 
+----
 # list available modules
 anders@srv1:~$ sudo apachectl -M
 # install apache passenger module
@@ -96,7 +97,7 @@ anders@srv1:/var/www/rillbert_se/apps$ tree .
         └── restart.txt
 
 3 directories, 3 files
-
+----
 
 
 
@@ -129,6 +130,22 @@ When using giblish for generating docs the following applies:
  * giblish *will overwrite* files with the same name in the destination directory.
  * giblish requires that the git working tree and index of the repo containing source documents are clean when generating documentation.
  * giblish will make explicit check-outs of all the branches or tags that matches the selection criteria. The working dir of the source git repo will thus have the last branch that giblish checked-out as the current branch after doc generation.
+
+== Contributing
+
+If you want to contribute to giblish, great :) Use the standard GitHub flow of forking the repo and submit a pull request.
+
+Pull requests must meet the following to be considered for merging:
+
+ * Tests have been added for new or updated functionality
+ * The code has been linted using the `standardrb` tool. 
+ ** The version of standardrb shall be the same as the one used in the target branch for the PR. 
+
+To develop on giblish, you:
+
+ . Install ruby on your local machine (rbenv is a good choice for handling ruby installations)
+ . Clone or fork the repository
+ . Run the `bin/setup` script from a bash prompt
 
 == Text search implementation
 
