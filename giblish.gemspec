@@ -18,6 +18,12 @@ Gem::Specification.new do |spec|
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.7"
 
+  spec.metadata = {
+    "bug_tracker_uri" => "https://github.com/rillbert/giblish/issues",
+    # 'changelog_uri' => 'https://github.com/asciidoctor/asciidoctor/blob/master/CHANGELOG.adoc',
+    "source_code_uri" => "https://github.com/rillbert/giblish"
+  }
+
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
   # delete this section to allow pushing this gem to any host.
   # if spec.respond_to?(:metadata)
@@ -27,11 +33,22 @@ Gem::Specification.new do |spec|
   # end
 
   spec.files = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
+
+  # TODO: Improve file selection
+  # files = begin
+  #   `git ls-files -z`.split("\x0").
+  # rescue
+  #   Dir['**/*']
+  # end
+  # s.files = files.grep %r/^(?:(?:data|lib|man)\/.+|LICENSE|(?:CHANGELOG|README(?:-\w+)?)\.adoc|\.yardopts|#{s.name}\.gemspec)$/
+  # s.executables = (files.grep %r/^bin\//).map {|f| File.basename f }
+  # s.require_paths = ['lib']
+  # s.test_files = files.grep %r/^(?:features|test)\/.+$/
+
   spec.bindir = "exe"
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "bundler", "~> 2.1"
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "standard", "~> 1.1"
   spec.add_development_dependency "rake", "~> 13.0"
