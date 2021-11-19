@@ -1,74 +1,218 @@
-= Server-side setup
-needed for user interaction
+= giblish text search
+:docid: G-003
 :imagesdir: setup_search_assets
 
 == Overview
 
+giblish includes an implementation of full text search for html documents if they are published via a web server. Two things must be in place to enable this functionality:
+
+ . a specific set of options must be given to giblish during the generation of the html documents. This will ensure that giblish:
+ .. copies a search index to the same tree as the generated html documents.
+ .. includes an html form at the top of each generated document that the user can interact with to send search queries.
+ . a server-side script must be setup on the web server that hosts the generated html docs. 
+ .. The script must be invoked as a result of a search query from one of the generated html documents and return the corresponding search result to the user.
+
+The server-side script can be implemented in many ways, the giblish gem provides helper classes for most of the functionality needed and templates for using CGI or for using a sinatra web app hosted in the Phusion Passenger application server.
+
+NOTE: The same instance of the server-side text search script can be used for many document repositories deployed to different paths under the same web server. The helper classes in giblish use a URI_MAPPING hash to help route search requests to the correct search index.
+
+The specification of the search query parameters can be found in <<:docid:G-002>>.
+
+== Text search using CGI
+
+CGI is the solution with fewest external dependencies (and worst performance). Below is an overview of the involved actors.
+
+.CGI script example
+image::cgi-search_request.svg[]
+
+Giblish contains two template scripts to get you started:
+
+ . gibsearch.rb - a naive implementation of a CGI script in ruby that uses the helper classes provided by giblish to retrieve and format an html response triggered by a search request to a web server.
+ . wserv_development.rb - a naive implementation of a boot-strap script for an instance of Webrick, a web server written in ruby, that serves html pages on localhost:8000
+
+IMPORTANT: The template scripts in giblish are provided as examples and are not meant for any form of use in production.
+
+
+.Using CGI and ruby's built-in Webrick server
+====
+This is the most basic example, it assumes that all documents and tools are run on a local machine.
+
+[source,bash]
+----
+# install giblish
+gem install giblish
+
+# install webrick
+gem install webrick
+
+# cd to your directory of choice, called top_dir in this example
+cd top_dir
+
+# clone the repo containing the docs (using the giblish repo as 
+# an example)
+git clone https://github.com/rillbert/giblish.git
+
+# generate html docs from all 1.x tags
+giblish -t "^v1" -m giblish html_docs
+
+# opy the cgi template provided in the giblish gem to the directory
+# for the html docs.
+# The template is named 'gibsearch.rb' and resides under 
+# 'web_apps/cgi_search' relative to the dir of the installed
+# giblish gem. 
+# The below uses bash to find the template, copy and rename it to 
+# 'gibsearch.cgi' to make it smoother to use the cgi func of webrick.
+cp "$(dirname $(gem which giblish))/../web_apps/cgi_search/gibsearch.rb" html_docs/gibsearch.cgi 
+
+# copy a boot-strap script for Webrick from the giblish gem
+cp "$(dirname $(gem which giblish))/../scripts/wserv_development.rb"
+
+# start a web server using the boot-strap script
+#
+# If you deviate from this example regarding paths, you need to 
+# adjust the boot-strap script accordingly
+ruby wserv_development.rb
+
+# browse to localhost:8000
+firefox localhost:8000
+
+# click on one of the 1.x tags to see the docs for that tag
+
+# search docs using the form in the index page.
+----
+====
+
+== Text search using an application hosted by Passenger
+
+This setup has more dependencies than the CGI example. The upsides are e.g. stateful execution, better performance, more versatile.
+
+This example uses Apache2, Passenger and Sinatra to deploy the server-side text search as a web application. There are a gazillion other tech stacks/permutations to provide the same functionality.
+
+IMPORTANT: Full installation instructions of Apache2, Passenger or their interconnection is out of scope for this example. Security is also out of scope so you will probably hardened this before using it in production.
+
+.Passenger web-app example
 image::search_request.svg[]
 
-== Setup giblish text search using CGI
+=== Setup a sinatra app under apache/passenger
 
- . Copy the gibsearch.rb file from the gem to the cgi-bin dir of the web server
- . Update the following in the file:
- .. the URI_MAPPING
+This example is based on the info found in these links: 
 
-== Setup a sinatra app under apache/passenger
+ * https://www.phusionpassenger.com/library/walkthroughs/deploy/ruby/ownserver/apache/oss/bionic/deploy_app.html#nonrails_preparing-the-app-s-environment
+ * https://newbedev.com/how-do-i-set-up-a-sinatra-app-under-apache-with-passenger 
 
-https://www.phusionpassenger.com/library/walkthroughs/deploy/ruby/ownserver/apache/oss/bionic/deploy_app.html#nonrails_preparing-the-app-s-environment[Passenger doc]
 
+.Deploy a text search application under Apache/Passenger
+====
+Preconditions::
+ * You have a working installation of 
+ ** Apache (version >= 2.4)
+ ** Ruby (version >= 2.7)
+ ** giblish (version >= 1.0)
+ * The generated html documents are stored under `/var/www/html/mydomain`
+ * The web server will serve the docs from the domain `www.mydomain.se`
+ * The search script is accessible via the url `www.mydomain.se:1233/gibsearch`
+
+.Setup Passenger under apache
+[source, bash]
 ----
 # list available modules
-anders@srv1:~$ sudo apachectl -M
-# install apache passenger module
-anders@srv1:~$ sudo apt install libapache2-mod-passenger 
-# check passanger is running
-anders@srv1:~$ sudo /usr/sbin/passenger-memory-stats 
-# determining ruby command for passenger (Ex: /usr/bin/ruby2.7)
-passenger-config about ruby-command
-# install sinatra
-anders@srv1:~$ sudo gem install sinatra --no-document
-# add an apache 'site-available' config file for your app
-anders@srv1:~$ sudo nano /etc/apache2/sites-available/100-gibsearch.conf
+sudo apachectl -M
 
-Content:
+# install the apache passenger module
+sudo apt install libapache2-mod-passenger 
+
+# check that passanger is running
+sudo /usr/sbin/passenger-memory-stats 
+
+# determining the ruby command for passenger (Ex: /usr/bin/ruby2.7)
+passenger-config about ruby-command
+
+# install sinatra
+sudo gem install sinatra --no-document
+
+# add an apache 'site-available' config file for your app
+sudo nano /etc/apache2/sites-available/100-gibsearch.conf
+
+# use the following as a starting point for your config file but
+# tweak it to your situation
 <VirtualHost *:1233>
-    ServerName rillbert.se
+    ServerName mydomain.se
 
     # Tell Apache and Passenger where your app's 'public' directory is
     # NOTE: Passenger requires a 'public' dir even if it is empty
-    DocumentRoot /var/www/rillbert_se/apps/gibsearch/public
+    DocumentRoot /var/www/mydoain/apps/gibsearch/public
 
     PassengerRuby /usr/bin/ruby2.7
 
     # Relax Apache security settings
-    <Directory /var/www/rillbert_se/apps/gibsearch/public>
+    <Directory /var/www/mydomain/apps/gibsearch/public>
       Allow from all
       Options -MultiViews
       Require all granted
     </Directory>
 </VirtualHost>
 
-# add an entry in ports.conf
-anders@srv1:/etc/apache2/sites-enabled$ sudo nano ports.conf 
+# add an entry in Apache's ports.conf file
+cd /etc/apache2/
+sudo nano ports.conf 
+
+# add the following line in the ports.conf file and save it
+Listen 1233
+
 # symlink site-available to sites-enabled
-anders@srv1:/etc/apache2/sites-enabled$ sudo ln -s /etc/apache2/sites-available/100-gibsearch.conf .
+sudo ln -s /etc/apache2/sites-available/100-gibsearch.conf .
+
 # restart apache
-anders@srv1:/etc/apache2/sites-enabled$ sudo apache2ctl restart 
-
-# deploy your app
-Content taken from https://newbedev.com/how-do-i-set-up-a-sinatra-app-under-apache-with-passenger[here]
-
-anders@srv1:/var/www/rillbert_se/apps$ tree .
-.
-└── gibsearch
-    ├── config.ru
-    ├── hello-app.rb
-    ├── public
-    └── tmp
-        └── restart.txt
-
-3 directories, 3 files
+sudo apache2ctl restart 
 ----
 
-== Setup doc generation using a GitHub web hook
+.Deploy the text search web application
+[source,bash]
+----
+# the giblish gem contains a template application called 
+# 'sinatra_search' that you can use to start out with.
+#
+# copy the files from the giblish gem to where you want to deploy
+# the web app under apache, eg:
+cd /var/www/mydomain/apps/
+cp -r "$(dirname $(gem which giblish))/../web_apps/sinatra_search" gibsearch
 
+# when you're done, you should have something similar to this on your 
+# server
+$ tree gibsearch/
+gibsearch/
+├── config.ru
+├── public
+│   └── dummy.txt
+├── sinatra_search.rb
+└── tmp
+    └── restart.txt
+
+# you will want to tweak:
+#  the URL_PATH_MAPPINGS hash in the sinatra_search.rb file 
+# to your situation.
+
+# you can restart your app using
+touch gibsearch/tmp/restart.txt
+
+----
+
+.Generate docs compatible with the text search web application
+[source,bash]
+----
+# cd to your directory of choice, called top_dir in this example
+cd top_dir
+
+# clone the repo containing the docs (using the giblish repo as 
+# an example)
+git clone https://github.com/rillbert/giblish.git
+
+# generate html docs from all 1.x tags
+cd /var/www/html/mydomain
+giblish -c -t "^v1" -m --server-search-path www.mydomain.se:1233/gibsearch giblish html_docs
+ 
+----
+====
+
+[appendix]
+== 

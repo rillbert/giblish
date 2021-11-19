@@ -12,18 +12,18 @@ box "The Document Hosting Server" #EEEEEE
 participant "Web Server" as Webserv
 participant "Search Result\nGenerator\n(CGI)"   as Searcher
 note over of Searcher
-  This is a CGI script that
-  can use the 
+  The CGI script could use the
   ""Giblish::RequestManager""
-  class to do most of the 
-  work.
+  class to do most of the work.
 end note
+database "Search index"   as Index
 end box
 
-Vi -> Webserv     : Send POST request
-Webserv -> Searcher : Invoke CGI script
-Searcher -> Searcher : Generate the\nsearch result
-note left
+Vi -> Webserv     : Search Query\n(html POST)
+Webserv -> Searcher : Invoke CGI\nscript
+Searcher -> Index : Search the\nindex
+Searcher -> Webserv : Return serch\nresult (html)
+note right
   Giblish contains help classes 
   that provide most of the heavy 
   lifting for retrieving and

@@ -1,17 +1,16 @@
 @startuml
 !theme cerulean-outline
-' !theme spacelab
 hide footbox
 autonumber
 
-title "Using a Passenger app for search requests"
+title "Using a Passenger web-app for search requests"
 
 actor       Viewer       as Vi
 
-box "Document Hosting Server" #EEEEEE
+box "Document-hosting Server" #EEEEEE
 participant "Web Server" as Webserv
 participant "Passenger"   as Pass
-participant "Search Result\nGenerator"   as Searcher
+participant "Search script\n(Web app)"   as Searcher
 note over of Searcher
   This could eg be a
   sinatra-based application 
@@ -19,21 +18,23 @@ note over of Searcher
   ""Giblish::RequestManager""
   class.
 end note
+database "Search index"   as Index
 end box
 
-Vi -> Webserv     : Send POST request
+Vi -> Webserv     : Search Query\n(html POST)
 Webserv -> Pass : hand over\nPOST request
 Pass -> Searcher : hand over\nPOST request
-Searcher -> Searcher : generate search\nresult
-note left
-  Giblish contains help classes 
-  that provide most of the heavy 
-  lifting for retrieving and
-  formatting the search result.
+Searcher -> Index : Search the\nindex
+Searcher -> Pass : Return search\nresult (html)
+note right
+  Giblish contains help 
+  classes fthat provide 
+  most of the heavy lifting 
+  for retrieving and formatting
+  the search result.
 end note
-Searcher -> Pass : return search\nresult
-Pass -> Webserv : return search\nresult
-Webserv -> Vi  : return  search\nresult
+Pass -> Webserv : Return search\nresult (html)
+Webserv -> Vi  : Return search\nresult (html)
 @enduml
 
 
