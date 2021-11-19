@@ -1,5 +1,5 @@
 = giblish text search
-:docid: G-003
+:docid: G-004
 :imagesdir: setup_search_assets
 
 == Overview
@@ -88,7 +88,7 @@ This setup has more dependencies than the CGI example. The upsides are e.g. stat
 
 This example uses Apache2, Passenger and Sinatra to deploy the server-side text search as a web application. There are a gazillion other tech stacks/permutations to provide the same functionality.
 
-IMPORTANT: Full installation instructions of Apache2, Passenger or their interconnection is out of scope for this example. Security is also out of scope so you will probably hardened this before using it in production.
+IMPORTANT: Full installation instructions of Apache2, Passenger or their interconnection is out of scope for this example. Security is also out of scope so you will probably want to harden this before using it in production.
 
 .Passenger web-app example
 image::search_request.svg[]
