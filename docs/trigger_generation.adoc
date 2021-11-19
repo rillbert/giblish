@@ -1,12 +1,12 @@
-= Publish asciidoc docs in git repos using giblish
-:imagesdir: setup_server_assets
+= Trigger document generation
+:imagesdir: trigger_generation_im
 :numbered:
 :docid: G-003
 :toc: left
 
 == Purpose
 
-To describe how to use `giblish` as a tool for creating a static web site with documents that are automatically generated each time a contributer push changes to a git repo.
+To describe how to use `giblish` as a tool for creating a static web site with documents that are automatically generated each time a contributor push changes to a git repo.
 
 If you want to dive straight in and setup one of the scenarios below, jump to <<setup_instructions>>, otherwise read on for some examples and considerations.
 
@@ -33,7 +33,7 @@ A mirror of the _Master Repo_ that fulfills two functions:
  . to provide a script that uses giblish to generate html documents and publish those docs to a location where a web server can access them.
 
 Web Server::
-Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (eg under /var/www/... )
+Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
 
 === Considerations
 
@@ -42,7 +42,7 @@ Possible advantages::
  * giblish provides templates for the `post-receive` hook.
 
 Possible drawbacks::
- * The hook and publish scripts provided with giblish runs syncronously at each push from a _Doc Writer_ to the _Master Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Master Repo_.
+ * The hook and publish scripts provided with giblish runs synchronously at each push from a _Doc Writer_ to the _Master Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Master Repo_.
  * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool implement a proper 'build' of your documents. You might for example end up with race conditions if two pushes to the _Master Repo_ are done close in time.
 
 === Using Jenkins / git hook combo
@@ -63,12 +63,12 @@ Jenkins instance::
 A running instance of Jenkins and one or more defined build jobs that use giblish to build the HTML documents.
 
 Web Server::
-Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (eg under /var/www/... )
+Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
 
 ==== Considerations
 
 Possible advantages::
- * Using Jenkins enables a lot of flexibility and scaleability. You can setup multiple jenkins agents to increase performance, you can define many build jobs where each job builds either a particular branch from a particular git repo or many branches from one or many repos.
+ * Using Jenkins enables a lot of flexibility and scaleability. You can setup multiple Jenkins agents to increase performance, you can define many build jobs where each job builds either a particular branch from a particular git repo or many branches from one or many repos.
 
 Possible drawbacks::
  * You need to be familiar with, and maintain, the Jenkins instance.
@@ -99,7 +99,7 @@ git and gitrepo setup::
  . Install git on the _Server_.
  . Setup the *bare* _Master Repo_ on the _Server_ by either.
  .. Copy a bare repo you already use to the _Server_ file system.
- .. Init a new repo using `git init --bare <your_repo_name>` somewhere on the _Server_ file system.
+ .. Initiate a new repo using `git init --bare <your_repo_name>` somewhere on the _Server_ file system.
 +
 NOTE: If you start with an empty, bare, _Master Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Master Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
 
@@ -116,7 +116,7 @@ NOTE: If you start with an empty, bare, _Master Repo_ on the _Server_, it is a g
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
 script setup::
- . Find out where the template scripts for the `post-receive` hook by running `gem which giblish`. Strip of the `lib/giblish.rb` from the end of the returned path and `cd` to the resulting folder. There should be a subfolder named `scripts` under which you can find the template scripts somewhere.
+ . Find out where the template scripts for the `post-receive` hook by running `gem which giblish`. Strip of the `lib/giblish.rb` from the end of the returned path and `cd` to the resulting folder. There should be a sub folder named `scripts` under which you can find the template scripts somewhere.
 +
 .Installation on Ubuntu 16.04
 ====
@@ -132,7 +132,7 @@ and the template scripts can thus be found somewhere under
  . Tweak the configuration variables of the copy to suite your use case.
  . Set the execute permission using `chmod +x post-receive`
 
-stylesheet setup::
+Stylesheet setup::
 The template scripts assume that the the css used to style the generated HTML is located under `<repo_root>/scripts/resources/css` and is called `giblish.css`. To enable a styling of your liking, either create this folder/css file in your repo at that exact place or tweak the `html_publish.sh` script to use another location/css file name for the styling.
 
 === Setup the git hook and Jenkins scenario

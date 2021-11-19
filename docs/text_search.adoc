@@ -1,6 +1,6 @@
 = giblish text search
 :docid: G-004
-:imagesdir: setup_search_assets
+:imagesdir: text_search_im
 
 == Overview
 
