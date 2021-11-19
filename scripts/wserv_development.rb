@@ -10,9 +10,11 @@
 # 3. Run this script to kick-off a web server that serves your html docs.
 
 require "webrick"
+require "webrick/cgi"
 
 # the root directory for the web server
-web_root = "/home/andersr/development/generated_docs"
+web_root = "#{__dir__}/html_docs"
+
 # the port the web server listens to
 port = 8000
 
@@ -27,5 +29,4 @@ puts "WEBrick instance now listening to localhost:#{port}"
 trap "INT" do
   server.shutdown
 end
-
 server.start

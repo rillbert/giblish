@@ -1,17 +1,21 @@
 #!/usr/bin/env ruby
+
 require "sinatra"
-# Toggle the below requires for deployment or development of this script
-# respectively
-require "giblish" # used when deploying
-# require_relative "../../lib/giblish/search/request_manager"  # used when developping this script
+begin
+  # used when developping this script
+  require_relative "../gh_giblish/lib/giblish/search/request_manager"
+rescue LoadError
+  # used in deployment
+  require "giblish"
+end
 
 # Provide the mappings of URI paths that apply to the specific deployment
 # setup.
 #
-# The below example maps the URL www.exaple.com/ to the local directory
-# /home/andersr/repos/gendocs on the web server.
+# The below example maps the URL www.example.com/ to the local directory
+# /var/www/html/mydocs on the web server.
 URL_PATH_MAPPINGS = {
-  "/" => "/home/andersr/repos/gendocs/"
+  "/" => "/var/www/html/mydocs"
 }
 
 # instantiate the one-and-only manager for search requests.

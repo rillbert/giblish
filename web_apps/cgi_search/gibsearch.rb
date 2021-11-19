@@ -1,4 +1,7 @@
-#!/usr/bin/env ruby
+#!/home/andersr/.rbenv/shims/ruby
+## /usr/bin/env ruby
+# replace the line above with an absolute path to a ruby interpreter
+# if you don't want the system one.
 
 require "cgi"
 begin
@@ -15,7 +18,7 @@ end
 # The below example maps the URI www.exaple.com/ to the local directory
 # /home/andersr/repos/gendocs on the web server.
 URL_PATH_MAPPINGS = {
-  "/" => "/home/andersr/repos/gendocs/"
+  "/" => __dir__.to_s
 }
 
 # This is run for each CGI request.
