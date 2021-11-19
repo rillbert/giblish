@@ -48,19 +48,19 @@ module Giblish
           # There is a docid defined, cache the path and doc id
           id = Regexp.last_match(1).strip
           Giblog.logger.debug { "found possible docid: #{id}" }
-          if doc_id_ok?(id)
+          if doc_id_ok?(id, p)
             @id_2_node[id] = node
           else
-            Giblog.logger.error { "Invalid docid: #{id} in file #{path}, this will be ignored!" }
+            Giblog.logger.error { "Invalid docid: #{id} in file #{p}, this will be ignored!" }
           end
         end
       end
 
       # make sure the id is within the designated length and
       # does not contain a '#' symbol
-      def doc_id_ok?(doc_id)
+      def doc_id_ok?(doc_id, path)
         if @id_2_node.key? doc_id
-          Giblog.logger.warn { "Found same doc id twice: (#{doc_id}). This id will be associated with '#{pathname}' and _not_ with '#{@id_2_node[id]}'." }
+          Giblog.logger.warn { "Found same doc id twice: (#{doc_id}). This id will be associated with '#{path}' and _not_ with '#{@id_2_node[id]}'." }
         end
         (doc_id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) && !doc_id.include?("#"))
       end
