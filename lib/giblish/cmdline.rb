@@ -66,11 +66,9 @@ module Giblish
           @index_basename = name
         end
         parser.on("-r", "--resource-dir [DIR]",
-          "Specify a directory where fonts, themes, css and other",
+          "Specify a directory tree within which fonts, themes, css and other",
           "central stuff needed for document generation are located.",
-          "The resources are expected to be located in a subfolder",
-          "whose name matches the resource type (font, theme",
-          "or css). If no resource dir is specified, the asciidoctor",
+          "If no resource dir is specified, the asciidoctor",
           "defaults are used. (default: nil)") do |resource_dir|
           r = Pathname.new(resource_dir)
           @resource_dir = (r.absolute? ? r : (Pathname.new(Dir.pwd) / r)).cleanpath
