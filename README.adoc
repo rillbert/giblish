@@ -50,6 +50,12 @@ Giblish uses the awesome *asciidoctor* and *asciidoctor-pdf* projects under the 
 
 Want to get started straight away? Go directly to the <<usage_examples>>.
 
+// install script for linux deps to the mathematica gem:
+// https://github.com/gjtorikian/mathematical/blob/47041d5492cc7c5f04105031430fb44119406f49/script/install_linux_deps
+//
+// Graphviz needed for some tests to pass
+
+
 === Some caveats
 
 When using giblish for generating docs the following applies:

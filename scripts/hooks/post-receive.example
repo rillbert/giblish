@@ -7,11 +7,20 @@
 # the git refs that should trigger a doc generation at update
 TRIGGERING_REFS_REGEX=$'main'
 
+# the relative path to a subfolder in the repo where the docs are
+REPO_DOC_SUBFOLDER="docs"
+
 # the staging repo root (where the working tree exists)
 STAGING_REPO="/usr/local/git_staging/rillbert_se_staging"
 
 # The web-server top dir for the published documents
 DST_DIR="/var/www/rillbert_se/html/public/docs"
+
+# path to a top dir of the styling css and other resources
+RESOURCE_DIR="scripts/resources"
+
+# the name of the css file to use for styling, without the 'css' extension
+LAYOUT_STYLE="giblish"
 
 # "true" runs an 'rm -rf' of the destination dir before generating new htmls
 CLEAR_DST="true"
@@ -46,6 +55,11 @@ echo ""
   fi
 
   # Generate html docs
-  echo "running: giblish -a xrefstyle=basic --copy-asset-folders _assets$ -g ${TRIGGERING_REFS_REGEX} -r scripts/resources -s giblish docs ${DST_DIR}"
-  giblish -a xrefstyle=basic --copy-asset-folders "_assets$" -g "${TRIGGERING_REFS_REGEX}" -r scripts/resources -s giblish docs "${DST_DIR}"
+  echo "running giblish..."
+  giblish -a xrefstyle=basic \
+          --copy-asset-folders "_assets$" \
+          -g "${TRIGGERING_REFS_REGEX}" \
+          -r "${RESOURCE_DIR}" \
+          -s "${LAYOUT_STYLE}" \
+          "${REPO_DOC_SUBFOLDER}" "${DST_DIR}"
 )

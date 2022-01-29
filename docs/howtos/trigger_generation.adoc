@@ -6,28 +6,31 @@
 
 == Purpose
 
-To describe how to use `giblish` as a tool for creating a static web site with documents that are automatically generated each time a contributor push changes to a git repo.
+To describe how to use `giblish` as a tool for creating a static web site backed by a git repo that is automatically generated each time a contributor push changes to the git repo.
+
+This text covers the followwing deployment scenarios:app-name: 
+
+ . Using a git hook together with a simple (well) shell script
+ . Using a git hook together with Jenkins.
+
+They have been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
 
 If you want to dive straight in and setup one of the scenarios below, jump to <<setup_instructions>>, otherwise read on for some examples and considerations.
 
-This text covers two deployment scenarios; one using a git hook together with a simple (well) shell script, and one using a git hook together with Jenkins.
-
-They have both been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
-
 == Git hook and shell script
 
-This requires the least number of installed components to work. An overview of the scenario is given below.
+This requires the least number of dependencies to work but is more limited.
 
 .Deploy using git hook and shell script
 image::deploy_with_hooks.svg[]
 
 The components needed on the server are:
 
-Master Repo with `post-receive` hook::
+A 'Main Repo'::
 The common (bare) git repo used by all content writers to push updates to. This repo shall be setup with a server-side hook (_post-receive_) that initiates the html generation and is triggered by each push to the repo.
 
-Staging Repo::
-A mirror of the _Master Repo_ that fulfills two functions:
+A 'Staging Repo'::
+A mirror of the _Main Repo_ that fulfills two functions:
 
  . to provide a checked-out working tree with the source files (adoc files).
  . to provide a script that uses giblish to generate html documents and publish those docs to a location where a web server can access them.
@@ -35,17 +38,17 @@ A mirror of the _Master Repo_ that fulfills two functions:
 Web Server::
 Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
 
-=== Considerations
+=== Pros & Cons
 
-Possible advantages::
+Pros::
  * it has few dependencies on external tools, only git, giblish and a web server are needed for this to work.
  * giblish provides templates for the `post-receive` hook.
 
-Possible drawbacks::
- * The hook and publish scripts provided with giblish runs synchronously at each push from a _Doc Writer_ to the _Master Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Master Repo_.
- * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool implement a proper 'build' of your documents. You might for example end up with race conditions if two pushes to the _Master Repo_ are done close in time.
+Cons::
+ * The hook and publish scripts provided with giblish runs synchronously at each push from a _Doc Writer_ to the _Main Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Main Repo_.
+ * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool implement a proper 'build' of your documents. You might for example end up with race conditions if two pushes to the _Main Repo_ are done close in time.
 
-=== Using Jenkins / git hook combo
+=== Using a combination of Jenkins and git hook
 
 This setup adds a Jenkins (or similar build orchestrator) installation so it is more tools to setup but offer more flexibility and performance. It is also more robust and thus more 'production friendly'.
 
@@ -56,7 +59,7 @@ image::deploy_with_jenkins.svg[]
 
 The components needed on the server are:
 
-Master Repo::
+Main Repo::
 The common (bare) git repo used by all content writers to push updates to. This repo needs to be setup with a server-side hook (_post-receive_) that are executed by git after each push to the repository.
 
 Jenkins instance::
@@ -65,26 +68,24 @@ A running instance of Jenkins and one or more defined build jobs that use giblis
 Web Server::
 Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
 
-==== Considerations
+==== Pros & cons
 
-Possible advantages::
+Pros::
  * Using Jenkins enables a lot of flexibility and scaleability. You can setup multiple Jenkins agents to increase performance, you can define many build jobs where each job builds either a particular branch from a particular git repo or many branches from one or many repos.
 
-Possible drawbacks::
+Cons::
  * You need to be familiar with, and maintain, the Jenkins instance.
 
 [[setup_instructions]]
 == Setup instructions
 
-Follow the instructions below to get this running on your server.
+Follow the instructions below to get one of the above setups running on your server.
 
 === Some preliminary notes
 
-Permissions and security::
-These instructions does not give any advice on setting up permissions in a way that is suitable for your use case. You should however, give this an appropriate amount of consideration. You need to set the permissions so that the relevant tools and scripts can perform their expected tasks without constituting security vulnerabilities on your server. You might want to consider setting up specific user accounts/groups to achieve this but this is outside the scope of this text.
+IMPORTANT: Setting up permissions and secure your setup from unwanted access is outside the scope of these instructions. You must understand and implement the proper user/groups/rules for your use case.
 
-Server side git hooks::
-git supports several hooks that are executed at different points in the sequence of committing and pushing changes to a repository. This feature is used in both scenarios below to provide the trigger for generating the HTML document. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc].
+NOTE: git server side hooks are used in the instructions below. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc].
 
 [[common_setup]]
 === Initial setup
@@ -97,49 +98,54 @@ giblish setup::
 
 git and gitrepo setup::
  . Install git on the _Server_.
- . Setup the *bare* _Master Repo_ on the _Server_ by either.
+ . Setup the *bare* _Main Repo_ on the _Server_ by either.
  .. Copy a bare repo you already use to the _Server_ file system.
  .. Initiate a new repo using `git init --bare <your_repo_name>` somewhere on the _Server_ file system.
 +
-NOTE: If you start with an empty, bare, _Master Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Master Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
+NOTE: If you start with an empty, bare, _Main Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Main Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
 
- . Setup the _Staging Repo_ on the _Server_ by cloning the _Master Repo_ to a suitable folder in the _Server_ file system, ex:
-+
-.Setup a staging repo in your home folder on the _Server_
-====
- cd ~
- git clone file:///usr/local/master_repo.git
-====
-
-=== Setup the git hook and shell script scenario
+=== Use a git hook and shell script
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
-script setup::
- . Find out where the template scripts for the `post-receive` hook by running `gem which giblish`. Strip of the `lib/giblish.rb` from the end of the returned path and `cd` to the resulting folder. There should be a sub folder named `scripts` under which you can find the template scripts somewhere.
+ . Setup the _Staging Repo_ on the _Server_ by cloning the _Main Repo_ to a suitable folder in the _Server_ file system, ex:
 +
-.Installation on Ubuntu 16.04
+.Setup a staging repo in your home folder on the _Server_
+====
+[source, bash]
+----
+# go to your home directory
+cd ~ 
+
+# clone the Main Repo, assuming it is located at /usr/local/main_repo.git
+git clone file:///usr/local/main_repo.git
+----
+====
+ . Make a copy of the `post-receive.example` template from the installed `giblish` gem.
++
+.Find the `post-receive` template in the giblish gem
 ====
 On a server running Ubuntu 16.04, `gem which giblish` returns:
 
  /var/lib/gems/2.6.0/gems/giblish-0.7.0/lib/giblish.rb
 
-and the template scripts can thus be found somewhere under
+and the template hook can be found under
 
- /var/lib/gems/2.6.0/gems/giblish-0.7.0/scripts
+ /var/lib/gems/2.6.0/gems/giblish-0.7.0/scripts/hooks/post-receive.example
 ====
 
+ . Rename the copy to `post-receive`
  . Tweak the configuration variables of the copy to suite your use case.
+ . Move your copy to the `hooks` directory of your _Main Repo_.
  . Set the execute permission using `chmod +x post-receive`
 
-Stylesheet setup::
-The template scripts assume that the the css used to style the generated HTML is located under `<repo_root>/scripts/resources/css` and is called `giblish.css`. To enable a styling of your liking, either create this folder/css file in your repo at that exact place or tweak the `html_publish.sh` script to use another location/css file name for the styling.
+That's it. You can now push to your _Main Repo_ and the `post-receive` hook will run `giblish` on the branches that you set it up to.
 
 === Setup the git hook and Jenkins scenario
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
-TBD
+
 
 ==== Sequence for generating documents
 
