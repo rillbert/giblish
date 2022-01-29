@@ -1,8 +1,9 @@
 #!/bin/bash
 #
-# this hook runs a script which, in turn, generates html documentation
-# and publishes them to the given destination.
-#
+# this hook runs giblish on a document tree according to the 
+# users settings.
+# Typically used to publish html documents when a push to a matching
+# branch is detected.
 
 # the git refs that should trigger a doc generation at update
 TRIGGERING_REFS_REGEX=$'main'
