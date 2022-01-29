@@ -143,9 +143,9 @@ That's it. You can now push to your _Main Repo_ and the `post-receive` hook will
 
 === Setup the git hook and Jenkins scenario
 
+TBD...
+
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
-
-
 
 ==== Sequence for generating documents
 
@@ -162,7 +162,7 @@ image::Render Documents.png[]
 ====
 [source,bash]
 ----
-include::../scripts/hooks/post-receive[]
+include::../scripts/hooks/post-receive.example[]
 ----
 ====
 
@@ -178,9 +178,3 @@ Below is an example of a `post-update` hook that triggers Jenkins jobs after a p
 include::../docgen/scripts/githook_examples/post-update.example[]
 ----
 ====
-
-=== Jenkins pipeline script
-
-Below is a very basic example of a Jenkins pipeline that triggers giblish to render html and pdf documents located in a specific directory in a git repository.
-
-TBD
