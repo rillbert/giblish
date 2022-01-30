@@ -17,7 +17,8 @@ module Giblish
     def initialize(doc_repo_url, ref_regexp, clone_dir_parent, clone_name, giblish_args, doc_src_rel, doc_dst_abs, logger)
       @doc_repo_url = doc_repo_url
       @ref_regexp = ref_regexp
-      @giblish_args = STANDARD_GIBLISH_FLAGS + giblish_args
+      @giblish_args = STANDARD_GIBLISH_FLAGS
+      @giblish_args += giblish_args unless giblish_args.nil?
       @doc_src_rel = doc_src_rel
       @dstdir = doc_dst_abs
       @logger = logger

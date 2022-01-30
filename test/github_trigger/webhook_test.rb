@@ -223,6 +223,7 @@ module Giblish
           /svg/,
           topdir,
           "giblish",
+          nil,
           "docs",
           dstdir,
           Giblog.logger
