@@ -2,7 +2,7 @@ name: Giblish CI checks
 
 on:
   push:
-    branches: [personal/rillbert/svg_index]
+    branches: [personal/rillbert/*, main]
 
 jobs:
   test:
