@@ -1,0 +1,3 @@
+This file only exists to make git create the 'public' dir in which it resides.
+
+The 'public' dir, in turn, is needed when deploying the app to a passenger instance.

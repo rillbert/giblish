@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-set -euo pipefail
-IFS=$'\n\t'
-set -vx
+# set -euo pipefail
+# IFS=$'\n\t'
+# set -vx
 
+# setup bundle to cache needed gems locally
+bundle config set --local path .bundle/gems
+bundle binstubs --all --path .bundle/.bin
 bundle install
 
 # Do any other automated setup that you need to do here

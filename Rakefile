@@ -1,41 +1,25 @@
 require "rake/testtask"
+require "standard/rake"
 
-Rake::TestTask.new(:test) do |t|
+Rake::TestTask.new(:giblish) do |t|
   t.libs << "test"
   t.libs << "lib"
   t.test_files = FileList["test/**/*_test.rb"]
 end
 
-Rake::TestTask.new(:current) do |t|
+Rake::TestTask.new(:sinatra) do |t|
   t.libs << "test"
-  t.libs << "lib"
-  t.test_files = FileList["test/**/index_heading_test.rb"]
+  t.libs << "web_apps/sinatra_search"
+  t.test_files = FileList["apps/test/**/*_test.rb"]
 end
 
-Rake::TestTask.new(:paths) do |t|
+Rake::TestTask.new(:all) do |t|
   t.libs << "test"
   t.libs << "lib"
-  t.test_files = FileList["test/**/pathmanager_test.rb"]
+  t.libs << "web_apps/sinatra_search"
+  t.test_files = FileList["test/**/*_test.rb"]
 end
-
-Rake::TestTask.new(:graph) do |t|
-  t.libs << "test"
-  t.libs << "lib"
-  t.test_files = FileList["test/**/depgraph_test.rb"]
-end
-
-Rake::TestTask.new(:css) do |t|
-  t.libs << "test"
-  t.libs << "lib"
-  t.test_files = FileList["test/**/linkcss_test.rb"]
-end
-
-Rake::TestTask.new(:sandbox) do |t|
-  t.libs << "test"
-  t.libs << "lib"
-  t.test_files = FileList["test/**/sandbox_test.rb"]
-end
-
 
 # task :default => :spec
-task :default => :test
+task default: :all
+task test: :all

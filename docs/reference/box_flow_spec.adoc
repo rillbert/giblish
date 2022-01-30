@@ -1,0 +1,22 @@
+= Tree flow 
+
+== Algorithm
+
+Preconditions::
+ * No padding
+ * Left-to-right filling
+ * 1 sublevel
+ * Width for outer box is fixed, height is variable
+
+Outer box = B [bx, by, bw, bh]
+Inner boxes = In [In_x, In_y, In_w, In_h]
+
+Horizontal strips = Sn
+
+foreach In in I
+  if In_w > S_free_width
+    S = S(n+1)
+  end
+  In_coord = S_free_coord
+end
+

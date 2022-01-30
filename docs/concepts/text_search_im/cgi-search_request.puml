@@ -1,0 +1,35 @@
+@startuml
+!theme cerulean-outline
+' !theme spacelab
+hide footbox
+autonumber
+
+title "Using CGI for search requests"
+
+actor       Viewer       as Vi
+
+box "The Document Hosting Server" #EEEEEE
+participant "Web Server" as Webserv
+participant "Search Result\nGenerator\n(CGI)"   as Searcher
+note over of Searcher
+  The CGI script could use the
+  ""Giblish::RequestManager""
+  class to do most of the work.
+end note
+database "Search index"   as Index
+end box
+
+Vi -> Webserv     : Search Query\n(html POST)
+Webserv -> Searcher : Invoke CGI\nscript
+Searcher -> Index : Search the\nindex
+Searcher -> Webserv : Return serch\nresult (html)
+note right
+  Giblish contains help classes 
+  that provide most of the heavy 
+  lifting for retrieving and
+  formatting the search result.
+end note
+Webserv -> Vi  : return  search\nresult
+@enduml
+
+

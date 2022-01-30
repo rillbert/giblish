@@ -1,0 +1,40 @@
+@startuml
+!theme cerulean-outline
+hide footbox
+autonumber
+
+title "Using a Passenger web-app for search requests"
+
+actor       Viewer       as Vi
+
+box "Document-hosting Server" #EEEEEE
+participant "Web Server" as Webserv
+participant "Passenger"   as Pass
+participant "Search script\n(Web app)"   as Searcher
+note over of Searcher
+  This could eg be a
+  sinatra-based application 
+  that use the 
+  ""Giblish::RequestManager""
+  class.
+end note
+database "Search index"   as Index
+end box
+
+Vi -> Webserv     : Search Query\n(html POST)
+Webserv -> Pass : hand over\nPOST request
+Pass -> Searcher : hand over\nPOST request
+Searcher -> Index : Search the\nindex
+Searcher -> Pass : Return search\nresult (html)
+note right
+  Giblish contains help 
+  classes fthat provide 
+  most of the heavy lifting 
+  for retrieving and formatting
+  the search result.
+end note
+Pass -> Webserv : Return search\nresult (html)
+Webserv -> Vi  : Return search\nresult (html)
+@enduml
+
+

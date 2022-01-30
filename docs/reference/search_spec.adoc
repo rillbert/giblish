@@ -1,0 +1,185 @@
+= Text search spec for giblish
+:docid: G-002
+
+== Information expected to be included in a search request
+
+URL endpoint for the search service::
+When a search is triggered, the correct URL for triggering the search service must be POSTed to.
+
+URI parameters::
+The search service expects a number of parameters as part of the search query, see <<uri_params>>.
+
+.URI parameters
+[[uri_params]]
+[cols="2,2,5,3"]
+|===
+|name |status |comment |example
+
+|calling-url
+|required
+|the URL to the file from which the search request originated
+|www.example.com/my/doc/site/subdir/file_1.html
+
+|search-assets-top-rel
+|required
+|the relative path from the originating file's directory to the top dir of the search assets. The default implementation in giblish uses the name `gibsearch_assets` for this directory.
+|../../gibsearch_assets
+
+|search-phrase
+|required
+|a string with the phrase to search for
+|meaning of life
+
+|css-path
+|optional
+a|the path to the css file to use when generating the result. 
+
+absolute::
+the path is used as-is. 
+
+relative::
+the relative path to the css file from the originating file's directory.
+
+not set::
+the styling is left to the search implementation.
+
+a| * *absolute* - /var/www/html/my/site/style.css
+* *relative* - ../../web_assets/css/style.css
+
+|consider-case
+|optional
+a|
+if set::
+search case sensitive
+
+not set::
+ignore case during search
+
+|true
+
+|as-regexp
+|optional
+a|
+if set::
+treat the search phrase as a regexp
+
+not set::
+treat the search phrase as a string
+|true
+
+|===
+
+== The implementation in giblish
+
+=== At document generation
+
+ . Collect all adoc docs in a search asset directory.
+ . Embed html code for a search form as part of running gibish on the source tree. During generation, the following search parameters are known for each document to be generated:
+ .. search-assets-top-rel
+ .. css-path
+ . The `calling-url` is not known but it is possible to embed javascript code as part of the search form code that will resolve the url at runtime.
+ . The URL for the search service endpoint must be given by the user or hard-coded in giblish.
+
+=== At a user search query
+
+When a user submit a 'search' query, the following parameters must be filled in and submitted to the text search service:
+
+ . searchphrase
+ . usecase (optional)
+ . useregexp (optional)
+
+The other required parameters comes from the generated document itself.
+
+=== The search index
+
+The search index is created by giblish during html generation and consists of 
+
+ . the adoc source files (when `include` directives have been resolved) 
+ . a `heading_db.json` file mapping sections in the source files to line numbers
+
+.The storage location for the search index information
+----
+|- <top_path>
+|    |- file1.html
+|    |- subdir
+|         |- file2.html
+|    |- web_assets
+|        |- mystyle.css
+|    |- gibsearch_assets
+|         |- heading_db.json
+|         |- file1.adoc
+|              |- subdir
+|                   |file2.adoc
+----
+
+.The format of the heading_db.json file
+[source,json]
+----
+{
+  fileinfos : [
+    {
+      filepath : "file1.adoc",
+      title : "File 1 Title",
+      sections : [
+        {
+          id : "section_id_1",
+          title : "Purpose",
+          line_no : 10
+        },
+        {
+          id : "section_id_2",
+          ...
+        }
+      ]
+    },
+    {
+      filepath: "subdir/file2.adoc",
+      ...
+    }
+  ]
+}
+----
+
+=== The search form
+
+giblish inserts the below html/JavaScript at the top of each generated html document.
+
+.A minimal search form
+[source,html]
+----
+      <script type="text/javascript">
+      window.onload = function () {
+        document.getElementById("calingurl_input").value = window.location.href;
+      };
+      </script>
+
+      <style>
+      #gibsearch-form {
+        position:fixed;
+        top:0.5rem;
+        left:70%;
+        width:30%;
+        height:3rem;
+        background:white;
+        z-index:2000; 
+        }
+      </style>
+
+      <div id=gibsearch-form>
+        <form class="gibsearch" action="<%=action_path%>">
+          <input type="search" placeholder="Search the docs.." name="search-phrase" />
+          <button type="submit">Search</button>
+          <br>
+
+          <input type="checkbox" id="consider-case" name="consider-case" />
+          <label for="consider-case">case sensitive</label>
+          &nbsp;&nbsp;
+          <input type="checkbox" id="as-regexp" name="as-regexp" />
+          <label for="as-regexp">use regexp</label>
+
+          <input type="hidden" name="calling-url" id=calingurl_input />
+          <input type="hidden" name="search-assets-top-rel" value="<%=sa_top_rel%>"/>
+          <input type="hidden" name="css-path" value="<%=css_path%>"/>
+        </form>
+      </div>
+----

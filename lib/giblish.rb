@@ -1,18 +1,21 @@
 #!/usr/bin/env ruby
+if /^2/.match?(RUBY_VERSION)
+  # suppress warnings for 'experimental' pattern matching
+  # for ruby versions < 3.x
+  require "warning"
+  Warning.ignore(/Pattern matching/)
+end
 
 require_relative "giblish/version"
-require_relative "giblish/utils"
-require_relative "giblish/core"
-require_relative "giblish/buildindex"
-require_relative "giblish/cmdline"
-require_relative "giblish/pathtree"
 require_relative "giblish/application"
+require_relative "giblish/search/request_manager"
+require_relative "giblish/github_trigger/webhook_manager"
 
 module Giblish
+  # The main entry point to the giblish application
   class << self
-
     def application
-      @application ||= Giblish::Application.new
+      @application ||= Giblish::EntryPoint
     end
   end
 end

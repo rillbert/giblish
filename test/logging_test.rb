@@ -1,42 +1,33 @@
-require 'oga'
+require "oga"
 require "test_helper"
-require_relative "../lib/giblish/utils.rb"
-require_relative "../lib/giblish/docid.rb"
+require_relative "../lib/giblish/utils"
 
-# tests logging of giblish and asciidoc messages
-class LoggingTest < Minitest::Test
+module Giblish
+  # tests logging of giblish and asciidoc messages
+  class LoggingTest < GiblishTestBase
+    include Giblish::TestUtils
 
-  include Giblish::TestUtils
+    TEST_DOC = <<~EOF
+      = Test logging
+      :numbered:
 
-  @@doc_str = <<~EOF
-    = Test logging
-    :numbered:
+      == The first section
 
-    == The first section
+      some random text..
 
-    some random text..
+      ==== A section one lovel too deep
 
-    ==== A section one lovel too deep
+      An invalid reference: <<_the_first>>.
+    EOF
 
-    An invalid reference: <<_the_first>>.
-  EOF
-
-  def setup
-    # setup logging
-    Giblog.setup
-  end
-
-  def test_logging_of_info_and_warn
-
-    TmpDocDir.open do |tmp_docs|
-      # act on the input data
-      adoc_filename = tmp_docs.add_doc_from_str @@doc_str
-      args = [tmp_docs.dir,
-              tmp_docs.dir]
-      status = Giblish.application.run args
-
-      # assert
-      assert_equal 0, status
+    def test_logging_of_info_and_warn
+      TmpDocDir.open do |tmp_docs|
+        srcdir = Pathname.new(tmp_docs.dir)
+        tmp_docs.create_adoc_src_on_disk(srcdir, {doc_src: TEST_DOC})
+        args = [srcdir, srcdir]
+        assert(Giblish.application.run(args))
+        # TODO: Find a good way of testing this !!
+      end
     end
   end
 end

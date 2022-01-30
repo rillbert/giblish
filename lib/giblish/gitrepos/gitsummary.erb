@@ -1,0 +1,61 @@
+= Document repo '<%= @repo_name %>'
+Generated at <%= DateTime.now.strftime("%Y-%m-%d %H:%M:%S") %> by giblish - v<%= Giblish::VERSION %>
+
+// Display one table for each branch
+<% unless @branch_info.empty? %>
+Branches::
+
+<% @branch_info.each do |b|
+  c = b.latest_commit
+%>
+
+xref:<%= index_path(b.name) %>[*<%= b.name %>*]
+[cols="1a,5a"]
+|===
+
+2+^|_last committed to <%= c.datetime.strftime("%Y-%m-%d") %> by <%= c.committer %>._
+
+|*Sha* 
+|<%= c.sha[0..7] %> ...
+
+|*Message*
+|<%= c.message %>
+
+|===
+
+
+<% end %>
+<% end %>
+
+// Display one table for each tag
+<% unless @tag_infos.empty? %>
+Tags::
+
+<% @tag_infos.each do |t| 
+  c = t.commit
+%>
+
+xref:<%= index_path(t.name) %>[*<%= t.name %>*]
+[cols="1a,5a"]
+|===
+
+2+^| _was created <%= t.date.strftime("%Y-%m-%d") %> by <%= t.author %>._
+
+|*Message*
+|<%= t.message %>
+
+2+^|_The tag points to the commit made <%= c.datetime.strftime("%Y-%m-%d") %> by <%= c.committer %>._
+
+|*Sha*
+|<%= c.sha[0..8] %> ...
+
+|*Message*
+|<%= t.commit.message %>
+
+|===
+
+
+<% end %>
+<% end %>
+
+

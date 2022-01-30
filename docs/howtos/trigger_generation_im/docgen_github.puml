@@ -1,0 +1,51 @@
+@startuml
+!theme cerulean-outline
+' !theme spacelab
+hide footbox
+autonumber
+
+title "Generate docs via GitHub web hook"
+
+box "GitHub" #EEEEEE
+actor       Editor       as Ed
+participant GitHub       as GitHub
+end box
+
+box "Document Hosting Server" #EEEEEE
+participant "Web Server" as Webserv
+participant "Passenger"   as Pass
+participant "Document\nGenerator"   as Docgen
+note right of Docgen
+  This could be
+  a sinatra-based
+  application that 
+  use giblish' helper
+  classes.
+end note
+end box
+
+
+Ed -> GitHub     : push doc update\nto repository
+GitHub -> Webserv : send POST request
+Webserv -> Pass : hand over\nPOST request
+Pass -> Docgen : hand over\nPOST request
+Docgen -> Docgen : generate\ndocumentation
+note left
+  The documents are generated and stored\n
+  somewhere in the file system known to\n
+  the web server.
+end note
+/' You can also declare:
+
+== Using raw git hook ==
+
+Ed -> GitHub     : push doc update to repository
+GitHub -> Web server : send POST request
+Webserv -> Pass : hand over POST request to passenger
+Pass -> Docgen : hand over POST request to Sinatra
+Docgen -> Docgen : generate documentation
+  '/
+
+@enduml
+
+

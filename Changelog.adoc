@@ -1,0 +1,61 @@
+= giblish changelog
+
+== Not yet in place
+
+ * Update docs for giblish.
+ ** the later part of the trigger_generation doc
+ ** go through and fix spelling
+ * Update the default css for giblish html generation.
+ * Maybe put some effort into the ConversionInfo hierarchy
+
+== v1.0.0
+
+This release includes a complete refactoring of almost the entire code base.
+
+Breaking changes::
+ * The '-w' flag is removed  
+ * The text search parameters interface has changed completely. A written specification of this interface is included in the docs.
+ * The '-r' flag will, for html generation, *copy everything* under the given directory to the target location.
+ ** the previous restriction on folder names has been removed.
+ * The '-s' flag now instructs giblish to use any matching style found under the resource directory given by the '-r' flag. The exact path is no longer necessary.
+ * The doc attribute `:icons: font` is now set by default.
+ * The source highlighter attributes are now set as follows by default:
+ ** :source-highlighter: rouge  :rouge-css: style  :rouge-style: github
+ * The format of the index pages has been updated
+
+Changes/New functionality::
+ * Rouge is used as source highlighter and the default is to use the following attributes:
+ ** :rouge-css: style
+ ** :rouge-style: github
+ * A --server-css-path flag can be used to set a path to the css file used by generated html documents when served via a web server.
+ * A --server-search-path flag can be used to set the URI path to the location of a server-side search script that can supply the user with search results.
+ * A --copy-asset-folders flag can be used to copying full directories from the source to the destination tree.
+ * Index pages are generated for each subdirectory in the target document tree.
+ * The format of the git summary page has been updated and more info included.
+ * The text search server-side cgi script has been rewritten.
+ * The text search for web-server-served html docs has been updated in the following ways:
+ ** the asciidoc 'include' directive is supported by expanding them and include the resulting text in the search database.
+ ** the implementation of the server-side search tools are written completely in ruby and does no longer depend on an external 'grep' tool.
+ ** almost all needed infrastructure for implementing a server-side search script has been implemented within the 'giblish' gem.
+ * The asciidoctor toolchain dependencies are updated to the latest versions (at the time of release).
+ 
+
+== v0.8.0
+
+ * *Breaking change* require ruby 2.7
+ * update asciidoctor tool deps to latest versions
+
+== v0.7.0
+
+ * *Breaking change* include the entire path in the -i and -j options
+ * *Breaking change* change the meaning of the -w flag (and rename the long form to --web-path)
+   and add the -mp flag.
+   This was done as a means to remove the hard-coded arguments to the search box html so that one
+   can generate html docs to a destination that is not the same as the one where they are deployed
+   on a web server.
+ * take the idprefix and idseparator into account when indexing sections for text search
+ * Add the font awesome css as link to search box and use the magnifying glass icon
+ * update README file
+ * handle the case where a 'index.adoc' file exists by making the basename configurable using the
+   '--index-basename' flag.
+ * update the dependencies to the latest asciidoctor-pdf release

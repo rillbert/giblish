@@ -1,3 +1,3 @@
 module Giblish
-  VERSION = "0.8.2".freeze
+  VERSION = "1.0.0.rc1".freeze
 end
