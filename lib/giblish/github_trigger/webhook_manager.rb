@@ -4,7 +4,7 @@ require_relative "../application"
 module Giblish
   # Generate documentation using giblish based on the supplied parameters
   class GenerateFromRefs
-    STANDARD_GIBLISH_FLAGS = %W[-f html -m --copy-asset-folders "_assets$" --server-search-path "/cgi-bin/gibsearch.cgi"]
+    STANDARD_GIBLISH_FLAGS = %W[-f html -m --copy-asset-folders _assets$ --server-search-path /cgi-bin/gibsearch.cgi]
 
     # doc_repo_url:: the url of the repo hosting the docs to be generated. this repo will be cloned
     # ref_regexp:: a regexp that both defines what git refs that trigger a document generation and what refs will be
