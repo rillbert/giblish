@@ -4,9 +4,7 @@
 
  * Update docs for giblish.
  ** the later part of the trigger_generation doc
- ** go through and fix spelling
  * Update the default css for giblish html generation.
- * Maybe put some effort into the ConversionInfo hierarchy
 
 == v1.0.0
 
