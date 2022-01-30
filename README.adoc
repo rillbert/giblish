@@ -17,6 +17,10 @@ IMPORTANT: The examples below are *not* the official documentation for the corre
 |===
 |Project |Link to example |Comment
 
+|The `giblish` documentation
+|https://www.rillbert.se/giblish_examples/giblish/main/index.html[here]
+|The documentation of giblish (same as you find in GitHub).
+
 |Raspberry Pi documentation
 |https://www.rillbert.se/giblish_examples/rpi_docs/giblish_example/index.html[example]
 |The original documentation site uses Jekyl for site generation, the link points to a mirror where some small tweaks to the docs were made to make them suitable for generation with giblish.
