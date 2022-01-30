@@ -43,8 +43,8 @@ module Giblish
   #   }]
   # }
   class HeadingIndexer < Asciidoctor::Extensions::TreeProcessor
-    HEADING_REGEX = /^=+\s+(.*)$/.freeze
-    ANCHOR_REGEX = /^\[\[(\w+)\]\]\s*$/.freeze
+    HEADING_REGEX = /^=+\s+(.*)$/
+    ANCHOR_REGEX = /^\[\[(\w+)\]\]\s*$/
     HEADING_DB_BASENAME = "heading_db.json"
     SEARCH_ASSET_DIRNAME = "gibsearch_assets"
 
@@ -239,9 +239,7 @@ module Giblish
       heading_db_path = dst_dir.join(HEADING_DB_BASENAME)
       Giblog.logger.info { "writing json to #{heading_db_path}" }
 
-      File.open(heading_db_path.to_s, "w") do |f|
-        f.write(@heading_index.to_json)
-      end
+      File.write(heading_db_path.to_s, @heading_index.to_json)
     end
   end
 

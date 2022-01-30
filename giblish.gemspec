@@ -1,5 +1,5 @@
 begin
-  require_relative 'lib/giblish/version'
+  require_relative "lib/giblish/version"
 rescue LoadError
   require "giblish/version"
 end
@@ -33,7 +33,7 @@ Gem::Specification.new do |spec|
   # end
 
   # filter out files not included in the shipped gem
-  spec.files = `git ls-files -z`.split("\x0").reject do |f| 
+  spec.files = `git ls-files -z`.split("\x0").reject do |f|
     skip_dirs = %r{^(data|bin|test|spec|features)/}
     skip_files = %r{^(Rakefile|Gemfile)}
     f.match(skip_dirs) || f.match(skip_files)

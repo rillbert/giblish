@@ -15,7 +15,7 @@ module Giblish
       ID_MAX_LENGTH = 10
 
       # the regex used to find :docid: entries in the doc header
-      DOCID_REGEX = /^:docid: +(.*)$/.freeze
+      DOCID_REGEX = /^:docid: +(.*)$/
 
       def initialize
         @id_2_node = {}
@@ -92,7 +92,7 @@ module Giblish
       end
 
       # The regex that matches docid references in files
-      DOCID_REF_REGEX = /<<\s*:docid:\s*(.*?)>>/.freeze
+      DOCID_REF_REGEX = /<<\s*:docid:\s*(.*?)>>/
       PASS_MACRO_REGEX = /pass:\[.*\]/
 
       # This hook is called by Asciidoctor once for each document _before_
