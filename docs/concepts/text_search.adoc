@@ -4,17 +4,16 @@
 
 == Overview
 
-giblish includes an implementation of full text search for html documents if they are published via a web server. Two things must be in place to enable this functionality:
+giblish includes an implementation of full text search for html documents if they are published via a web server. Two things must be met to enable this functionality:
 
- . a specific set of options must be given to giblish during the generation of the html documents. This will ensure that giblish:
+ . A specific set of options must be given to giblish during the generation of the html documents. This will ensure that giblish:
  .. copies a search index to the same tree as the generated html documents.
  .. includes an html form at the top of each generated document that the user can interact with to send search queries.
- . a server-side script must be setup on the web server that hosts the generated html docs. 
- .. The script must be invoked as a result of a search query from one of the generated html documents and return the corresponding search result to the user.
+ . A server-side search application must be setup on the web server that hosts the generated html docs. 
+ .. The application must be invoked as a result of a search query from one of the generated html documents and return the corresponding search result to the user.
+ .. The same instance of a search application can be used for multiple document repositories deployed on the same web server.
 
-The server-side script can be implemented in many ways, the giblish gem provides helper classes for most of the functionality needed and templates for using CGI or for using a sinatra web app hosted in the Phusion Passenger application server.
-
-NOTE: The same instance of the server-side text search script can be used for many document repositories deployed to different paths under the same web server. The helper classes in giblish use a URI_MAPPING hash to help route search requests to the correct search index.
+The server-side script can be implemented in many ways, the giblish gem provides helper classes that implement most of the heavy-lifting. It also contains template scripts for using CGI or a sinatra web app hosted in the Phusion Passenger application server to initiate a search.
 
 The specification of the search query parameters can be found in <<:docid:G-002>>.
 
@@ -30,12 +29,11 @@ Giblish contains two template scripts to get you started:
  . gibsearch.rb - a naive implementation of a CGI script in ruby that uses the helper classes provided by giblish to retrieve and format an html response triggered by a search request to a web server.
  . wserv_development.rb - a naive implementation of a boot-strap script for an instance of Webrick, a web server written in ruby, that serves html pages on localhost:8000
 
-IMPORTANT: The template scripts in giblish are provided as examples and are not meant for any form of use in production.
-
+IMPORTANT: The template scripts in giblish are provided as examples and are not tested in any form of production use.
 
 .Using CGI and ruby's built-in Webrick server
 ====
-This is the most basic example, it assumes that all documents and tools are run on a local machine.
+This is the most basic example, it assumes that all documents and tools are run on a local machine. To publish documents to the world, you would replace Webrick with Apache, Nginx or other, more production-friendly web server.
 
 [source,bash]
 ----
@@ -55,13 +53,13 @@ git clone https://github.com/rillbert/giblish.git
 # generate html docs from all 1.x tags
 giblish -t "^v1" -m giblish html_docs
 
-# opy the cgi template provided in the giblish gem to the directory
+# Copy the cgi template provided in the giblish gem to the directory
 # for the html docs.
 # The template is named 'gibsearch.rb' and resides under 
 # 'web_apps/cgi_search' relative to the dir of the installed
 # giblish gem. 
 # The below uses bash to find the template, copy and rename it to 
-# 'gibsearch.cgi' to make it smoother to use the cgi func of webrick.
+# 'gibsearch.cgi' to make it smoother to use the cgi binding in webrick.
 cp "$(dirname $(gem which giblish))/../web_apps/cgi_search/gibsearch.rb" html_docs/gibsearch.cgi 
 
 # copy a boot-strap script for Webrick from the giblish gem
@@ -82,7 +80,7 @@ firefox localhost:8000
 ----
 ====
 
-== Text search using an application hosted by Passenger
+== Text search using a web application hosted by Passenger
 
 This setup has more dependencies than the CGI example. The upsides are e.g. stateful execution, better performance, more versatile.
 
@@ -183,7 +181,7 @@ $ tree gibsearch/
 gibsearch/
 ├── config.ru
 ├── public
-│   └── dummy.txt
+│   └── dummy.txt
 ├── sinatra_search.rb
 └── tmp
     └── restart.txt
@@ -213,6 +211,3 @@ giblish -c -t "^v1" -m --server-search-path www.mydomain.se:1233/gibsearch gibli
  
 ----
 ====
-
-[appendix]
-== 
