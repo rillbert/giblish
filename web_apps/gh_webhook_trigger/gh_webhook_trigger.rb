@@ -33,13 +33,13 @@ doc_generator = Giblish::GenerateFromRefs.new(
   access_logger
 )
 
-post "/" do
+post "/docgen" do
   gh_data = JSON.parse(request.body.read, symbolize_names: true)
   access_logger.debug { "Calling webhook manager with data: #{gh_data}" }
   doc_generator.docs_from_gh_webhook(gh_data)
 end
 
-get "/" do
+get "/docgen" do
   ""
 end
 
