@@ -3,7 +3,7 @@
 == Not yet in place
 
  * Update docs for giblish.
- ** the later part of the trigger_generation doc
+ ** write detailed instructions on howto setup the doc generation examples
  * Update the default css for giblish html generation.
 
 == v1.0.0
