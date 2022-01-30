@@ -27,7 +27,7 @@ doc_generator = Giblish::GenerateFromRefs.new(
   /svg/, 
   clone_dir, 
   "giblish", 
-  %W[-j 'data/'],
+  %W[-j data/],
   ".", 
   DSTDIR, 
   access_logger
