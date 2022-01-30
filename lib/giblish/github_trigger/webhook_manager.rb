@@ -4,7 +4,7 @@ require_relative "../application"
 module Giblish
   # Generate documentation using giblish based on the supplied parameters
   class GenerateFromRefs
-    STANDARD_GIBLISH_FLAGS = %W[-f html -m --copy-asset-folders "_assets$" --server-search-path "/gibsearch"]
+    STANDARD_GIBLISH_FLAGS = %W[-f html -m --copy-asset-folders "_assets$" --server-search-path "/cgi-bin/gibsearch.cgi"]
 
     # doc_repo_url:: the url of the repo hosting the docs to be generated. this repo will be cloned
     # ref_regexp:: a regexp that both defines what git refs that trigger a document generation and what refs will be
@@ -14,9 +14,10 @@ module Giblish
     # doc_src_rel:: the relative path from the repo root to the directory where the docs reside
     # doc_dst_abs:: the absolute path to the target location for the generated docs
     # logger:: a ruby Logger instance that will receive log messages
-    def initialize(doc_repo_url, ref_regexp, clone_dir_parent, clone_name, doc_src_rel, doc_dst_abs, logger)
+    def initialize(doc_repo_url, ref_regexp, clone_dir_parent, clone_name, giblish_args, doc_src_rel, doc_dst_abs, logger)
       @doc_repo_url = doc_repo_url
       @ref_regexp = ref_regexp
+      @giblish_args = STANDARD_GIBLISH_FLAGS + giblish_args
       @doc_src_rel = doc_src_rel
       @dstdir = doc_dst_abs
       @logger = logger
@@ -52,7 +53,7 @@ module Giblish
 
     def generate_docs(ref)
       srcdir = @repo_root.join(@doc_src_rel)
-      args = STANDARD_GIBLISH_FLAGS + %W[-g #{@ref_regexp} #{srcdir} #{@dstdir}]
+      args = @giblish_args + %W[-g #{@ref_regexp} #{srcdir} #{@dstdir}]
 
       @logger&.info { "Generate docs using parameters: #{args}" }
       # run giblish with all args

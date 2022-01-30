@@ -1,5 +1,4 @@
-# This app will trigger a document generation from a github webhook
-# POST.
+# This app will trigger a document generation from a 'push' github webhook
 require "sinatra"
 require "json"
 require "pathname"
@@ -19,7 +18,7 @@ accesslog_path.dirname.mkpath
 access_logger = ::Logger.new(accesslog_path.to_s)
 
 # instantiate the one-and-only web-hook-manager
-DSTDIR = "/var/www/rillbert_se/html/public/docs/giblish"
+DSTDIR = "/var/www/rillbert_se/html/public/giblish_examples/giblish"
 clone_dir = Dir.mktmpdir
 
 # setup the doc generation once-and-for-all
@@ -28,6 +27,7 @@ doc_generator = Giblish::GenerateFromRefs.new(
   /svg/, 
   clone_dir, 
   "giblish", 
+  %W[-j 'data/'],
   ".", 
   DSTDIR, 
   access_logger
