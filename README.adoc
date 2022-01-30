@@ -43,8 +43,6 @@ The features of giblish include:
  ** Validate doc id references during document rendering and thus be alerted to any invalid doc id references.
  ** Let giblish generate a clickable graph of all document references (requires graphviz and the 'dot' tool).
 
-NOTE: giblish shall be considered stable from a usage perspective, please report bugs to the issue tracker. It's API however, is to be considered alpha, meaning that future versions may break the current usage of cmd line flags, generated artifacts, styling or other functionality.
-
 == Dependencies and credits
 
 Giblish uses the awesome *asciidoctor* and *asciidoctor-pdf* projects under the hood. Thank you @mojavelinux and others for making these brilliant tools available!!
