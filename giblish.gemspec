@@ -58,6 +58,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rack-test", "1.1"
 
   # Run-time deps
+  # 'matrix' needed because of incompatibilities between prawn v2.4 
+  # and ruby 3.1
+  spec.add_runtime_dependency "matrix", "~>0.4" 
   spec.add_runtime_dependency "warning", "~>1.2"
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.17"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.2"]
