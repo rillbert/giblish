@@ -179,12 +179,12 @@ cp -r "$(dirname $(gem which giblish))/../web_apps/sinatra_search" gibsearch
 # server
 $ tree gibsearch/
 gibsearch/
-├── config.ru
-├── public
-│   └── dummy.txt
-├── sinatra_search.rb
-└── tmp
-    └── restart.txt
+|----- config.ru
+|----- public
+|   |-- dummy.txt
+|----- sinatra_search.rb
+|-- tmp
+    |-- restart.txt
 
 # you will want to tweak:
 #  the URL_PATH_MAPPINGS hash in the sinatra_search.rb file 
