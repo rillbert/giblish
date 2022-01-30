@@ -49,7 +49,9 @@ Giblish uses the awesome *asciidoctor* and *asciidoctor-pdf* projects under the 
 
 == Installation
 
- gem install giblish
+As long as `giblish` hasn't reached 1.0.0, use the `--pre` flag to get the latest version.
+
+ gem install giblish --pre
 
 Want to get started straight away? Go directly to the <<usage_examples>>.
 
