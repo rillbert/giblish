@@ -24,7 +24,7 @@ clone_dir = Dir.mktmpdir
 # setup the doc generation once-and-for-all
 doc_generator = Giblish::GenerateFromRefs.new(
   "https://github.com/rillbert/giblish.git", 
-  /svg/, 
+  /main/, 
   clone_dir, 
   "giblish", 
   %W[-l debug -j data/],
