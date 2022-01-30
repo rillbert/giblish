@@ -59,9 +59,9 @@ Gem::Specification.new do |spec|
 
   # Run-time deps
   spec.add_runtime_dependency "warning", "~>1.2"
-  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.16"
+  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.17"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.2"]
-  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.6", ">= 1.6.1"]
+  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.6", ">= 1.6.2"]
   spec.add_runtime_dependency "git", "~> 1.9"
   spec.add_runtime_dependency "rouge", "~> 3.0"
   spec.add_runtime_dependency "prawn-svg", "~> 0.32.0"
