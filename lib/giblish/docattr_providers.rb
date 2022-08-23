@@ -43,7 +43,7 @@ module Giblish
     # pdf_font_dirs:: one or more Pathnames to each font dir that shall be
     # checked for fonts
     def initialize(pdf_style_path, *pdf_font_dirs)
-      @pdf_style_path = pdf_style_path
+      @pdf_theme_path = pdf_style_path
       # one can specify multiple font dirs as:
       # -a pdf-fontsdir="path/to/fonts;path/to/more-fonts"
       # Always use the GEM_FONTS_DIR token to load the adoc-pdf gem's font dirs as well
@@ -52,8 +52,8 @@ module Giblish
 
     def document_attributes(src_node, dst_node, dst_top)
       result = {
-        "pdf-style" => @pdf_style_path.basename.to_s,
-        "pdf-stylesdir" => @pdf_style_path.dirname.to_s,
+        "pdf-theme" => @pdf_theme_path.basename.to_s,
+        "pdf-themesdir" => @pdf_theme_path.dirname.to_s,
         "icons" => "font"
       }
       result["pdf-fontsdir"] = @pdf_fontsdir unless @pdf_fontsdir.nil?
