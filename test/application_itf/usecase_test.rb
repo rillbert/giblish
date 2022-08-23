@@ -239,7 +239,7 @@ module Giblish
         # used by asciidoctor by default
         html_result = PathTree.build_from_fs(topdir / "dst")
         expected_hrefs = [
-          "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
+          "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic," \
               "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
           "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
         ]
@@ -284,7 +284,7 @@ module Giblish
         # assert that the css link is only the google font api
         # used by asciidoctor by default
         expected_hrefs = [
-          "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,"\
+          "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic," \
               "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
           "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
           "placeholder for relative path"

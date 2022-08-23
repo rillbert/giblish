@@ -86,10 +86,10 @@ module Giblish
       )
 
       layout_config = case config_opts
-        in format: "html" then HtmlLayoutConfig.new(config_opts)
-        in format: "pdf" then PdfLayoutConfig.new(config_opts)
-        else
-          raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{config_opts.inspect}"
+      in format: "html" then HtmlLayoutConfig.new(config_opts)
+      in format: "pdf" then PdfLayoutConfig.new(config_opts)
+      else
+        raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{config_opts.inspect}"
       end
 
       # setup all options from the chosen layout configuration but

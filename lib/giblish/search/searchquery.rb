@@ -7,12 +7,12 @@ module Giblish
 
     def initialize(uri: nil, query_params: nil)
       @parameters = case [uri, query_params]
-        in [String, nil]
-          uri_2_params(uri)
-        in [nil, _]
-          validate_parameters(query_params)
-        else
-          raise ArgumentError, "You must supply one of 'uri: [String]' or 'query_params: [Hash]' got: #{query_params}"
+      in [String, nil]
+        uri_2_params(uri)
+      in [nil, _]
+        validate_parameters(query_params)
+      else
+        raise ArgumentError, "You must supply one of 'uri: [String]' or 'query_params: [Hash]' got: #{query_params}"
       end
     end
 

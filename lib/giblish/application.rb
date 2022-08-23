@@ -232,10 +232,10 @@ module Giblish
 
     def select_conversion(user_opts)
       case user_opts
-        in {branch_regex: _} | {tag_regex: _}
-          GitRepoConvert.new(user_opts)
-        else
-          DirTreeConvert.new(user_opts)
+      in {branch_regex: _} | {tag_regex: _}
+        GitRepoConvert.new(user_opts)
+      else
+        DirTreeConvert.new(user_opts)
       end
     end
   end

@@ -181,7 +181,7 @@ module Giblish
             # we did not get a heading, this is ok as well but we can not
             # index it
             Giblog.logger.debug do
-              "Did not index the anchor: #{match_str} at "\
+              "Did not index the anchor: #{match_str} at " \
               "line #{line_no}, probably not associated with a heading."
             end
           end

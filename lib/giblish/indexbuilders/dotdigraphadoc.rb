@@ -115,10 +115,10 @@ module Giblish
       # out-of-the-box for pdf).
       rp = conv_info.dst_rel_path
       dot_entry += case rp.extname
-                   when ".html"
-                     ", URL=\"#{rp}\" ]"
-                   else
-                     " ]"
+      when ".html"
+        ", URL=\"#{rp}\" ]"
+      else
+        " ]"
       end
       doc_dict[doc_id] = dot_entry
     end
