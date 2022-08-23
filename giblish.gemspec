@@ -45,11 +45,12 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Development deps
-  spec.add_development_dependency "minitest", "~> 5.0"
-  spec.add_development_dependency "standard", "~> 1.1"
+  spec.add_development_dependency "minitest", "~> 5.16"
+  spec.add_development_dependency "standard", "~> 1.16"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "oga", "~> 3.3"
-  spec.add_development_dependency "thor", "~> 0.20.3"
+  # spec.add_development_dependency "thor", "~> 0.20.3"
+  spec.add_development_dependency "thor", "~> 1.2"
   spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
   # needed for the sinatra-based apps
   spec.add_development_dependency "sinatra", "~>2.1"
@@ -64,8 +65,8 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "warning", "~>1.2"
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.17"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.2"]
-  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 1.6", ">= 1.6.2"]
-  spec.add_runtime_dependency "git", "~> 1.9"
-  spec.add_runtime_dependency "rouge", "~> 3.0"
+  spec.add_runtime_dependency "asciidoctor-pdf", ["~> 2.3"]
+  spec.add_runtime_dependency "git", "~> 1.12"
+  spec.add_runtime_dependency "rouge", "~> 3.30"
   spec.add_runtime_dependency "prawn-svg", "~> 0.32.0"
 end
