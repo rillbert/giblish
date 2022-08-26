@@ -2,6 +2,7 @@
 :docid: G-001
 :numbered:
 :toc: preamble
+:toclevels: 1
 
 image::https://github.com/rillbert/giblish/actions/workflows/unit_tests.yml/badge.svg["Build Status"]
 
@@ -44,7 +45,9 @@ The features of giblish include:
 
 == Dependencies and credits
 
-Giblish uses the awesome *asciidoctor* and *asciidoctor-pdf* projects under the hood. Thank you @mojavelinux and others for making these brilliant tools available!!
+Giblish uses the awesome `asciidoctor` and `asciidoctor-pdf` projects under the hood. Thank you @mojavelinux and others for making these brilliant tools available!!
+
+The official documentation of these tools as well as extensive information about the AsciiDoc syntax can be found at https://docs.asciidoctor.org
 
 == Installation
 
