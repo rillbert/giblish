@@ -285,12 +285,12 @@ module Giblish
       end
 
       if opts.make_searchable && opts.format != "html"
-        raise OptionParser::InvalidArgument, "Error: The --make-searchable option "\
+        raise OptionParser::InvalidArgument, "Error: The --make-searchable option " \
         "is only supported for html rendering."
       end
 
       if opts.search_action_path && !opts.make_searchable
-        raise OptionParser::InvalidArgument, "Error: The --server-search-path "\
+        raise OptionParser::InvalidArgument, "Error: The --server-search-path " \
         "flag is only supported in combination with the --make-searchable (-m) flag."
       end
     end

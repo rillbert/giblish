@@ -28,8 +28,8 @@ module Giblish
       end
 
       uri_all_opts = {
-        ok: "http://www.example.com/search?calling-url=http://www.example.com/file_1.html"\
-        "&search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan"\
+        ok: "http://www.example.com/search?calling-url=http://www.example.com/file_1.html" \
+        "&search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan" \
         "&css-path=../my/css&consider-case&as-regexp=true"
       }
       q = SearchQuery.new(uri: uri_all_opts[:ok])
@@ -38,8 +38,8 @@ module Giblish
       assert_equal(true, q.as_regexp?)
 
       uri_some_opts = {
-        ok: "http://www.example.com/search?calling-url=http://www.example.com/file_1.html"\
-        "&search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan"\
+        ok: "http://www.example.com/search?calling-url=http://www.example.com/file_1.html" \
+        "&search-assets-top-rel=../gibsearch_assets&search-phrase=hejsan" \
         "&as-regexp=true"
       }
       q = SearchQuery.new(uri: uri_some_opts[:ok])
