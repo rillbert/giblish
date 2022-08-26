@@ -1,0 +1,27 @@
+= Developing and building giblish
+:docid: G-005
+
+NOTE: giblish is developed using the https://github.com/rbenv/rbenv[rbenv] ruby version manager. It is *strongly recommended* to setup and use this tool when developing or building giblish.
+
+[[build_gem]]
+== Building giblish as a gem
+
+Setup dependencies::
+ . Setup your `rbenv` environment.
+ . Check out the branch you want to build.
+ . Open a terminal in the top directory of the checked-out branch.
+ . Install giblish' dependencies using `bundle install`
+ .. *Note* The `mathematical` gem is currently a development dependency for giblish and it can be a bit tricky to build and install its native dependencies. How to do that is outside the scope of this document.
+
+ Run the unit tests::
+ . Run the unit tests using `bundle exec rake`.
+
+ Build the gem::
+ . Build the gem using `bundle exec gem build`
+
+== Publish a release
+
+ . Create a new release in GitHub using the same version nr as stated in `.../lib/version.rb`.
+ . Build the gem using the steps from <<build_gem>>.
+ . Publish the gem to https://rubygems.org/ by running `bundle exec gem push giblish-<version>.gem`
+

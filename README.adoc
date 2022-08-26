@@ -1,11 +1,10 @@
 = giblish
 :docid: G-001
 :numbered:
+:toc: preamble
 
 image::https://github.com/rillbert/giblish/actions/workflows/unit_tests.yml/badge.svg["Build Status"]
 
-[abstract] 
-== Purpose
 
 giblish converts a source directory tree containing AsciiDoc files to a destination directory tree containing the corresponding html or pdf files. It adds some handy tools for easier navigation of the resulting destination tree.
 
@@ -107,7 +106,7 @@ Example document one::
 = Document one
 :toc:
 :numbered:
-:docid: G-001
+:docid: AB-001
 
 == Purpose
 
@@ -120,16 +119,16 @@ Example document two::
 = Document two
 :toc:
 :numbered:
-:docid: G-002
+:docid: AB-002
 
 == Purpose
 
-To illustrate the use of doc id. You can refer to document one as <<:docid:G-001>>. This will display a clickable link with the doc id (G-001 in this case).
+To illustrate the use of doc id. You can refer to document one as <<:docid:AB-001>>. This will display a clickable link with the doc id (AB-001 in this case).
 
 You can use the same syntax as the normal asciidoc cross-ref but replace 'xref' with ':docid:' as shown below:
 
- * <<:docid:G-002#purpose>> to refer to a specific section or anchor.
- * <<:docid:G-002#purpose,The purpose section>> to refer to a specific section and display a specific text for the link.
+ * <<:docid:AB-002#purpose>> to refer to a specific section or anchor.
+ * <<:docid:AB-002#purpose,The purpose section>> to refer to a specific section and display a specific text for the link.
 ----
 
 The above reference will work even if either document changes location or file name as long as both documents are parsed by giblish in the same run.
