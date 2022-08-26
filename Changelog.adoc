@@ -2,9 +2,15 @@
 
 == Not yet in place
 
+ * Investigate how to remove tmp/cache files and dirs during graph generation
  * Update docs for giblish.
- ** write detailed instructions on howto setup the doc generation examples
+ ** write instructions for github web hook triggered generation
  * Update the default css for giblish html generation.
+
+== v2.0.0
+
+Breaking changes::
+ * Dependency on asciidoctor-pdf has been bumped to v2.3
 
 == v1.0.0
 
