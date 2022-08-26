@@ -1,6 +1,6 @@
 = Setup a static website
 using giblish and git
-:imagesdir: trigger_generation_im
+:imagesdir: setup_static_site_assets
 :numbered:
 :docid: G-003
 :toc: left
@@ -9,7 +9,7 @@ using giblish and git
 
 To describe how to use `giblish` as a tool for creating a static web site backed by a git repo that is automatically generated each time a contributor push changes to the git repo.
 
-This text covers the followwing deployment scenarios:
+This text covers the following deployment scenarios:
 
  . Using a git hook together with a shell script.
  . Using a git hook together with Jenkins.
