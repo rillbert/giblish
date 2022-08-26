@@ -1,4 +1,5 @@
-= Trigger document generation
+= Setup a static website
+using giblish and git
 :imagesdir: trigger_generation_im
 :numbered:
 :docid: G-003
@@ -8,18 +9,18 @@
 
 To describe how to use `giblish` as a tool for creating a static web site backed by a git repo that is automatically generated each time a contributor push changes to the git repo.
 
-This text covers the followwing deployment scenarios:app-name: 
+This text covers the followwing deployment scenarios:
 
- . Using a git hook together with a simple (well) shell script
+ . Using a git hook together with a shell script.
  . Using a git hook together with Jenkins.
 
-They have been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and is, again, not tested.
+They have been tested on Linux servers (Ubuntu). Most of the tools and scripts should work on a Windows server as well but might need some tweaking and it is not tested.
 
 If you want to dive straight in and setup one of the scenarios below, jump to <<setup_instructions>>, otherwise read on for some examples and considerations.
 
 == Git hook and shell script
 
-This requires the least number of dependencies to work but is more limited.
+This requires the least number of external dependencies but is limited.
 
 .Deploy using git hook and shell script
 image::deploy_with_hooks.svg[]
@@ -30,13 +31,13 @@ A 'Main Repo'::
 The common (bare) git repo used by all content writers to push updates to. This repo shall be setup with a server-side hook (_post-receive_) that initiates the html generation and is triggered by each push to the repo.
 
 A 'Staging Repo'::
-A mirror of the _Main Repo_ that fulfills two functions:
+A mirror of the _Main Repo_ that fulfils two functions:
 
  . to provide a checked-out working tree with the source files (adoc files).
  . to provide a script that uses giblish to generate html documents and publish those docs to a location where a web server can access them.
 
-Web Server::
-Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
+A Web Server::
+Apache, Nginx or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
 
 === Pros & Cons
 
@@ -48,7 +49,7 @@ Cons::
  * The hook and publish scripts provided with giblish runs synchronously at each push from a _Doc Writer_ to the _Main Repo_. The time it takes to generate the HTML docs from the adoc source will thus be added to each push to the _Main Repo_.
  * You need to manually setup the _Staging Repo_ on the server and this is a bit more 'hackish' than letting a build orchestrator tool implement a proper 'build' of your documents. You might for example end up with race conditions if two pushes to the _Main Repo_ are done close in time.
 
-=== Using a combination of Jenkins and git hook
+== Using a combination of Jenkins and git hook
 
 This setup adds a Jenkins (or similar build orchestrator) installation so it is more tools to setup but offer more flexibility and performance. It is also more robust and thus more 'production friendly'.
 
@@ -66,9 +67,9 @@ Jenkins instance::
 A running instance of Jenkins and one or more defined build jobs that use giblish to build the HTML documents.
 
 Web Server::
-Apache, Ngnix or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
+Apache, Nginx or other web server that provides clients with HTML pages located somewhere on the file system on the server (e.g under /var/www/... )
 
-==== Pros & cons
+=== Pros & cons
 
 Pros::
  * Using Jenkins enables a lot of flexibility and scaleability. You can setup multiple Jenkins agents to increase performance, you can define many build jobs where each job builds either a particular branch from a particular git repo or many branches from one or many repos.
@@ -83,9 +84,9 @@ Follow the instructions below to get one of the above setups running on your ser
 
 === Some preliminary notes
 
-IMPORTANT: Setting up permissions and secure your setup from unwanted access is outside the scope of these instructions. You must understand and implement the proper user/groups/rules for your use case.
+IMPORTANT: Setting up permissions and secure your setup from unwanted access is outside the scope of these instructions. You must understand and implement the proper authentication rules for your use case.
 
-NOTE: git server side hooks are used in the instructions below. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc].
+git server side hooks are used in the instructions below. For details on git hooks see https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks[this doc].
 
 [[common_setup]]
 === Initial setup
@@ -94,9 +95,9 @@ These steps are common to both deployment scenarios.
 
 giblish setup::
  . Install ruby on the _Server_ (a version no more than 18 months old)
- . Install giblish on the _Server_ using `gem install giblish`
+ . Install giblish on the _Server_. See e.g. <<:docid:G-001>>
 
-git and gitrepo setup::
+git and git repo setup::
  . Install git on the _Server_.
  . Setup the *bare* _Main Repo_ on the _Server_ by either.
  .. Copy a bare repo you already use to the _Server_ file system.
@@ -104,7 +105,7 @@ git and gitrepo setup::
 +
 NOTE: If you start with an empty, bare, _Main Repo_ on the _Server_, it is a good idea to directly clone it to your local machine, commit some content to the 'master' branch and push the result back to the _Main Repo_. An empty, bare repo does not even contain a 'master' branch from the start and this can lead to some edge cases that complicate things.
 
-=== Use a git hook and shell script
+=== Scenario 1 - use a git hook and shell script
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
@@ -125,13 +126,10 @@ git clone file:///usr/local/main_repo.git
 +
 .Find the `post-receive` template in the giblish gem
 ====
-On a server running Ubuntu 16.04, `gem which giblish` returns:
+run the following to copy the post-receive template to your current directory:
+  
+  cp $(dirname $(gem which giblish))/../scripts/hooks/post-receive.example .
 
- /var/lib/gems/2.6.0/gems/giblish-0.7.0/lib/giblish.rb
-
-and the template hook can be found under
-
- /var/lib/gems/2.6.0/gems/giblish-0.7.0/scripts/hooks/post-receive.example
 ====
 
  . Rename the copy to `post-receive`
@@ -142,8 +140,6 @@ and the template hook can be found under
 That's it. You can now push to your _Main Repo_ and the `post-receive` hook will run `giblish` on the branches that you set it up to.
 
 === Setup the git hook and Jenkins scenario
-
-TBD...
 
 First, follow the steps described in <<common_setup>>. Then proceed with the steps below.
 
@@ -162,7 +158,7 @@ image::Render Documents.png[]
 ====
 [source,bash]
 ----
-include::../scripts/hooks/post-receive.example[]
+include::../../scripts/hooks/post-receive.example[]
 ----
 ====
 
@@ -175,6 +171,6 @@ Below is an example of a `post-update` hook that triggers Jenkins jobs after a p
 ====
 [source,bash]
 ----
-include::../docgen/scripts/githook_examples/post-update.example[]
+include::../../scripts/hooks/post-update.example[]
 ----
 ====
