@@ -23,11 +23,11 @@ IMPORTANT: The examples below are *not* the official documentation for the corre
 
 |Raspberry Pi documentation
 |https://www.rillbert.se/giblish_examples/rpi_docs/giblish_example/index.html[example]
-|The original documentation site uses Jekyl for site generation, the link points to a mirror where some small tweaks to the docs were made to make them suitable for generation with giblish.
+|The project's official documentation site uses Jekyl for site generation, the link points to a mirror where some small tweaks to the docs were made to make them suitable for generation with giblish.
 
 |The *old* asciidoctor docs
 |https://www.rillbert.se/giblish_examples/asciidoctor_docs/master/newindex.html[example]
-|An example of how giblish can generate the master branch of the official asciidoc.org documentation git repo can be found at
+|An example of how giblish can generate the master branch of the *old, deprecated* official asciidoc.org documentation git repo.
 
 |===
 
