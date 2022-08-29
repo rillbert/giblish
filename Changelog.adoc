@@ -1,10 +1,20 @@
 = giblish changelog
+:docid: G-006
 
 == Not yet in place
 
+ * Investigate how to remove tmp/cache files and dirs during graph generation
  * Update docs for giblish.
- ** write detailed instructions on howto setup the doc generation examples
+ ** write instructions for github webhook triggered generation
  * Update the default css for giblish html generation.
+
+== v2.0.0
+
+This is a breaking release because the internal dependencies to asciidoctor-pdf has been bumped from one major release to the next. `giblish` itself has not seen any major, internal, updates.
+
+Breaking changes::
+ * Dependency on asciidoctor-pdf has been bumped to v2.3
+ * rename some pdf attributes internally in giblish to comply with the new version of asciidoctor-pdf
 
 == v1.0.0
 
