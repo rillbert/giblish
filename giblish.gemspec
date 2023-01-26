@@ -49,7 +49,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "standard", "~> 1.16"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "oga", "~> 3.3"
-  # spec.add_development_dependency "thor", "~> 0.20.3"
   spec.add_development_dependency "thor", "~> 1.2"
   spec.add_development_dependency "asciidoctor-mathematical", "~> 0.3.5"
   # needed for the sinatra-based apps
@@ -61,6 +60,7 @@ Gem::Specification.new do |spec|
   # Run-time deps
   # 'matrix' needed because of incompatibilities between prawn v2.4
   # and ruby 3.1
+  # sorbet-runtime
   spec.add_runtime_dependency "matrix", "~>0.4"
   spec.add_runtime_dependency "warning", "~>1.2"
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.17"

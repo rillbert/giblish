@@ -3,6 +3,8 @@
 
 == Not yet in place
 
+ * Add flag for requiring asciidoctor-diagram
+ * Handle doctype book correctly
  * Investigate how to remove tmp/cache files and dirs during graph generation
  * Update docs for giblish.
  ** write instructions for github webhook triggered generation
@@ -21,7 +23,7 @@ Breaking changes::
 This release includes a complete refactoring of almost the entire code base.
 
 Breaking changes::
- * The '-w' flag is removed  
+ * The '-w' flag is removed
  * The text search parameters interface has changed completely. A written specification of this interface is included in the docs.
  * The '-r' flag will, for html generation, *copy everything* under the given directory to the target location.
  ** the previous restriction on folder names has been removed.
@@ -46,7 +48,7 @@ Changes/New functionality::
  ** the implementation of the server-side search tools are written completely in ruby and does no longer depend on an external 'grep' tool.
  ** almost all needed infrastructure for implementing a server-side search script has been implemented within the 'giblish' gem.
  * The asciidoctor toolchain dependencies are updated to the latest versions (at the time of release).
- 
+
 
 == v0.8.0
 

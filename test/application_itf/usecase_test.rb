@@ -297,6 +297,7 @@ module Giblish
 
             expected_hrefs[2] = rp.to_s
             assert_equal "stylesheet", csslink.get("rel")
+            pp expected_hrefs
             assert(expected_hrefs.include?(csslink.get("href")))
             nof_links += 1
           end

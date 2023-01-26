@@ -1,0 +1,8 @@
+= My test doc
+:doctype: book
+:myattrig: hejhopp
+:toc:
+
+== Section 1
+
+Some text

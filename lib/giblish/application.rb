@@ -5,54 +5,54 @@ require_relative "gitrepos/checkoutmanager"
 
 module Giblish
   # The app class for the giblish application
-  class Application
-    # returns on success, raises otherwise
-    def run(args)
-      # force immediate output
-      $stdout.sync = true
+  # class Application
+  #   # returns on success, raises otherwise
+  #   def run(args)
+  #     # force immediate output
+  #     $stdout.sync = true
 
-      # setup logging
-      Giblog.setup
-      Giblog.logger.level = Logger::INFO
+  #     # setup logging
+  #     Giblog.setup
+  #     Giblog.logger.level = Logger::INFO
 
-      # Parse cmd line
-      cmdline = CmdLine.new.parse(args)
-      Giblog.logger.level = cmdline.log_level
+  #     # Parse cmd line
+  #     cmdline = CmdLine.new.parse(args)
+  #     Giblog.logger.level = cmdline.log_level
 
-      Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
+  #     Giblog.logger.debug { "cmd line args: #{cmdline.inspect}" }
 
-      # build a tree of files matching user's regexp selection
-      src_tree = PathTree.build_from_fs(cmdline.srcdir) do |p|
-        if cmdline.exclude_regex&.match(p.to_s)
-          false
-        else
-          (cmdline.include_regex =~ p.to_s)
-        end
-      end
-      if src_tree.nil?
-        Giblog.logger.warn { "Did not find any files to convert" }
-        return
-      end
+  #     # build a tree of files matching user's regexp selection
+  #     src_tree = PathTree.build_from_fs(cmdline.srcdir) do |p|
+  #       if cmdline.exclude_regex&.match(p.to_s)
+  #         false
+  #       else
+  #         (cmdline.include_regex =~ p.to_s)
+  #       end
+  #     end
+  #     if src_tree.nil?
+  #       Giblog.logger.warn { "Did not find any files to convert" }
+  #       return
+  #     end
 
-      app = Configurator.new(cmdline, src_tree)
-      app.tree_converter.run
+  #     app = Configurator.new(cmdline, src_tree)
+  #     app.tree_converter.run
 
-      Giblog.logger.info { "Giblish is done!" }
-    end
+  #     Giblog.logger.info { "Giblish is done!" }
+  #   end
 
-    # does not return, exits with status code
-    def run_from_cmd_line
-      begin
-        run(ARGV)
-        exit_code = 0
-      rescue => exc
-        Giblog.logger.error { exc.message }
-        Giblog.logger.error { exc.backtrace }
-        exit_code = 1
-      end
-      exit(exit_code)
-    end
-  end
+  #   # does not return, exits with status code
+  #   def run_from_cmd_line
+  #     begin
+  #       run(ARGV)
+  #       exit_code = 0
+  #     rescue => exc
+  #       Giblog.logger.error { exc.message }
+  #       Giblog.logger.error { exc.backtrace }
+  #       exit_code = 1
+  #     end
+  #     exit(exit_code)
+  #   end
+  # end
 
   class DirTreeConvert
     # This class provides a file as the source for the asciidoc info and

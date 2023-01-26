@@ -156,20 +156,20 @@ module Giblish
     }
 
     # see https://docs.asciidoctor.org/asciidoctor/latest/api/options/
-    DEFAULT_ADOC_OPTS = {
-      backend: "html5",
+    DEFAULT_ADOC_API_OPTS = {
+      # backend: "html5",
       # base_dir:
-      catalog_assets: false,
+      # catalog_assets: false,
       # converter:
-      doctype: "article",
+      # doctype: "article",
       # eruby:
       # ignore extention stuff
-      header_only: false,
+      # header_only: false,
       # logger:
-      mkdirs: false,
-      parse: true,
-      safe: :unsafe,
-      sourcemap: false,
+      # mkdirs: false,
+      # parse: true,
+      # safe: :unsafe,
+      # sourcemap: false,
       # template stuff TBD,
       # to_file:
       # to_dir:
@@ -192,12 +192,70 @@ module Giblish
         failure: ->(src, dst, dst_rel_path, ex, logstr) { TreeConverter.on_failure(src, dst, dst_rel_path, ex, logstr) }
       })
 
+      # cache external configuration
+      @config_opts = opts.dup
+
       # merge user's options with the default, giving preference
       # to the user
-      @adoc_api_opts = DEFAULT_ADOC_OPTS.dup
-        .merge!(opts.fetch(:adoc_api_opts, {}))
-      @adoc_api_opts[:attributes] = DEFAULT_ADOC_DOC_ATTRIBS.dup
-        .merge!(opts.fetch(:adoc_doc_attribs, {}))
+      # @adoc_api_opts = DEFAULT_ADOC_API_OPTS.dup
+      #   .merge!(opts.fetch(:adoc_api_opts, {}))
+      # @adoc_api_opts[:attributes] = DEFAULT_ADOC_DOC_ATTRIBS.dup
+      #   .merge!(opts.fetch(:adoc_doc_attribs, {}))
+    end
+
+    # Assemble the document attributes according to their precedence.
+    #
+    # According to https://docs.asciidoctor.org/asciidoc/latest/attributes/assignment-precedence/
+    # The attribute precedence is:
+    # 1. An attribute passed to the API or CLI whose value does not end in @
+    # 2. An attribute defined in the document
+    # 3. An attribute passed to the API or CLI whose value or name ends in @
+    # 4. The default value of the attribute, if applicable
+    #
+    # giblish adds the following rules:
+    # 1.5 An attribute defined in an attribute provider for a specific source node
+    # 3.5 The default value set by giblish, if applicable
+    def set_doc_attributes(doc_src, node_attr)
+
+      # rule 3.5
+      header_attr = DEFAULT_ADOC_DOC_ATTRIBS.dup
+
+      # sort attribs into soft and hard (rule 1 and 3)
+      soft_attr = {}
+      hard_attr = {}
+      @config_opts.each do |k,v|
+        ks = k.to_s.strip
+        vs = v.to_s.strip
+
+        if ks.end_with?('@')
+          soft_attr[ks[0..-1]] = vs
+          next
+        end
+        if vs.end_with?('@')
+          soft_attr[ks] = vs[0..-1]
+          next
+        end
+        hard_attr[ks] = vs
+      end
+
+      # rule 3.
+      header_attr.merge!(soft_attr)
+
+      # rule 2
+      Giblish.process_header_lines(doc_src.lines) do |line|
+        a = /^:(.+):(.*)$/.match(line)
+        next unless a
+        header_attr[a[1].strip] = a[2].strip
+      end
+
+      # rule 1.5
+      header_attr.merge!(node_attr)
+
+      # rule 1.
+      header_attr.merge!(hard_attr)
+
+      @logger&.debug { "Header attribs: #{header_attr}" }
+      return header_attr
     end
 
     # require the following methods to be available from the src node:
@@ -216,25 +274,43 @@ module Giblish
       @logger&.info { "Converting #{src_node.pathname} and store result under #{dst_node.parent.pathname}" }
 
       # merge the common api opts with node specific
-      api_opts = @adoc_api_opts.dup
+      api_opts = DEFAULT_ADOC_API_OPTS.dup
+      api_opts.merge!(@config_opts.fetch(:adoc_api_opts, {}))
       api_opts.merge!(src_node.api_options(src_node, dst_node, dst_top)) if src_node.respond_to?(:api_options)
-      api_opts[:attributes].merge!(src_node.document_attributes(src_node, dst_node, dst_top)) if src_node.respond_to?(:document_attributes)
 
       # use a new logger instance for each conversion
       adoc_logger = Giblish::AsciidoctorLogger.new(@logger, @adoc_log_level)
 
       begin
-        # load the source to enable access to doc properties
+        doc_src = src_node.adoc_source(src_node, dst_node, dst_top)
+        # load the source to enable access to doc attributes and properties
         #
-        # NOTE: the 'parse: false' is needed to prevent preprocessor extensions to be run as part
+        # NOTE: tell parser to only parse the header, this is needed to prevent preprocessor extensions to be run as part
         # of loading the document. We want them to run during the 'convert' call later when
         # doc attribs have been amended.
-        doc = Asciidoctor.load(src_node.adoc_source(src_node, dst_node, dst_top), api_opts.merge(
+        doc = Asciidoctor.load(doc_src,api_opts.merge(
           {
-            parse: false,
-            logger: adoc_logger
-          }
-        ))
+              parse: false,
+              logger: adoc_logger
+          }));
+
+        node_attr = src_node.respond_to?(:document_attributes) ?
+          src_node.document_attributes(src_node, dst_node, dst_top) : {}
+
+        doc_attr = set_doc_attributes(doc_src,node_attr)
+        doc_attr.each { |a,v| doc.set_attribute(a,v.to_s) }
+
+
+        # header_attr = DEFAULT_ADOC_DOC_ATTRIBS.dup
+        # header_attr.merge!(src_node.document_attributes(src_node, dst_node, dst_top)) if src_node.respond_to?(:document_attributes)
+        # header_attr.merge!(@config_opts.fetch(:adoc_doc_attribs, {}))
+        # Giblish.process_header_lines(doc_src.lines) do |line|
+        #   a = /^:(.+):(.*)$/.match(line)
+        #   next unless a
+        #   header_attr[a[1].strip] = a[2].strip
+        # end
+        # @logger&.debug { "Header attribs: #{header_attr}" }
+        # header_attr.each { |a,v| doc.set_attribute(a,v.to_s) }
 
         # piggy-back our own info on the doc attributes hash so that
         # asciidoctor extensions can use this info later on
@@ -253,7 +329,12 @@ module Giblish
         d.dirname.mkpath
 
         # write the converted doc to the file
-        output = doc.convert(api_opts.merge({logger: adoc_logger}))
+        api_opts.merge!({logger: adoc_logger})
+        # api_opts[:attributes].merge!(doc.attributes)
+        # @logger&.debug { "Api opts: #{api_opts}" }
+        pp doc.attributes
+        # @logger&.debug { "Doctype: #{doc.doctype}" }
+        output = doc.convert(api_opts)
         doc.write(output, d.to_s)
 
         # give user the opportunity to eg store the result of the conversion
