@@ -197,15 +197,20 @@ module Giblish
       Giblog.logger.level = Logger::INFO
 
       # Parse cmd line
-      user_opts = CmdLine.new.parse(args)
-      Giblog.logger.level = user_opts.log_level
-      Giblog.logger.debug { "cmd line args: #{user_opts.inspect}" }
+      @user_opts = CmdLine.new.parse(args)
+      Giblog.logger.level = @user_opts.log_level
+      Giblog.logger.debug { "cmd line args: #{@user_opts.inspect}" }
 
       # Select the coversion instance to use
-      @converter = select_conversion(user_opts)
+      @converter = select_conversion(@user_opts)
     end
 
     def run
+      begin
+        require "asciidoctor-diagram"
+      rescue LoadError
+        Giblog.logger.error { "Did not find asciidoctor-diagram installed, diagrams will not be rendered." }
+      end
       # do the conversion
       @converter.run
     end
