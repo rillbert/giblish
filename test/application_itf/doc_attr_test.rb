@@ -12,12 +12,12 @@ module Giblish
     IDPREFIX_DEFAULT = <<~ID_SOURCE
       = Test idprefix settings
 
-      == Paragraph 1
+      == Default 1
 
       Some random text
 
       [[my_id]]
-      == Paragraph 2
+      == Default 2
 
       More random text
     ID_SOURCE
@@ -34,7 +34,7 @@ module Giblish
       == Paragraph 2
 
       More random text
-    ID_SOURCE
+  ID_SOURCE
 
     # use a template xref doc
     XREF_DOC_STR = <<~XREF_TEST
@@ -168,7 +168,7 @@ module Giblish
     end
 
     def test_custom_idprefix
-      TmpDocDir.open(preserve: false) do |tmp_docs|
+      TmpDocDir.open(preserve: true) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
         src_topdir = topdir / "src"
 
@@ -185,7 +185,7 @@ module Giblish
 
         # check that the idprefix is as expected
         expected_ids = {
-          Pathname.new(file1).basename.sub_ext(".html") => ["_paragraph_1", "my_id"],
+          Pathname.new(file1).basename.sub_ext(".html") => ["_default_1", "my_id"],
           Pathname.new(file2).basename.sub_ext(".html") => ["customparagraph_1", "my_p2_id"]
         }
         html_result = PathTree.build_from_fs(topdir / "dst", prune: false) { |p| p.extname == ".html" }
@@ -193,7 +193,7 @@ module Giblish
         tmp_docs.get_html_dom(html_result) do |node, document|
           p = node.pathname
           next unless expected_ids.key?(p.basename)
-
+  
           count += 1
           # select all 'id' attributes and check that they start with
           # the right prefix
@@ -207,13 +207,15 @@ module Giblish
         assert_equal(expected_ids.keys.count, count)
 
         # now re-do the html generation using a hard-coded idprefix
+        Giblog.logger.debug { "using hard-coded idprefix" }
+        # src_tree = PathTree.build_from_fs(tmp_docs.dir)
         convert(
           src_tree,
           Configurator.new(CmdLine.new.parse(%W[-f html -a idprefix=idefix #{topdir} #{topdir / "dst"}]))
         )
 
         expected_ids = {
-          Pathname.new(file1).basename.sub_ext(".html") => ["idefixparagraph_1", "my_id"],
+          Pathname.new(file1).basename.sub_ext(".html") => ["idefixdefault_1", "my_id"],
           Pathname.new(file2).basename.sub_ext(".html") => ["idefixparagraph_1", "my_p2_id"]
         }
         count = 0

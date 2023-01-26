@@ -168,7 +168,7 @@ module Giblish
       # logger:
       # mkdirs: false,
       # parse: true,
-      # safe: :unsafe,
+      safe: :unsafe,
       # sourcemap: false,
       # template stuff TBD,
       # to_file:
@@ -216,46 +216,50 @@ module Giblish
     # 1.5 An attribute defined in an attribute provider for a specific source node
     # 3.5 The default value set by giblish, if applicable
     def set_doc_attributes(doc_src, node_attr)
-
       # rule 3.5
-      header_attr = DEFAULT_ADOC_DOC_ATTRIBS.dup
+      doc_attr = DEFAULT_ADOC_DOC_ATTRIBS.dup
 
       # sort attribs into soft and hard (rule 1 and 3)
       soft_attr = {}
       hard_attr = {}
-      @config_opts.each do |k,v|
+      @config_opts.each do |k, v|
         ks = k.to_s.strip
         vs = v.to_s.strip
 
-        if ks.end_with?('@')
-          soft_attr[ks[0..-1]] = vs
+        if ks.end_with?("@")
+          soft_attr[ks[0..]] = vs
           next
         end
-        if vs.end_with?('@')
-          soft_attr[ks] = vs[0..-1]
+        if vs.end_with?("@")
+          soft_attr[ks] = vs[0..]
           next
         end
         hard_attr[ks] = vs
       end
 
       # rule 3.
-      header_attr.merge!(soft_attr)
+      doc_attr.merge!(soft_attr)
 
       # rule 2
       Giblish.process_header_lines(doc_src.lines) do |line|
         a = /^:(.+):(.*)$/.match(line)
         next unless a
-        header_attr[a[1].strip] = a[2].strip
+        @logger.debug { "got header attr from doc: #{a[1]} : #{a[2]}" }
+        doc_attr[a[1].strip] = a[2].strip
       end
 
+      @logger.debug { "idprefix before: #{doc_attr["idprefix"]}" }
+
       # rule 1.5
-      header_attr.merge!(node_attr)
+      doc_attr.merge!(node_attr)
 
       # rule 1.
-      header_attr.merge!(hard_attr)
+      doc_attr.merge!(hard_attr)
 
-      @logger&.debug { "Header attribs: #{header_attr}" }
-      return header_attr
+      @logger.debug { "idprefix after: #{doc_attr["idprefix"]}" }
+
+      # @logger&.debug { "Header attribs: #{doc_attr}" }
+      doc_attr
     end
 
     # require the following methods to be available from the src node:
@@ -288,29 +292,20 @@ module Giblish
         # NOTE: tell parser to only parse the header, this is needed to prevent preprocessor extensions to be run as part
         # of loading the document. We want them to run during the 'convert' call later when
         # doc attribs have been amended.
-        doc = Asciidoctor.load(doc_src,api_opts.merge(
+        doc = Asciidoctor.load(doc_src, api_opts.merge(
           {
-              parse: false,
-              logger: adoc_logger
-          }));
+            parse: false,
+            logger: adoc_logger
+          }
+        ))
 
         node_attr = src_node.respond_to?(:document_attributes) ?
           src_node.document_attributes(src_node, dst_node, dst_top) : {}
 
-        doc_attr = set_doc_attributes(doc_src,node_attr)
-        doc_attr.each { |a,v| doc.set_attribute(a,v.to_s) }
+        doc_attr = set_doc_attributes(doc_src, node_attr)
+        doc_attr.each { |a, v| doc.set_attribute(a, v.to_s) }
 
-
-        # header_attr = DEFAULT_ADOC_DOC_ATTRIBS.dup
-        # header_attr.merge!(src_node.document_attributes(src_node, dst_node, dst_top)) if src_node.respond_to?(:document_attributes)
-        # header_attr.merge!(@config_opts.fetch(:adoc_doc_attribs, {}))
-        # Giblish.process_header_lines(doc_src.lines) do |line|
-        #   a = /^:(.+):(.*)$/.match(line)
-        #   next unless a
-        #   header_attr[a[1].strip] = a[2].strip
-        # end
-        # @logger&.debug { "Header attribs: #{header_attr}" }
-        # header_attr.each { |a,v| doc.set_attribute(a,v.to_s) }
+        @logger.debug { "idprefix in doc: #{doc.attributes["idprefix"]}" }
 
         # piggy-back our own info on the doc attributes hash so that
         # asciidoctor extensions can use this info later on
@@ -329,12 +324,10 @@ module Giblish
         d.dirname.mkpath
 
         # write the converted doc to the file
-        api_opts.merge!({logger: adoc_logger})
-        # api_opts[:attributes].merge!(doc.attributes)
-        # @logger&.debug { "Api opts: #{api_opts}" }
-        pp doc.attributes
-        # @logger&.debug { "Doctype: #{doc.doctype}" }
-        output = doc.convert(api_opts)
+        api_opts[:logger] = adoc_logger
+        output = doc.convert(
+          api_opts
+        )
         doc.write(output, d.to_s)
 
         # give user the opportunity to eg store the result of the conversion
