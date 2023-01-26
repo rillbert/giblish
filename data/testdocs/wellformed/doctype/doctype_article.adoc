@@ -1,11 +1,13 @@
-= My test doc
-// :doctype: article
+= Doctype Article
+:doctype: article
 :toc:
+:sectnums:
 
-== Section 1
+[[sect_1]]
+== My Section
 
 Some text
 
 == Section 2
 
-See <<Section 1>>
+See <<sect_1>>

@@ -194,16 +194,9 @@ module Giblish
 
       # cache external configuration
       @config_opts = opts.dup
-
-      # merge user's options with the default, giving preference
-      # to the user
-      # @adoc_api_opts = DEFAULT_ADOC_API_OPTS.dup
-      #   .merge!(opts.fetch(:adoc_api_opts, {}))
-      # @adoc_api_opts[:attributes] = DEFAULT_ADOC_DOC_ATTRIBS.dup
-      #   .merge!(opts.fetch(:adoc_doc_attribs, {}))
     end
 
-    # Assemble the document attributes according to their precedence.
+    # Resolve the document attributes according to the precedence.
     #
     # According to https://docs.asciidoctor.org/asciidoc/latest/attributes/assignment-precedence/
     # The attribute precedence is:
@@ -215,14 +208,14 @@ module Giblish
     # giblish adds the following rules:
     # 1.5 An attribute defined in an attribute provider for a specific source node
     # 3.5 The default value set by giblish, if applicable
-    def set_doc_attributes(doc_src, node_attr)
+    def resolve_doc_attributes(doc_src, node_attr)
       # rule 3.5
       doc_attr = DEFAULT_ADOC_DOC_ATTRIBS.dup
 
       # sort attribs into soft and hard (rule 1 and 3)
       soft_attr = {}
       hard_attr = {}
-      @config_opts.each do |k, v|
+      @config_opts.fetch(:adoc_doc_attribs, {}).each do |k, v|
         ks = k.to_s.strip
         vs = v.to_s.strip
 
@@ -287,33 +280,34 @@ module Giblish
 
       begin
         doc_src = src_node.adoc_source(src_node, dst_node, dst_top)
-        # load the source to enable access to doc attributes and properties
-        #
-        # NOTE: tell parser to only parse the header, this is needed to prevent preprocessor extensions to be run as part
-        # of loading the document. We want them to run during the 'convert' call later when
-        # doc attribs have been amended.
-        doc = Asciidoctor.load(doc_src, api_opts.merge(
-          {
-            parse: false,
-            logger: adoc_logger
-          }
-        ))
 
         node_attr = src_node.respond_to?(:document_attributes) ?
           src_node.document_attributes(src_node, dst_node, dst_top) : {}
-
-        doc_attr = set_doc_attributes(doc_src, node_attr)
-        doc_attr.each { |a, v| doc.set_attribute(a, v.to_s) }
-
-        @logger.debug { "idprefix in doc: #{doc.attributes["idprefix"]}" }
-
+        doc_attr = resolve_doc_attributes(doc_src, node_attr)
         # piggy-back our own info on the doc attributes hash so that
         # asciidoctor extensions can use this info later on
-        doc.attributes["giblish-info"] = {
+        doc_attr["giblish-info"] = {
           src_node: src_node,
           dst_node: dst_node,
           dst_top: dst_top
         }
+
+        # load the source to enable access to doc attributes and properties
+        #
+        # NOTE: 'parse' is set to false to prevent preprocessor extensions to be run as part
+        # of loading the document. We want them to run during the 'convert' call later when
+        # doc attribs have been amended.
+        #
+        # NOTE2: by trial-and-error, it seems that some document attributes must be set when
+        # calling 'load' and not added after the call and before the 'convert' call to have
+        # the expected effect (e.g. idprefix).
+        doc = Asciidoctor.load(doc_src, api_opts.merge(
+          {
+            attributes: doc_attr,
+            parse: false,
+            logger: adoc_logger
+          }
+        ))
 
         # update the destination node with the correct file suffix. This is dependent
         # on the type of conversion performed
@@ -323,14 +317,11 @@ module Giblish
         # make sure the dst dir exists
         d.dirname.mkpath
 
-        # write the converted doc to the file
-        api_opts[:logger] = adoc_logger
-        output = doc.convert(
-          api_opts
-        )
+        # do the conversion and write the converted doc to file
+        output = doc.convert(api_opts)
         doc.write(output, d.to_s)
 
-        # give user the opportunity to eg store the result of the conversion
+        # give the user the opportunity to eg store the result of the conversion
         # as data in the destination node
         @conv_cb[:success]&.call(src_node, dst_node, dst_top, doc, adoc_logger.in_mem_storage.string)
         true

@@ -1,9 +1,9 @@
 {
-    "ruby.useBundler": true, //run non-lint commands with bundle exec
-    "ruby.useLanguageServer": true, // use the internal language server (see below)
+    "ruby.useBundler": true,
+    "ruby.useLanguageServer": true,
     "ruby.lint": {
         "standard": {
-            "command": "standard",
+            // "command": "standard",
             "useBundler": true,
             //   "only": ["array", "of", "cops", "to", "run"],
             //   "except": ["array", "of", "cops", "not", "to", "run"],

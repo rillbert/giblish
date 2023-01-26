@@ -1,6 +1,5 @@
-= My test doc
+= Doctype Book
 :doctype: book
-:myattrig: hejhopp
 :toc:
 
 == Section 1

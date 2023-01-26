@@ -1,0 +1,10 @@
+= Default doctype
+:toc:
+
+== Section 1
+
+Some text
+
+== Section 2
+
+See <<Section 1>>
