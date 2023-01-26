@@ -209,7 +209,7 @@ module Giblish
       begin
         require "asciidoctor-diagram"
       rescue LoadError
-        Giblog.logger.error { "Did not find asciidoctor-diagram installed, diagrams will not be rendered." }
+        Giblog.logger.warn { "Did not find asciidoctor-diagram installed, diagrams will not be rendered." }
       end
       # do the conversion
       @converter.run
