@@ -1,14 +1,27 @@
 = giblish changelog
 :docid: G-006
 
-== Not yet in place
+== Some of the things Not yet in place
 
- * Add flag for requiring asciidoctor-diagram
- * Handle doctype book correctly
  * Investigate how to remove tmp/cache files and dirs during graph generation
  * Update docs for giblish.
  ** write instructions for github webhook triggered generation
  * Update the default css for giblish html generation.
+ * Implement a way for a user to customize the index page
+
+== v2.1.0
+
+Changes/New functionality::
+ * asciidoctor-diagram is required if it exists, this makes diagrams in documents render.
+ * giblish now complies with these precedence rules for document attributes:
+ .. An attribute passed to the API or CLI whose value does not end in @
+ .. (giblish specific) An attribute defined in an attribute provider for a specific source node
+ .. An attribute defined in the document
+ .. An attribute passed to the API or CLI whose value or name ends in @
+ .. (giblish specific) The default value set by giblish, if applicable
+ .. The default value set by asciidoctor, if applicable
++
+this is an augumentation of the ones found here: https://docs.asciidoctor.org/asciidoc/latest/attributes/assignment-precedence/
 
 == v2.0.0
 
