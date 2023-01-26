@@ -34,7 +34,7 @@ module Giblish
       == Paragraph 2
 
       More random text
-  ID_SOURCE
+    ID_SOURCE
 
     # use a template xref doc
     XREF_DOC_STR = <<~XREF_TEST
@@ -193,7 +193,7 @@ module Giblish
         tmp_docs.get_html_dom(html_result) do |node, document|
           p = node.pathname
           next unless expected_ids.key?(p.basename)
-  
+
           count += 1
           # select all 'id' attributes and check that they start with
           # the right prefix
