@@ -62,8 +62,6 @@ module Giblish
         # assert that the searchable index has been created
         assert File.exist?(search_root.join(HeadingIndexer::HEADING_DB_BASENAME))
 
-        # puts File.read(search_root.join(HeadingIndexer::HEADING_DB_BASENAME))
-
         # assert that the adoc src files have been copied to the
         # dst
         doc_paths.each do |doc|

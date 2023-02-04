@@ -3,11 +3,16 @@
 
 == Some of the things Not yet in place
 
- * Investigate how to remove tmp/cache files and dirs during graph generation
  * Update docs for giblish.
  ** write instructions for github webhook triggered generation
  * Update the default css for giblish html generation.
  * Implement a way for a user to customize the index page
+
+== v2.1.2
+
+ * enable asciidoc-mathematical (if it is accessible on the system) when rendering pdfs
+ ** force the output format for equations to svg
+ ** remove stem-...svg files created by asciidoctor-mathematical
 
 == v2.1.0
 

@@ -70,8 +70,6 @@ module Giblish
       c = repo.gcommit(branch)
       commit = CommitInfo.new(c.sha, c.date, c.author.name, c.message)
 
-      # puts c.instance_variables
-
       BranchInfo.new(branch.name, commit)
     end
   end

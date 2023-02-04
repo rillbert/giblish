@@ -46,6 +46,28 @@ module Giblish
     end
   end
 
+  # A combined docattr_provider and post-processor that:
+  # - instructs asciidoctor-mathematical to use svg as format
+  # - removes svg cache files produced by asciidoctor-mathematical
+  class PdfMathHelper
+    # called by the TreeConverter during the post_build phase
+    def on_postbuild(src_topdir, dst_tree, converter)
+      dst_top = src_topdir.pathname
+      dst_top.each_child do |c|
+        if c.basename.to_s.match?(/^stem-[0-9a-f]*\.svg$/)
+          Giblog.logger.debug("will remove #{c}")
+          c.delete
+        end
+      end
+    end
+
+    def document_attributes(src_node, dst_node, dst_top)
+      {
+        "mathematical-format" => "svg"
+      }
+    end
+  end
+
   class PdfLayoutConfig
     attr_reader :pre_builders, :post_builders, :adoc_extensions, :adoc_api_opts, :docattr_providers
 
@@ -55,6 +77,15 @@ module Giblish
       @post_builders = []
       @adoc_extensions = {}
       @docattr_providers = []
+
+      begin
+        require "asciidoctor-mathematical"
+        cc = PdfMathHelper.new
+        @post_builders << cc
+        @docattr_providers << cc
+      rescue LoadError
+        Giblog.logger.warn { "Did not find asciidoctor-mathematical. stem blocks will not be rendered correctly!" }
+      end
 
       unless config_opts.resource_dir.nil?
         # generate pdf using asciidoctor-pdf with custom styling

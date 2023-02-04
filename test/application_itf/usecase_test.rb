@@ -297,7 +297,6 @@ module Giblish
 
             expected_hrefs[2] = rp.to_s
             assert_equal "stylesheet", csslink.get("rel")
-            pp expected_hrefs
             assert(expected_hrefs.include?(csslink.get("href")))
             nof_links += 1
           end
@@ -371,8 +370,6 @@ module Giblish
 
         create_resource_dir(topdir / "my/resources")
 
-        # repo_tree = PathTree.build_from_fs(repo_top, prune:  true)
-        # puts repo_tree.to_s
         EntryPoint.run(%W[-f html -c -g .* #{src_top} #{dst_top}])
 
         dsttree = PathTree.build_from_fs(dst_top, prune: true)
