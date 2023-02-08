@@ -31,8 +31,8 @@ The below is an example on how a template can use the @pathtree to display info.
 %>
 |<%= node.segment %>
 |<%= node.leaf? ? "no" : "yes" %>
-|<%= d.title if d %>
-|<%= d.adoc.attributes["asciidoctor-version"] if d && d.converted %>
+|<%= d.title if node.leaf? %>
+|<%= d.adoc.attributes["asciidoctor-version"] if node.leaf? %>
 
 <% end %>
 |===

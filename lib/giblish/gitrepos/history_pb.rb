@@ -19,7 +19,6 @@ module Giblish
           dst_node.data.add(FileHistory.new(current_branch))
           next
         end
-        # next unless dst_node.leaf?
 
         src_node = dst_node.data.src_node
         next unless src_node.pathname.exist?
