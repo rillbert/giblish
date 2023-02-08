@@ -3,12 +3,21 @@ require_relative "pathtree"
 
 module Giblish
   class SubtreeSrcItf
-    attr_reader :adoc_source
-    def initialize(dst_node, output_basename)
+    def initialize(opts = {})
+      raise NotImplementedError
+    end
+
+    def adoc_source(dst_node, output_basename)
       raise NotImplementedError
     end
   end
 
+  # A post builder that provides the ability for a adoc source provider to
+  # run on each directory node in the destination pathtree output from the build step.
+  #
+  # The adoc source provider is invoked on each directory node depth-first. The
+  # resulting adoc source is converted and the result added to the destination
+  # pathtree from the build step.
   class SubtreeInfoBuilder
     attr_accessor :docattr_provider
 
@@ -21,7 +30,15 @@ module Giblish
     def initialize(docattr_provider = nil, api_opt_provider = nil, adoc_src_provider = nil, basename = DEFAULT_BASENAME)
       @docattr_provider = docattr_provider
       @api_opt_provider = api_opt_provider
+
       @adoc_src_provider = adoc_src_provider || SubtreeIndexBase
+      if @adoc_src_provider.is_a?(Class)
+        @adoc_src_provider = @adoc_src_provider.new(
+          {docattr_provider: docattr_provider,
+           api_opt_provider: api_opt_provider}
+        )
+      end
+
       @basename = basename
       @adoc_source = nil
     end
@@ -52,12 +69,7 @@ module Giblish
         index_dir = dst_node.pathname.relative_path_from(dst_tree.pathname).cleanpath
         Giblog.logger.debug { "Creating #{@basename} under #{index_dir}" }
 
-        # get the adoc source from the provider (Class or instance)
-        @adoc_source = if @adoc_src_provider.is_a?(Class)
-          @adoc_src_provider.new(dst_node, @basename).adoc_source
-        else
-          @adoc_src_provider.adoc_source
-        end
+        @adoc_source = @adoc_src_provider.adoc_source(dst_node, @basename)
 
         # add a virtual 'index.adoc' node as the only node in a source tree
         # with this object as source for conversion options

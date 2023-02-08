@@ -37,10 +37,15 @@ module Giblish
         src_tree = tree_from_src_dir(srcdir)
         assert_equal(3, src_tree.leave_pathnames.count)
 
+        opts = CmdLine::Options.new
+        opts.dstdir = dstdir
         # Convert all adoc files in the src tree to html and use a
         # 'post builder' to generate adoc source for index pages for each
         # directory.
-        index_builder = SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
+        adoc_src_provider = SubtreeIndexBase.new(
+          {erb_template_path: ResourcePaths.new(opts).idx_erb_template_abs}
+        )
+        index_builder = SubtreeInfoBuilder.new(nil, nil, adoc_src_provider, "index")
         tc = TreeConverter.new(src_tree, dstdir, {post_builders: index_builder})
         tc.run
 
@@ -67,10 +72,15 @@ module Giblish
         # setup the corresponding PathTree
         src_tree = tree_from_src_dir(srcdir)
 
+        opts = CmdLine::Options.new
+        opts.dstdir = dstdir
         # Convert all adoc files in the src tree to html and use a
         # 'post builder' to generate adoc source for index pages for each
         # directory.
-        index_builder = SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
+        adoc_src_provider = SubtreeIndexBase.new(
+          {erb_template_path: ResourcePaths.new(opts).idx_erb_template_abs}
+        )
+        index_builder = SubtreeInfoBuilder.new(nil, nil, adoc_src_provider, "index")
         tc = TreeConverter.new(src_tree, dstdir, {post_builders: index_builder})
         tc.run
 
@@ -100,8 +110,13 @@ module Giblish
         # Convert all adoc files in the src tree to html and use the
         # post builder for indices
         css_path = "web_assets/hejsan/hopp.css"
+        opts = CmdLine::Options.new
+        opts.dstdir = dstdir
+        adoc_src_provider = SubtreeIndexBase.new(
+          {erb_template_path: ResourcePaths.new(opts).idx_erb_template_abs}
+        )
         tc = TreeConverter.new(src_tree, dstdir, {
-          post_builders: SubtreeInfoBuilder.new(RelativeCssDocAttr.new(css_path), nil, SubtreeIndexBase, "index")
+          post_builders: SubtreeInfoBuilder.new(RelativeCssDocAttr.new(css_path), nil, adoc_src_provider, "index")
         })
         tc.run
 
@@ -145,6 +160,12 @@ module Giblish
         src_tree = tree_from_src_dir(srcdir)
         assert_equal(3, src_tree.leave_pathnames.count)
 
+        opts = CmdLine::Options.new
+        opts.dstdir = dstdir
+        adoc_src_provider = SubtreeIndexBase.new(
+          {erb_template_path: ResourcePaths.new(opts).idx_erb_template_abs}
+        )
+
         # Convert all adoc files in the src tree to pdf
         # setup a post builder to generate pdf index pages for each dir
         tc = TreeConverter.new(src_tree, dstdir,
@@ -153,7 +174,7 @@ module Giblish
               backend: "pdf"
             },
 
-            post_builders: SubtreeInfoBuilder.new(nil, nil, SubtreeIndexBase, "index")
+            post_builders: SubtreeInfoBuilder.new(nil, nil, adoc_src_provider, "index")
           })
         tc.run
 

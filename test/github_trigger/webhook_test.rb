@@ -204,15 +204,15 @@ module Giblish
             "apps/gh_webhook_trigger/gh_webhook_trigger.rb"
           ]
         }
-      }    
+      }
     GH_JSON
 
     def test_get_ref
       no_trig_push = {
-        ref: "refs/heads/master"
+        ref: "refs/heads/fake_branch"
       }
       trig_push = {
-        ref: "refs/heads/svg_index"
+        ref: "refs/heads/main"
       }
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
@@ -220,7 +220,7 @@ module Giblish
 
         wm = GenerateFromRefs.new(
           "https://github.com/rillbert/giblish.git",
-          /svg/,
+          /main/,
           topdir,
           "giblish",
           nil,
@@ -234,8 +234,8 @@ module Giblish
         wm.docs_from_gh_webhook(trig_push)
         result = PathTree.build_from_fs(dstdir, prune: true)
         assert(result.node("index.html"))
-        assert(result.node("personal_rillbert_svg_index"))
-        assert(result.node("personal_rillbert_svg_index/reference/search_spec.html"))
+        assert(result.node("main"))
+        assert(result.node("main/reference/search_spec.html"))
       end
     end
   end

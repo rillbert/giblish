@@ -179,7 +179,12 @@ module Giblish
           # create a new top_dir for each branch/tag
           branch_dst = dst_root / Giblish.to_fs_str(name)
 
-          # setup a tree converter with postbuilders for getting git history
+          opts = CmdLine::Options.new
+          opts.dstdir = dst_root
+          adoc_src_provider = SubtreeIndexGit.new(
+            {erb_template_path: ResourcePaths.new(opts).idx_erb_template_abs}
+          )
+            # setup a tree converter with postbuilders for getting git history
           # and showing that in index
           tc = TreeConverter.new(st, branch_dst,
             {
@@ -188,7 +193,7 @@ module Giblish
                 SubtreeInfoBuilder.new(
                   nil,
                   nil,
-                  SubtreeIndexGit,
+                  adoc_src_provider,
                   "myindex"
                 )
               ]

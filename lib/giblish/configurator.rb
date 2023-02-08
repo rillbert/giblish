@@ -13,26 +13,24 @@ module Giblish
   class HtmlLayoutConfig
     attr_reader :pre_builders, :post_builders, :adoc_extensions, :adoc_api_opts, :docattr_providers
 
-    def initialize(config_opts)
+    def initialize(resource_paths, config_opts)
       @adoc_api_opts = {backend: "html"}
       @pre_builders = []
       @post_builders = []
       @adoc_extensions = {}
       @docattr_providers = []
-      case config_opts
-        in resource_dir:
-          # copy local resources to dst and link the generated html with
-          # the given css
-          @pre_builders << CopyResourcesPreBuild.new(config_opts)
 
-          # make sure generated html has relative link to the copied css
-          @docattr_providers << RelativeCssDocAttr.new(ResourcePaths.new(config_opts).dst_style_path_rel)
-        in server_css:
-          # do not copy any local resources, use the given web path to link to css
-          @docattr_providers << AbsoluteLinkedCss.new(config_opts.server_css)
-        else
-          4 == 5 # workaround for bug in standardrb formatting
-        end
+      if resource_paths.src_resource_dir_abs && resource_paths.dst_style_path_rel
+        # copy local resources to dst and link the generated html with
+        # the given css
+        @pre_builders << CopyResourcesPreBuild.new(resource_paths)
+
+        # make sure generated html has relative link to the copied css
+        @docattr_providers << RelativeCssDocAttr.new(resource_paths.dst_style_path_rel)
+      elsif config_opts.server_css
+        # do not copy any local resources, use the given web path to link to css
+        @docattr_providers << AbsoluteLinkedCss.new(config_opts.server_css)
+      end
 
       if config_opts.make_searchable
         # enabling text search
@@ -49,7 +47,7 @@ module Giblish
   # A combined docattr_provider and post-processor that:
   # - instructs asciidoctor-mathematical to use svg as format
   # - removes svg cache files produced by asciidoctor-mathematical
-  class PdfMathHelper
+  class PdfMathPostbuilder
     # called by the TreeConverter during the post_build phase
     def on_postbuild(src_topdir, dst_tree, converter)
       dst_top = src_topdir.pathname
@@ -71,7 +69,7 @@ module Giblish
   class PdfLayoutConfig
     attr_reader :pre_builders, :post_builders, :adoc_extensions, :adoc_api_opts, :docattr_providers
 
-    def initialize(config_opts)
+    def initialize(resource_paths)
       @adoc_api_opts = {backend: "pdf"}
       @pre_builders = []
       @post_builders = []
@@ -80,17 +78,19 @@ module Giblish
 
       begin
         require "asciidoctor-mathematical"
-        cc = PdfMathHelper.new
+        cc = PdfMathPostbuilder.new
         @post_builders << cc
         @docattr_providers << cc
       rescue LoadError
         Giblog.logger.warn { "Did not find asciidoctor-mathematical. stem blocks will not be rendered correctly!" }
       end
 
-      unless config_opts.resource_dir.nil?
+      if resource_paths.src_style_path_abs
         # generate pdf using asciidoctor-pdf with custom styling
-        rp = ResourcePaths.new(config_opts)
-        @docattr_providers << PdfCustomStyle.new(rp.src_style_path_abs, *rp.font_dirs_abs.to_a)
+        @docattr_providers << PdfCustomStyle.new(
+          resource_paths.src_style_path_abs,
+          *resource_paths.font_dirs_abs.to_a
+        )
       end
     end
   end
@@ -103,6 +103,8 @@ module Giblish
     # config_opts:: a Cmdline::Options instance with config info
     def initialize(config_opts)
       @config_opts = config_opts
+      @resource_paths = ResourcePaths.new(config_opts)
+
       @build_options = {
         pre_builders: [],
         post_builders: [],
@@ -117,8 +119,8 @@ module Giblish
       )
 
       layout_config = case config_opts
-      in format: "html" then HtmlLayoutConfig.new(config_opts)
-      in format: "pdf" then PdfLayoutConfig.new(config_opts)
+      in format: "html" then HtmlLayoutConfig.new(@resource_paths, config_opts)
+      in format: "pdf" then PdfLayoutConfig.new(@resource_paths)
       else
         raise OptionParser::InvalidArgument, "The given cmd line flags are not supported: #{config_opts.inspect}"
       end
@@ -131,7 +133,7 @@ module Giblish
       )
 
       setup_docid(config_opts, @build_options, @doc_attr)
-      setup_index_generation(config_opts, @build_options, @doc_attr)
+      setup_index_generation(config_opts, @resource_paths, @build_options, @doc_attr)
 
       # setup all pre,post, and build options
       @build_options[:adoc_api_opts] = layout_config.adoc_api_opts
@@ -147,11 +149,14 @@ module Giblish
 
     protected
 
-    def setup_index_generation(config_opts, build_options, doc_attr)
+    def setup_index_generation(config_opts, resource_paths, build_options, doc_attr)
       return if config_opts.no_index
 
       # setup index generation
-      idx = SubtreeInfoBuilder.new(doc_attr, nil, SubtreeIndexBase, config_opts.index_basename)
+      adoc_src_provider = SubtreeIndexBase.new(
+        {erb_template_path: resource_paths.idx_erb_template_abs}
+      )
+      idx = SubtreeInfoBuilder.new(doc_attr, nil, adoc_src_provider, config_opts.index_basename)
       build_options[:post_builders] << idx
     end
 
@@ -184,11 +189,16 @@ module Giblish
 
     protected
 
-    def setup_index_generation(config_opts, build_options, doc_attr)
+    def setup_index_generation(config_opts, resource_paths, build_options, doc_attr)
       return if config_opts.no_index
 
       build_options[:post_builders] << AddHistoryPostBuilder.new(@git_repo_dir)
-      build_options[:post_builders] << SubtreeInfoBuilder.new(doc_attr, nil, SubtreeIndexGit, config_opts.index_basename)
+
+      # setup index generation
+      adoc_src_provider = SubtreeIndexGit.new(
+        {erb_template_path: resource_paths.idx_erb_template_abs}
+      )
+      build_options[:post_builders] << SubtreeInfoBuilder.new(doc_attr, nil, adoc_src_provider, config_opts.index_basename)
     end
   end
 end

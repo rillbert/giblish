@@ -30,6 +30,9 @@ module Giblish
         `lib/giblish.rb --server-css-path my/css/sheet.css data/testdocs/wellformed #{topdir}`
         assert_equal 0, $?.exitstatus
 
+        `lib/giblish.rb -r data/resources data/testdocs/wellformed #{topdir}`
+        assert_equal 0, $?.exitstatus
+
         `lib/giblish.rb -f pdf --server-css-path my/css/sheet.css data/testdocs/wellformed #{topdir}`
         assert_equal 1, $?.exitstatus
 
@@ -41,6 +44,7 @@ module Giblish
 
         `lib/giblish.rb -f html -r my/resource data/testdocs/wellformed #{topdir}`
         assert_equal 1, $?.exitstatus
+
       end
     end
 

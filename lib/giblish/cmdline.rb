@@ -276,9 +276,13 @@ module Giblish
         raise OptionParser::InvalidArgument, "The '-w' flag can only be used for the 'html' format flags"
       end
 
-      if opts.resource_dir.nil? ^ opts.style_name.nil?
-        raise OptionParser::InvalidArgument, "Either both '-s' and '-r' flags must be given or none of them."
+      if opts.style_name && opts.resource_dir.nil?
+        raise OptionParser::InvalidArgument, "The '-s' flag requires the use of the '-r' flag as well."
       end
+
+      # if opts.resource_dir.nil? ^ opts.style_name.nil?
+      #   raise OptionParser::InvalidArgument, "Either both '-s' and '-r' flags must be given or none of them."
+      # end
 
       if opts.resource_dir && !opts.resource_dir.exist?
         raise OptionParser::InvalidArgument, "Could not find resource path #{opts.resource_dir}"

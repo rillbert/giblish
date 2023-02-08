@@ -1,22 +1,30 @@
 require "erb"
 require_relative "verbatimtree"
 require_relative "d3treegraph"
+require_relative "../resourcepaths"
 
 module Giblish
   class SubtreeIndexBase < SubtreeSrcItf
     attr_reader :src_location
 
-    DEFAULT_INDEX_ERB = "/standard_index.erb"
+    # Required options:
+    #   :erb_template_path - the absolute path to the erb template that will be used when generating
+    #                        the indices.
+    def initialize(opts)
+      raise InvalidArgument unless opts.key?(:erb_template_path)
 
-    def initialize(pathtree, output_basename)
-      @pathtree = pathtree
-      @output_basename = output_basename
-      @src_location = pathtree.pathname.dirname
-      @title = pathtree.segment
+      @erb_path = Pathname(opts[:erb_template_path])
     end
 
-    def adoc_source
-      erb_template = File.read(__dir__ + DEFAULT_INDEX_ERB)
+    def adoc_source(pathtree, output_basename)
+      @pathtree = pathtree
+      @output_basename = output_basename
+      @parent_dirpath = pathtree.pathname.dirname
+      @dirname = pathtree.segment
+
+      Giblog.logger.debug { "using erb template: #{@erb_path} for index generation" }
+      erb_template = File.read(@erb_path)
+
       ERB.new(erb_template, trim_mode: "<>").result(binding)
     end
 
@@ -91,16 +99,20 @@ module Giblish
     # The fixed heading of the table used to display file history
     HISTORY_TABLE_HEADING = <<~HISTORY_HEADER
       File history::
-  
+
       [cols=\"2,3,8,3\",options=\"header\"]
       |===
       |Date |Author |Message |Sha1
     HISTORY_HEADER
 
     HISTORY_TABLE_FOOTING = <<~HIST_FOOTER
-      
+
       |===\n\n
     HIST_FOOTER
+
+    def initialize(erb_template_path)
+      super(erb_template_path)
+    end
 
     def subtitle(dst_node)
       "from #{dst_node.data.branch}"
@@ -122,8 +134,8 @@ module Giblish
         <<~HISTORY_ROW
           |#{h.date.strftime("%Y-%m-%d")}
           |#{h.author}
-          |#{h.message}  
-          |#{h.sha1[0..7]} ... 
+          |#{h.message}
+          |#{h.sha1[0..7]} ...
         HISTORY_ROW
       end.join("\n\n")
       HISTORY_TABLE_HEADING + rows + HISTORY_TABLE_FOOTING

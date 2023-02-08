@@ -1,0 +1,55 @@
+= Testing index generation
+Generated at: <%= Time.now.strftime("%Y-%m-%d %H:%M") %>
+:icons: font
+
+== Simple attributes
+
+[cols="1,4,3"]
+|===
+|name |comment |value
+
+|@dirname |The basename of the directory for this index |<%= @dirname %>
+|@output_basename |The basename of the generated index file |<%= @output_basename %>
+|@parent_dirpath |The absolute path to the parent dir for this index |<%= @parent_dirpath %>
+
+|===
+
+== The underlying data structure
+
+The template have access to the `Pathtree` instance which is the underlying tree data structure used to cache all info about documents and directories.
+
+The below is an example on how a template can use the @pathtree to display info.
+
+.Display a subset of the data using the @pathtree
+[cols="1,1,2,1"]
+|===
+|node name |directory |document title |Asciidoctor version used to convert the doc
+
+<% @pathtree.traverse_preorder do |_level, node|
+  d = node.data
+  node.segment
+%>
+|<%= node.segment %>
+|<%= node.leaf? ? "no" : "yes" %>
+|<%= d.title if d %>
+|<%= d.adoc.attributes["asciidoctor-version"] if d && d.converted %>
+
+<% end %>
+|===
+
+== Predefined complex attributes
+
+=== Tree summary
+
+A compact view of all documents and directories below this node, including clickable links.
+
+Example::
+<%= tree_summary %>
+
+=== Document details
+
+Details about each document under this node.
+
+Example::
+<%= document_details %>
+

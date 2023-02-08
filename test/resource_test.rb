@@ -159,7 +159,9 @@ module Giblish
 
         opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s custom #{topdir} #{topdir / "dst"}])
 
-        pb = CopyResourcesPreBuild.new(opts)
+        pb = CopyResourcesPreBuild.new(
+          ResourcePaths.new(opts)
+        )
         pb.on_prebuild(nil, nil, nil)
 
         r = PathTree.build_from_fs(topdir, prune: true)
@@ -176,7 +178,9 @@ module Giblish
         Dir.chdir(topdir.to_s) do
           opts = CmdLine.new.parse(%W[-f html -r my/resources -s custom #{topdir} dst])
 
-          CopyResourcesPreBuild.new(opts).on_prebuild(nil, nil, nil)
+          CopyResourcesPreBuild.new(
+            ResourcePaths.new(opts)
+          ).on_prebuild(nil, nil, nil)
 
           r = PathTree.build_from_fs(topdir, prune: true)
           assert(r.node("dst/web_assets/dir1"))
@@ -184,28 +188,101 @@ module Giblish
       end
     end
 
-    def test_resource_paths_empty
+    def test_empty_resource_paths
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
         # fake an empty resource dir
         (topdir / "my/resources").mkpath
 
         opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s custom #{topdir} dst])
-        # no custom.css -> explode
-        assert_raises(OptionParser::InvalidArgument) { ResourcePaths.new(opts) }
+        # no custom.css in resource dir
+        rp = ResourcePaths.new(opts)
+        assert_nil(rp.src_style_path_rel)
+        assert_nil(rp.src_style_path_abs)
 
         opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s custom #{topdir} dst])
-        # no custom.yml -> explode
-        assert_raises(OptionParser::InvalidArgument) { ResourcePaths.new(opts) }
+        # no custom.yml in resource dir
+        rp = ResourcePaths.new(opts)
+        assert_nil(rp.src_style_path_rel)
+        assert_nil(rp.src_style_path_abs)
+      end
+    end
+
+    def test_missing_resource_paths
+      TmpDocDir.open(preserve: false) do |tmp_docs|
+        topdir = Pathname.new(tmp_docs.dir)
+
+        # no -r -> most paths are nil
+        opts = CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}])
+        p = ResourcePaths.new(opts)
+        assert_nil(p.src_style_path_rel)
+        assert_nil(p.src_style_path_abs)
+        assert_nil(p.font_dirs_abs)
+        assert_equal(
+          topdir / "dst/web_assets",
+          p.dst_webasset_dir_abs
+        )
+        assert_equal(
+          Pathname("indexbuilders/idx_template.erb"),
+          p.idx_erb_template_rel
+        )
+        assert_equal(
+          Pathname(__dir__ + "/../lib/giblish/" + "indexbuilders/idx_template.erb").cleanpath,
+          p.idx_erb_template_abs
+        )
+
+        # give an empty resource dir
+        res_dir = (topdir / "my/resources")
+        res_dir.mkpath
+        opts = CmdLine.new.parse(%W[-f html -r #{res_dir} #{topdir} #{topdir / "dst"}])
+        p = ResourcePaths.new(opts)
+        # most paths are nil
+        assert_nil(p.src_style_path_rel)
+        assert_nil(p.src_style_path_abs)
+        assert_equal(Set.new, p.font_dirs_abs)
+        assert_equal(
+          topdir / "dst/web_assets",
+          p.dst_webasset_dir_abs
+        )
+        assert_equal(
+          Pathname("indexbuilders/idx_template.erb"),
+          p.idx_erb_template_rel
+        )
+        assert_equal(
+          Pathname(__dir__ + "/../lib/giblish/" + "indexbuilders/idx_template.erb").cleanpath,
+          p.idx_erb_template_abs
+        )
+
+        # add a (fake) erb template file to the resource dir
+        (res_dir / "idx_template.erb").open("w")
+        opts = CmdLine.new.parse(%W[-f html -r #{res_dir} #{topdir} #{topdir / "dst"}])
+        p = ResourcePaths.new(opts)
+        # no -r -> all paths are nil except the erb template
+        assert_nil(p.src_style_path_rel)
+        assert_nil(p.src_style_path_abs)
+        assert_equal(Set.new, p.font_dirs_abs)
+        assert_equal(
+          topdir / "dst/web_assets",
+          p.dst_webasset_dir_abs
+        )
+        assert_equal(
+          Pathname("idx_template.erb"),
+          p.idx_erb_template_rel
+        )
+        assert_equal(
+          res_dir / "idx_template.erb",
+          p.idx_erb_template_abs
+        )
       end
     end
 
     def test_resource_paths
       TmpDocDir.open(preserve: false) do |tmp_docs|
         topdir = Pathname.new(tmp_docs.dir)
-        copy_test_resources(topdir / "my/resources")
+        res_dir = topdir / "my/resources"
+        copy_test_resources(res_dir)
 
-        opts = CmdLine.new.parse(%W[-f html -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
+        opts = CmdLine.new.parse(%W[-f html -r #{res_dir} -s giblish #{topdir} #{topdir / "dst"}])
         p = ResourcePaths.new(opts)
         assert_equal(
           Pathname.new("web/giblish.css"),
@@ -221,10 +298,18 @@ module Giblish
         )
         assert_equal(
           topdir / "dst/web_assets",
-          p.dst_resource_dir_abs
+          p.dst_webasset_dir_abs
+        )
+        assert_equal(
+          Pathname.new("erb/#{ResourcePaths::IDX_ERB_TEMPLATE_BASENAME}"),
+          p.idx_erb_template_rel
+        )
+        assert_equal(
+          res_dir / "erb/#{ResourcePaths::IDX_ERB_TEMPLATE_BASENAME}",
+          p.idx_erb_template_abs
         )
 
-        opts = CmdLine.new.parse(%W[-f pdf -r #{topdir / "my/resources"} -s giblish #{topdir} #{topdir / "dst"}])
+        opts = CmdLine.new.parse(%W[-f pdf -r #{res_dir} -s giblish #{topdir} #{topdir / "dst"}])
         p = ResourcePaths.new(opts)
         assert_equal(
           Pathname.new("pdf/giblish.yml"),
@@ -235,8 +320,16 @@ module Giblish
           p.dst_style_path_rel
         )
         assert_equal(
-          Set[topdir / "my/resources/custom_fonts/urbanist"],
+          Set[res_dir / "custom_fonts/urbanist"],
           p.font_dirs_abs
+        )
+        assert_equal(
+          Pathname.new("erb/#{ResourcePaths::IDX_ERB_TEMPLATE_BASENAME}"),
+          p.idx_erb_template_rel
+        )
+        assert_equal(
+          res_dir / "erb/#{ResourcePaths::IDX_ERB_TEMPLATE_BASENAME}",
+          p.idx_erb_template_abs
         )
       end
     end
