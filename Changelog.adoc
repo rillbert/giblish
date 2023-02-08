@@ -6,7 +6,10 @@
  * Update docs for giblish.
  ** write instructions for github webhook triggered generation
  * Update the default css for giblish html generation.
- * Implement a way for a user to customize the index page
+
+== v2.2.0
+
+ * enable customization of the index pages using erb templates
 
 == v2.1.2
 
