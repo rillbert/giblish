@@ -45,8 +45,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Development deps
+  spec.add_development_dependency "ruby-lsp", "~> 0.11"
   spec.add_development_dependency "minitest", "~> 5.16"
-  spec.add_development_dependency "standard", "~> 1.16"
+  spec.add_development_dependency "standard", "~> 1.24.3"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "oga", "~> 3.3"
   spec.add_development_dependency "thor", "~> 1.2"
@@ -63,7 +64,7 @@ Gem::Specification.new do |spec|
   # sorbet-runtime
   spec.add_runtime_dependency "matrix", "~>0.4"
   spec.add_runtime_dependency "warning", "~>1.2"
-  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.17"
+  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.20"
   spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.2"]
   spec.add_runtime_dependency "asciidoctor-pdf", ["~> 2.3"]
   spec.add_runtime_dependency "git", "~> 1.12"

@@ -76,7 +76,7 @@ module Giblish
           src_loc = msg.fetch(:source_location, nil)
           err_txt = msg.fetch(:text, "")
           str = ""
-          str << "Line #{src_loc.lineno} - " if src_loc.lineno
+          str << "Line #{src_loc.lineno} - " if src_loc&.lineno
           str << err_txt
           str
         else

@@ -169,7 +169,7 @@ module Giblish
       # mkdirs: false,
       # parse: true,
       safe: :unsafe,
-      # sourcemap: false,
+      sourcemap: true,
       # template stuff TBD,
       # to_file:
       # to_dir:

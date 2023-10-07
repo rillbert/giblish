@@ -47,7 +47,7 @@ module Giblish
     #   .style_name    optional
     #   .idx_erb_basename    optional
     def initialize(cmd_opts)
-      raise InvalidArgument, "Unsupported format: #{cmd_opts.format}" unless FORMAT_CONVENTIONS.key?(cmd_opts.format)
+      raise OptionParser::InvalidArgument, "Unsupported format: #{cmd_opts.format}" unless FORMAT_CONVENTIONS.key?(cmd_opts.format)
 
       init_to_default(cmd_opts)
 
