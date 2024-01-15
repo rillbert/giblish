@@ -100,7 +100,7 @@ module Giblish
     HISTORY_TABLE_HEADING = <<~HISTORY_HEADER
       File history::
 
-      [cols=\"2,3,8,3\",options=\"header\"]
+      [cols="2,3,8,3",options="header"]
       |===
       |Date |Author |Message |Sha1
     HISTORY_HEADER
@@ -109,10 +109,6 @@ module Giblish
 
       |===\n\n
     HIST_FOOTER
-
-    def initialize(erb_template_path)
-      super(erb_template_path)
-    end
 
     def subtitle(dst_node)
       "from #{dst_node.data.branch}"

@@ -16,7 +16,7 @@ module Giblish
     def source
       # output tree intro
       tree_string = +<<~DOC_HEADER
-        [subs=\"normal\"]
+        [subs="normal"]
         ----
       DOC_HEADER
 

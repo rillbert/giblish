@@ -17,7 +17,7 @@ module Giblish
     end
 
     def css_path
-      @parameters.key?("css-path") && !@parameters["css-path"].empty? ? Pathname.new(@parameters["css-path"]) : nil
+      (@parameters.key?("css-path") && !@parameters["css-path"].empty?) ? Pathname.new(@parameters["css-path"]) : nil
     end
 
     def search_assets_top_rel

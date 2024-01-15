@@ -184,7 +184,7 @@ module Giblish
           adoc_src_provider = SubtreeIndexGit.new(
             {erb_template_path: ResourcePaths.new(opts).idx_erb_template_abs}
           )
-            # setup a tree converter with postbuilders for getting git history
+          # setup a tree converter with postbuilders for getting git history
           # and showing that in index
           tc = TreeConverter.new(st, branch_dst,
             {

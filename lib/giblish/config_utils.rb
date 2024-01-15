@@ -27,7 +27,7 @@ module Giblish
     def method_missing(m, *args, &block)
       del = @delegates&.find { |d| d.respond_to?(m) }
       if del.nil?
-        Giblog.logger.warn { "Did not find method '#{m}' in any delegate (#{@delegates}"}
+        Giblog.logger.warn { "Did not find method '#{m}' in any delegate (#{@delegates}" }
       end
 
       del.nil? ? super : del.send(m, *args, &block)

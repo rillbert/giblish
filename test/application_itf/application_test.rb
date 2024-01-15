@@ -44,7 +44,6 @@ module Giblish
 
         `lib/giblish.rb -f html -r my/resource data/testdocs/wellformed #{topdir}`
         assert_equal 1, $?.exitstatus
-
       end
     end
 

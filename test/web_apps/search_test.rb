@@ -4,7 +4,7 @@ require "rack/test"
 require "sinatra/base"
 require_relative "../../web_apps/sinatra_search/sinatra_search"
 
-class SearchAppTest < MiniTest::Test
+class SearchAppTest < Minitest::Test
   include Rack::Test::Methods
 
   def app
