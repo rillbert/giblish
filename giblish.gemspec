@@ -45,6 +45,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Development deps
+  spec.add_development_dependency "yard", "~> 0.9"
   spec.add_development_dependency "ruby-lsp", "~> 0.18"
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "standard", "~> 1.0"
