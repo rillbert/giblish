@@ -33,9 +33,9 @@ module Giblish
       @parameters.key?("as-regexp")
     end
 
-    def method_missing(meth, *args, &block)
+    def method_missing(meth, ...)
       unless respond_to_missing?(meth)
-        super(meth, *args, &block)
+        super
         return
       end
 

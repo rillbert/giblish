@@ -21,7 +21,7 @@ module Giblish
     def wash_line(line)
       # remove some asciidoctor format sequences
       # '::', '^|===', '^==', '^--, ':myvar: ...'
-      r = Regexp.new(/(::+|^[=|]+|^--+|^:\w+:.*$)/)
+      r = /(::+|^[=|]+|^--+|^:\w+:.*$)/
       line.gsub(r, "")
     end
   end

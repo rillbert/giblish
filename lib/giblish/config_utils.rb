@@ -24,13 +24,13 @@ module Giblish
       end.join(",")
     end
 
-    def method_missing(m, *args, &block)
+    def method_missing(m, ...)
       del = @delegates&.find { |d| d.respond_to?(m) }
       if del.nil?
         Giblog.logger.warn { "Did not find method '#{m}' in any delegate (#{@delegates}" }
       end
 
-      del.nil? ? super : del.send(m, *args, &block)
+      del.nil? ? super : del.send(m, ...)
     end
 
     def respond_to_missing?(method_name, include_private = false)
@@ -38,7 +38,7 @@ module Giblish
         d.respond_to?(method_name)
       }
 
-      ok || super(method_name, include_private)
+      ok || super
     end
   end
 end

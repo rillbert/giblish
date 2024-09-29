@@ -21,7 +21,7 @@ module Giblish
 
       # puts self.instance_variables
       puts "Failed test: #{@NAME}"
-      puts @in_mem_storage.string.to_s
+      puts @in_mem_storage.string
     end
   end
 

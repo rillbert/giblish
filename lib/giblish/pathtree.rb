@@ -154,7 +154,7 @@ class PathTree
   #    traverse_preorder{ |level, n| "#{level} #{n.segment}" }
   #
   def traverse_preorder(level = 0, &block)
-    result = Array[yield(level, self)]
+    result = [yield(level, self)]
     @children.each do |c|
       result.append(*c.traverse_preorder(level + 1, &block))
     end
@@ -406,14 +406,14 @@ class PathTree
 
   # delegate method calls not implemented by PathTree to the associated 'data'
   # object
-  def method_missing(m, *args, &block)
+  def method_missing(m, ...)
     return super if data.nil?
 
-    data.send(m, *args, &block)
+    data.send(m, ...)
   end
 
   def respond_to_missing?(method_name, include_private = false)
-    return super(method_name, include_private) if data.nil?
+    return super if data.nil?
 
     data.respond_to?(method_name)
   end

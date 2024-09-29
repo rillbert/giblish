@@ -115,11 +115,11 @@ module Giblish
     end
 
     def document_detail_fail(node_data)
-      super(node_data) + generate_history_info(node_data)
+      super + generate_history_info(node_data)
     end
 
     def document_detail(node_data)
-      super(node_data) + generate_history_info(node_data)
+      super + generate_history_info(node_data)
     end
 
     def generate_history_info(node_data)

@@ -62,7 +62,7 @@ module Giblish
         if @id_2_node.key? doc_id
           Giblog.logger.warn { "Found same doc id twice: (#{doc_id}). This id will be associated with '#{path}' and _not_ with '#{@id_2_node[id]}'." }
         end
-        (doc_id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) && !doc_id.include?("#"))
+        doc_id.length.between?(ID_MIN_LENGTH, ID_MAX_LENGTH) && !doc_id.include?("#")
       end
     end
 
@@ -84,7 +84,7 @@ module Giblish
       def initialize(opts)
         raise ArgumentError, "Missing required option: :id_2_node!" unless opts.key?(:id_2_node)
 
-        super(opts)
+        super
         @id_2_node = opts[:id_2_node]
 
         # init new keys in the hash with an empty array
