@@ -390,7 +390,7 @@ module Giblish
     def test_build_from_fs
       # a bit hack-ish but we expect a 'hooks' dir within a dir named '.git'
       # since this file is part of a git repo
-      p = PathTree.build_from_fs("#{__dir__}/../.git", prune: true) do |pt|
+      p = PathTree.build_from_fs("#{__dir__}/../../.git", prune: true) do |pt|
         pt.extname == ".sample"
       end
       expected_dirs = %w[hooks]
