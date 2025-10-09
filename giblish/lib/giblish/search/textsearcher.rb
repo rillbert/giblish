@@ -1,7 +1,7 @@
 require "pathname"
 require "json"
+require "gran"
 require_relative "searchquery"
-require_relative "../pathtree"
 
 module Giblish
   # reads all lines in the given file at instantiation and
@@ -205,7 +205,7 @@ module Giblish
     def build_src_tree
       # setup the tree of source files and pro-actively read in all text
       # into memory
-      src_tree = PathTree.build_from_fs(@assets_fs_path, prune: false) do |p|
+      src_tree = Gran::PathTree.build_from_fs(@assets_fs_path, prune: false) do |p|
         p.extname.downcase == ".adoc"
       end
       src_tree.traverse_preorder do |level, node|

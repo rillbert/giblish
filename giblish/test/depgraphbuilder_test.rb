@@ -68,7 +68,7 @@ module Giblish
     end
 
     def test_create_d3_digraph
-      t = PathTree.build_from_fs(__dir__, prune: true)
+      t = Gran::PathTree.build_from_fs(__dir__, prune: true)
       t.traverse_preorder do |level, node|
         node.data = TestTitleDocid.new(node)
       end
@@ -89,7 +89,7 @@ module Giblish
           {header: ":docid: D-003",
            paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-004>>."],
            subdir: "subdir"})
-        src_tree = PathTree.build_from_fs(srcdir, prune: false)
+        src_tree = Gran::PathTree.build_from_fs(srcdir, prune: false)
 
         src_tree.traverse_preorder do |level, n|
           next unless n.leaf?

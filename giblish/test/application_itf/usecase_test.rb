@@ -185,7 +185,7 @@ module Giblish
         adoc_src = CreateAdocDocSrc.new(doc_config).source
         tmp_docs.add_doc_from_str(adoc_src, src_topdir / doc_config.fetch(:subdir, "."))
       end
-      PathTree.build_from_fs(Pathname.new(tmp_docs.dir) / src_topdir)
+      Gran::PathTree.build_from_fs(Pathname.new(tmp_docs.dir) / src_topdir)
     end
 
     def convert(src_tree, configurator)
@@ -211,14 +211,14 @@ module Giblish
 
         opts = CmdLine.new.parse(%W[-f html #{src_top} #{dst_top}])
 
-        src_tree = PathTree.build_from_fs(Pathname.new(src_top))
+        src_tree = Gran::PathTree.build_from_fs(Pathname.new(src_top))
         app = Configurator.new(opts)
         convert(src_tree, app)
 
         # check that there are three generated docs and two index files
-        doc_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
+        doc_tree = Gran::PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(3, doc_tree.leave_pathnames.count)
-        index_tree = PathTree.build_from_fs(tmp_docs.dir) { |p| p.basename.to_s == "index.html" }
+        index_tree = Gran::PathTree.build_from_fs(tmp_docs.dir) { |p| p.basename.to_s == "index.html" }
         assert_equal(2, index_tree.leave_pathnames.count)
 
         # check that the titles are correct in the generated files
@@ -237,7 +237,7 @@ module Giblish
 
         # assert that the css link is only the google font api
         # used by asciidoctor by default
-        html_result = PathTree.build_from_fs(topdir / "dst")
+        html_result = Gran::PathTree.build_from_fs(topdir / "dst")
         expected_hrefs = [
           "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic," \
               "600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700",
@@ -276,7 +276,7 @@ module Giblish
         convert(src_top, app)
 
         # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: false)
+        r = Gran::PathTree.build_from_fs(topdir / "dst", prune: false)
         docs = r.filter { |l, n| !(/web_assets/ =~ n.pathname.to_s) }
         assert_equal(5, docs.leave_pathnames.count)
         assert_equal(2, r.match(/index.html$/).leave_pathnames.count)
@@ -316,7 +316,7 @@ module Giblish
         convert(src_top, app)
 
         # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
+        r = Gran::PathTree.build_from_fs(topdir / "dst", prune: true)
         docs = r.filter { |l, n| !(/web_assets/ =~ n.pathname.to_s) }
         assert_equal(5, docs.leave_pathnames.count)
         assert_equal(2, r.match(/index.html$/).leave_pathnames.count)
@@ -334,7 +334,7 @@ module Giblish
         convert(src_top, app)
 
         # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
+        r = Gran::PathTree.build_from_fs(topdir / "dst", prune: true)
         assert_equal(5, r.leave_pathnames.count)
         assert_equal(2, r.match(/index.pdf$/).leave_pathnames.count)
       end
@@ -351,7 +351,7 @@ module Giblish
         convert(src_top, app)
 
         # check that the files are there
-        r = PathTree.build_from_fs(topdir / "dst", prune: true)
+        r = Gran::PathTree.build_from_fs(topdir / "dst", prune: true)
         assert_equal(5, r.leave_pathnames.count)
         assert_equal(2, r.match(/index.pdf$/).leave_pathnames.count)
       end
@@ -372,7 +372,7 @@ module Giblish
 
         EntryPoint.run(%W[-f html -c -g .* #{src_top} #{dst_top}])
 
-        dsttree = PathTree.build_from_fs(dst_top, prune: true)
+        dsttree = Gran::PathTree.build_from_fs(dst_top, prune: true)
         assert(dsttree.leave_pathnames.count > 0)
 
         expected_branches = %w[product_1 product_2 index.html]
@@ -386,7 +386,7 @@ module Giblish
       TmpDocDir.open(test_data_subdir: "src_top") do |tmp_docs|
         dst_top = "#{tmp_docs.dir}/dst_top"
         src_top = Pathname.new(tmp_docs.dir).join("src_top/wellformed/docidtest")
-        src_tree = PathTree.build_from_fs(Pathname.new(src_top))
+        src_tree = Gran::PathTree.build_from_fs(Pathname.new(src_top))
 
         opts = CmdLine.new.parse(%W[--resolve-docid #{src_top} #{dst_top}])
         app = Configurator.new(opts)

@@ -74,11 +74,11 @@ module Giblish
           tmp_docs.dir,
           tmp_docs.dir]
         convert(
-          PathTree.build_from_fs(tmp_docs.dir),
+          Gran::PathTree.build_from_fs(tmp_docs.dir),
           Configurator.new(CmdLine.new.parse(args))
         )
 
-        result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
+        result = Gran::PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
 
         expected_ref_text = ["Section 2", "Section 1"]
@@ -103,11 +103,11 @@ module Giblish
           tmp_docs.dir,
           tmp_docs.dir]
         convert(
-          PathTree.build_from_fs(tmp_docs.dir),
+          Gran::PathTree.build_from_fs(tmp_docs.dir),
           Configurator.new(CmdLine.new.parse(args))
         )
 
-        result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
+        result = Gran::PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
 
         # note the 'smart quotes'...
@@ -137,11 +137,11 @@ module Giblish
           tmp_docs.dir,
           tmp_docs.dir]
         convert(
-          PathTree.build_from_fs(tmp_docs.dir),
+          Gran::PathTree.build_from_fs(tmp_docs.dir),
           Configurator.new(CmdLine.new.parse(args))
         )
 
-        result = PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
+        result = Gran::PathTree.build_from_fs(tmp_docs.dir) { |p| p.extname == ".html" && p.basename.to_s != "index.html" }
         assert_equal(1, result.leave_pathnames.count)
 
         # note the 'smart quotes'...
@@ -177,7 +177,7 @@ module Giblish
         file2 = tmp_docs.add_doc_from_str(IDPREFIX_WITH_CUSTOM, src_topdir)
         # p_top = Pathname.new(tmp_docs.dir) / src_topdir
 
-        src_tree = PathTree.build_from_fs(tmp_docs.dir)
+        src_tree = Gran::PathTree.build_from_fs(tmp_docs.dir)
         convert(
           src_tree,
           Configurator.new(CmdLine.new.parse(%W[-f html #{topdir} #{topdir / "dst"}]))
@@ -188,7 +188,7 @@ module Giblish
           Pathname.new(file1).basename.sub_ext(".html") => ["_default_1", "my_id"],
           Pathname.new(file2).basename.sub_ext(".html") => ["customparagraph_1", "my_p2_id"]
         }
-        html_result = PathTree.build_from_fs(topdir / "dst", prune: false) { |p| p.extname == ".html" }
+        html_result = Gran::PathTree.build_from_fs(topdir / "dst", prune: false) { |p| p.extname == ".html" }
         count = 0
         tmp_docs.get_html_dom(html_result) do |node, document|
           p = node.pathname
@@ -208,7 +208,7 @@ module Giblish
 
         # now re-do the html generation using a hard-coded idprefix
         Giblog.logger.debug { "using hard-coded idprefix" }
-        # src_tree = PathTree.build_from_fs(tmp_docs.dir)
+        # src_tree = Gran::PathTree.build_from_fs(tmp_docs.dir)
         convert(
           src_tree,
           Configurator.new(CmdLine.new.parse(%W[-f html -a idprefix=idefix #{topdir} #{topdir / "dst"}]))

@@ -1,4 +1,5 @@
 require "pathname"
+require "gran"
 
 module Giblish
   # Provides relevant paths for layout resources based on the given options
@@ -54,7 +55,7 @@ module Giblish
       return if @src_resource_dir_abs.nil?
 
       # Tweak paths based on the content of a given resource dir
-      file_tree = PathTree.build_from_fs(@src_resource_dir_abs)
+      file_tree = Gran::PathTree.build_from_fs(@src_resource_dir_abs)
 
       @src_style_path_rel = find_style_file(file_tree, cmd_opts.format, cmd_opts.style_name)
       @src_style_path_abs = @src_resource_dir_abs / @src_style_path_rel if @src_style_path_rel
@@ -186,7 +187,7 @@ module Giblish
       return if @asset_regex.nil?
 
       # build a tree with all dirs matching the given regexp
-      st = PathTree.build_from_fs(@srcdir, prune: true) do |p|
+      st = Gran::PathTree.build_from_fs(@srcdir, prune: true) do |p|
         p.directory? && @asset_regex =~ p.to_s
       end
 

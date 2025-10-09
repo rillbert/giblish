@@ -1,5 +1,5 @@
 require "pathname"
-require_relative "pathtree"
+require "gran"
 
 module Giblish
   class SubtreeSrcItf
@@ -75,7 +75,7 @@ module Giblish
         # with this object as source for conversion options
         # and adoc_source
         v_path = Pathname.new("/virtual") / index_dir / "#{@basename}.adoc"
-        v_tree = PathTree.new(v_path, self)
+        v_tree = Gran::PathTree.new(v_path, self)
         src_node = v_tree.node(v_path, from_root: true)
 
         # add the destination node where the converted file will be stored

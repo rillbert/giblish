@@ -19,7 +19,7 @@ module Giblish
         `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`
         assert_equal 0, $?.exitstatus
 
-        dst_tree = PathTree.build_from_fs(dstdir, prune: false)
+        dst_tree = Gran::PathTree.build_from_fs(dstdir, prune: false)
         yield(dst_tree)
       end
     end
@@ -210,7 +210,7 @@ module Giblish
         `lib/giblish.rb --log-level info -f html -m #{TEST_DOC_DIR} #{dstdir}`
         assert_equal 0, $?.exitstatus
 
-        dst_tree = PathTree.build_from_fs(dstdir, prune: false)
+        dst_tree = Gran::PathTree.build_from_fs(dstdir, prune: false)
 
         rc = SearchRepoCache.new
         searcher = TextSearcher.new(rc)

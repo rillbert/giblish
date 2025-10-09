@@ -1,3 +1,4 @@
+require "gran"
 require_relative "cmdline"
 require_relative "configurator"
 require_relative "treeconverter"
@@ -46,7 +47,7 @@ module Giblish
 
     # build a tree of files matching user's regexp selection
     def build_src_tree(srcdir, include_regex, exclude_regex)
-      pt = PathTree.build_from_fs(srcdir) do |p|
+      pt = Gran::PathTree.build_from_fs(srcdir) do |p|
         if exclude_regex&.match(p.to_s)
           false
         else
@@ -132,7 +133,7 @@ module Giblish
         SrcFromString.new(s.source),
         conf.doc_attr
       )
-      srctree = PathTree.new("/" + conf.config_opts.index_basename + ".adoc", data_provider)
+      srctree = Gran::PathTree.new("/" + conf.config_opts.index_basename + ".adoc", data_provider)
       TreeConverter.new(srctree, @dst_topdir, conf.build_options).run
     end
   end

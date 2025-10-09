@@ -164,7 +164,7 @@ module Giblish
         )
         pb.on_prebuild(nil, nil, nil)
 
-        r = PathTree.build_from_fs(topdir, prune: true)
+        r = Gran::PathTree.build_from_fs(topdir, prune: true)
         assert(r.node("dst/web_assets/dir1"))
         assert(r.node("dst/web_assets/dir1/custom.css"))
       end
@@ -182,7 +182,7 @@ module Giblish
             ResourcePaths.new(opts)
           ).on_prebuild(nil, nil, nil)
 
-          r = PathTree.build_from_fs(topdir, prune: true)
+          r = Gran::PathTree.build_from_fs(topdir, prune: true)
           assert(r.node("dst/web_assets/dir1"))
         end
       end

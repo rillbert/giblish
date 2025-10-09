@@ -1,5 +1,5 @@
 require "asciidoctor"
-require_relative "../pathtree"
+require "gran"
 
 module Giblish
   module DocIdExtension

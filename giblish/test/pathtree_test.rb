@@ -1,13 +1,13 @@
+require "gran"
 require "test_helper"
 require "fileutils"
-require_relative "../lib/giblish/pathtree"
 
 module Giblish
   class PathTreeTest < GiblishTestBase
     include Giblish::TestUtils
 
     def tree_with_slash
-      t = PathTree.new("/1")
+      t = Gran::PathTree.new("/1")
       {"/1/2/4" => 124, "/1/2/5" => 125, "/1/2/6" => 126, "/1/3" => 13}.each { |p, d|
         t.add_path(p, d)
       }
@@ -15,7 +15,7 @@ module Giblish
     end
 
     def tree_without_slash
-      t = PathTree.new("1")
+      t = Gran::PathTree.new("1")
       {"1/2/4" => 124, "1/2/5" => 125, "1/2/6" => 126, "1/3" => 13}.each { |p, d|
         t.add_path(p, d)
       }
@@ -23,7 +23,7 @@ module Giblish
     end
 
     def test_wrong_args_paths
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       root.add_path("1/2")
 
       # can not add path with differing root
@@ -38,7 +38,7 @@ module Giblish
     end
 
     def test_whitespace_root
-      t = PathTree.new(" ")
+      t = Gran::PathTree.new(" ")
       assert_equal(0, t.children.length)
       assert_nil(t.parent)
       assert_equal(" ", t.segment)
@@ -50,21 +50,21 @@ module Giblish
     end
 
     # def test_parent_names
-    #   t = PathTree.new('/hej/hopp')
+    #   t = Gran::PathTree.new('/hej/hopp')
     #   assert_equal(["hopp", "hej"], t.parent_names)
     # end
     def test_root_node
-      t = PathTree.new("/")
+      t = Gran::PathTree.new("/")
       assert_equal(Pathname.new("/"), t.pathname)
       assert_equal("/", t.segment)
       assert_equal(1, t.count)
 
-      s = PathTree.new("/1")
+      s = Gran::PathTree.new("/1")
       assert_equal(2, s.count)
     end
 
     def test_name
-      t = PathTree.new("/1")
+      t = Gran::PathTree.new("/1")
       {"/1/2/4" => 124, "/1/2/5" => 125, "/1/2/6" => 126, "/1/3" => 13}.each { |p, d|
         t.add_path(p, d)
       }
@@ -82,7 +82,7 @@ module Giblish
     end
 
     def test_pathname
-      t = PathTree.new("/1")
+      t = Gran::PathTree.new("/1")
       {"/1/2/4" => 124, "/1/2/5" => 125, "/1/2/6" => 126, "/1/3" => 13}.each { |p, d|
         t.add_path(p, d)
       }
@@ -109,7 +109,7 @@ module Giblish
     end
 
     def test_dup_with_slash
-      origin = PathTree.new("/1")
+      origin = Gran::PathTree.new("/1")
       {"/1/2/4" => 124,
        "/1/2/5" => 125,
        "/1/2/6" => 126,
@@ -136,7 +136,7 @@ module Giblish
     end
 
     def test_dup_without_slash
-      origin = PathTree.new("1")
+      origin = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -162,7 +162,7 @@ module Giblish
     end
 
     def test_preorder_ok
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -183,7 +183,7 @@ module Giblish
     end
 
     def test_postorder_ok
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -205,7 +205,7 @@ module Giblish
     end
 
     def test_levelorder_ok
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -227,7 +227,7 @@ module Giblish
     end
 
     def test_node
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -255,7 +255,7 @@ module Giblish
     end
 
     def test_append_tree
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -263,7 +263,7 @@ module Giblish
         root.add_path(p, d)
       }
 
-      newtree = PathTree.new("3")
+      newtree = Gran::PathTree.new("3")
       {"3/4" => 34,
        "3/5" => 35,
        "3/6" => 36,
@@ -289,18 +289,18 @@ module Giblish
     end
 
     def test_append_tree_2
-      t = PathTree.new("/1/2")
-      t.node("1/2").append_tree(PathTree.new("my/new/tree"))
+      t = Gran::PathTree.new("/1/2")
+      t.node("1/2").append_tree(Gran::PathTree.new("my/new/tree"))
       assert_equal(6, t.count)
       assert(!t.node("1/2/my/new/tree").nil?)
 
-      t.node("1/").append_tree(PathTree.new("my/new/tree"))
+      t.node("1/").append_tree(Gran::PathTree.new("my/new/tree"))
       assert_equal(9, t.count)
       assert(!t.node("1/my/new/tree").nil?)
     end
 
     def test_trying_append_existing_path
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -308,7 +308,7 @@ module Giblish
         root.add_path(p, d)
       }
 
-      newtree = PathTree.new("2")
+      newtree = Gran::PathTree.new("2")
       {"2/4" => 34,
        "2/5" => 35,
        "2/6" => 36}.each { |p, d|
@@ -326,8 +326,8 @@ module Giblish
     end
 
     def test_split_stem
-      root = PathTree.new("/1/2")
-      root.node("1/2").append_tree(PathTree.new("my/new/tree"))
+      root = Gran::PathTree.new("/1/2")
+      root.node("1/2").append_tree(Gran::PathTree.new("my/new/tree"))
       n = root.node("1/2/my")
 
       assert_equal(
@@ -372,15 +372,15 @@ module Giblish
     end
 
     def test_copy_to_other_root
-      src = PathTree.new("src/my/tst/tree")
-      dst = PathTree.new("dst")
+      src = Gran::PathTree.new("src/my/tst/tree")
+      dst = Gran::PathTree.new("dst")
       src.children.each { |c| dst.append_tree(c) }
 
       assert_equal(4, dst.count)
       assert(!dst.node("my/tst/tree").nil?)
 
-      src = PathTree.new("/src/leaf")
-      dst = PathTree.new("dst")
+      src = Gran::PathTree.new("/src/leaf")
+      dst = Gran::PathTree.new("dst")
       src.node("src").children.each { |c| dst.append_tree(c) }
 
       assert_equal(2, dst.count)
@@ -390,7 +390,7 @@ module Giblish
     def test_build_from_fs
       # a bit hack-ish but we expect a 'hooks' dir within a dir named '.git'
       # since this file is part of a git repo
-      p = PathTree.build_from_fs("#{__dir__}/../../.git", prune: true) do |pt|
+      p = Gran::PathTree.build_from_fs("#{__dir__}/../../.git", prune: true) do |pt|
         pt.extname == ".sample"
       end
       expected_dirs = %w[hooks]
@@ -405,7 +405,7 @@ module Giblish
 
     def test_delegate_to_data
       # create a leaf node with a 'String' as data
-      root = PathTree.new("/my/new/tree", "my data")
+      root = Gran::PathTree.new("/my/new/tree", "my data")
       n = root.node("my/new/tree")
       assert_equal("my data", n.data)
 
@@ -417,7 +417,7 @@ module Giblish
     end
 
     def test_to_s
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2/4" => 124,
        "1/2/5" => 125,
        "1/2/6" => 126,
@@ -439,7 +439,7 @@ module Giblish
     end
 
     def test_match
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2" => 12,
        "1/2/4" => 124,
        "1/2/5" => 125,
@@ -456,7 +456,7 @@ module Giblish
     end
 
     def test_filter
-      root = PathTree.new("1")
+      root = Gran::PathTree.new("1")
       {"1/2" => 12,
        "1/2/4" => 124,
        "1/2/5" => 125,

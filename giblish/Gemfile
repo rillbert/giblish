@@ -4,6 +4,9 @@ source "https://rubygems.org"
 # metadata on the gem
 gemspec
 
+# Use local gran gem during development
+gem "gran", path: "../gran"
+
 group :development, :test do
   gem "yard", "~> 0.9"
   gem "ruby-lsp", "~> 0.18"

@@ -1,7 +1,7 @@
+require "gran"
 require_relative "../test_helper"
 require_relative "../../lib/giblish/treeconverter"
 require_relative "../../lib/giblish/docid/docid"
-require_relative "../../lib/giblish/pathtree"
 
 module Giblish
   class DocidTest < GiblishTestBase
@@ -13,7 +13,7 @@ module Giblish
     end
 
     def tree_from_src_dir(top_dir)
-      src_tree = PathTree.build_from_fs(top_dir, prune: false) do |pt|
+      src_tree = Gran::PathTree.build_from_fs(top_dir, prune: false) do |pt|
         !pt.directory? && pt.extname == ".adoc"
       end
       src_tree.traverse_preorder do |level, n|
@@ -33,7 +33,7 @@ module Giblish
           {header: ":docid: D-001"},
           {header: ":docid: D-002"},
           {header: ":docid: D-004", subdir: "subdir"})
-        src_tree = PathTree.build_from_fs(srcdir, prune: false)
+        src_tree = Gran::PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with a TreeConverter
         d_pp = DocIdExtension::DocidPreBuilder.new
@@ -67,7 +67,7 @@ module Giblish
           {header: ":docid: D-003",
            paragraphs: [title: "Section 1", text: "Ref to <<:docid:D-004>>."],
            subdir: "subdir"})
-        src_tree = PathTree.build_from_fs(srcdir, prune: false)
+        src_tree = Gran::PathTree.build_from_fs(srcdir, prune: false)
 
         # Create a docid preprocessor and register it with all future TreeConverters
         d_pp = DocIdExtension::DocidPreBuilder.new

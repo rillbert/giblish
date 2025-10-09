@@ -55,7 +55,7 @@ module Giblish
           dstdir]
         Giblish.application.run args
 
-        dt = PathTree.build_from_fs(dstdir, prune: false)
+        dt = Gran::PathTree.build_from_fs(dstdir, prune: false)
         assert(1, dt.match(/web_assets$/).leave_pathnames.count)
 
         # filter out only html files
@@ -102,7 +102,7 @@ module Giblish
           dstdir]
         Giblish.application.run args
 
-        dt = PathTree.build_from_fs(dstdir, prune: false)
+        dt = Gran::PathTree.build_from_fs(dstdir, prune: false)
         assert_nil(dt.match(/web_asset/))
         assert_equal(3, dt.leave_pathnames.count)
 

@@ -48,6 +48,7 @@ Gem::Specification.new do |spec|
   # 'matrix' needed because of incompatibilities between prawn v2.4
   # and ruby 3.1
   # sorbet-runtime
+  spec.add_runtime_dependency "gran", "~> 0.1"
   spec.add_runtime_dependency "matrix", "~>0.4"
   spec.add_runtime_dependency "warning", "~>1.0"
   spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.20"

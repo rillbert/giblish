@@ -232,7 +232,7 @@ module Giblish
         assert(!dstdir.exist?)
 
         wm.docs_from_gh_webhook(trig_push)
-        result = PathTree.build_from_fs(dstdir, prune: true)
+        result = Gran::PathTree.build_from_fs(dstdir, prune: true)
         assert(result.node("index.html"))
         assert(result.node("main"))
         assert(result.node("main/reference/search_spec.html"))

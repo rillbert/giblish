@@ -15,7 +15,7 @@ module Giblish
 
         opts = CmdLine.new.parse(%W[-f html -i "*.bin" #{src_top} #{dst_top}])
 
-        src_tree = PathTree.build_from_fs(Pathname.new(src_top))
+        src_tree = Gran::PathTree.build_from_fs(Pathname.new(src_top))
         app = Configurator.new(opts)
         convert(src_tree, app)
       end

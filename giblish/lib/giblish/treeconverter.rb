@@ -1,6 +1,6 @@
 require "asciidoctor"
 require "asciidoctor-pdf"
-require_relative "pathtree"
+require "gran"
 require_relative "conversion_info"
 require_relative "utils"
 
@@ -70,7 +70,7 @@ module Giblish
 
       # get the top-most node of the source and destination trees
       @src_tree = src_top
-      @dst_tree = PathTree.new(dst_top).node(dst_top, from_root: true)
+      @dst_tree = Gran::PathTree.new(dst_top).node(dst_top, from_root: true)
 
       # setup build-phase callback objects
       @pre_builders = Array(opts.fetch(:pre_builders, []))

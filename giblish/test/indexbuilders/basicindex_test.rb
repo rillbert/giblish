@@ -1,6 +1,6 @@
+require "gran"
 require_relative "../test_helper"
 require_relative "../../lib/giblish/treeconverter"
-require_relative "../../lib/giblish/pathtree"
 require_relative "../../lib/giblish/subtreeinfobuilder"
 require_relative "../../lib/giblish/indexbuilders/subtree_indices"
 
@@ -14,7 +14,7 @@ module Giblish
     end
 
     def tree_from_src_dir(top_dir)
-      src_tree = PathTree.build_from_fs(top_dir, prune: false) do |pt|
+      src_tree = Gran::PathTree.build_from_fs(top_dir, prune: false) do |pt|
         !pt.directory? && pt.extname == ".adoc"
       end
       src_tree.traverse_preorder do |level, n|

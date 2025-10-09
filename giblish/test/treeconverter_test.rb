@@ -1,13 +1,13 @@
+require "gran"
 require_relative "test_helper"
 require_relative "../lib/giblish/treeconverter"
-require_relative "../lib/giblish/pathtree"
 
 module Giblish
   class TreeConverterTest < GiblishTestBase
     include Giblish::TestUtils
 
     def tree_from_src_dir(top_dir)
-      src_tree = PathTree.build_from_fs(top_dir, prune: false) do |pt|
+      src_tree = Gran::PathTree.build_from_fs(top_dir, prune: false) do |pt|
         !pt.directory? && pt.extname == ".adoc"
       end
       src_tree.traverse_preorder do |level, n|
@@ -54,7 +54,7 @@ module Giblish
         p = Pathname.new(tmp_docs.dir)
 
         # setup a 'virtual' PathTree using strings as content for the nodes
-        root = PathTree.new(p / "src/metafile_1", SrcFromString.new(CreateAdocDocSrc.new.source))
+        root = Gran::PathTree.new(p / "src/metafile_1", SrcFromString.new(CreateAdocDocSrc.new.source))
         root.add_path(p / "src/metafile_2", SrcFromString.new(CreateAdocDocSrc.new.source))
         root.add_path(p / "src/subdir/metafile_3", SrcFromString.new(CreateAdocDocSrc.new.source))
 

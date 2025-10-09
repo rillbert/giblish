@@ -90,7 +90,7 @@ module Giblish
       # add a virtual 'gibgraph.adoc' node as the only node in a source tree
       # with this object as provider of both adoc source and conversion options
       v_srcpath = Pathname.new("/virtual") / "#{@basename}.adoc"
-      src_node = PathTree.new(v_srcpath, self).node(v_srcpath, from_root: true)
+      src_node = Gran::PathTree.new(v_srcpath, self).node(v_srcpath, from_root: true)
 
       # add the destination node where the converted file will be stored
       i_node = dst_tree.add_descendants(@basename)
