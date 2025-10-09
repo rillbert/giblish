@@ -1,9 +1,9 @@
 require "fileutils"
 require_relative "../lib/gran/pathtree"
+require "test_helper"
 
 module Gran
-  class PathTreeTest < Minitest::Test
-
+  class PathTreeTest < Gran::GranTestBase
     def tree_with_slash
       t = PathTree.new("/1")
       {"/1/2/4" => 124, "/1/2/5" => 125, "/1/2/6" => 126, "/1/3" => 13}.each { |p, d|
@@ -21,6 +21,9 @@ module Gran
     end
 
     def test_wrong_args_paths
+      logger.info("hej from test case")
+      logger.error("error from test case")
+      # puts "hej from test case"
       root = PathTree.new("1")
       root.add_path("1/2")
 

@@ -5,6 +5,7 @@ source "https://rubygems.org"
 gemspec
 
 group :development, :test do
+  gem "logging", "~> 2.4"
   gem "yard", "~> 0.9"
   gem "ruby-lsp", "~> 0.18"
   gem "standard", "~> 1.0"
@@ -13,4 +14,5 @@ end
 
 group :test do
   gem "minitest", "~> 5.0"
+  gem "minitest-hooks", "~> 1.5"
 end
