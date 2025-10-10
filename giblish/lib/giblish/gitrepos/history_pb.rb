@@ -1,9 +1,10 @@
 require_relative "../subtreeinfobuilder"
+require_relative "../node_data_provider"
 
 module Giblish
-  # Adds a 'FileHistory' instance to each file node's data delegator.
+  # Adds a 'FileHistory' instance to each node's data via dynamic composition.
   # Users down-the-line can then call node.data.history to receive
-  # an Array of HistoryEntry objects.
+  # a FileHistory object.
   class AddHistoryPostBuilder
     def initialize(repo_root)
       @git_itf = GitItf.new(repo_root)
@@ -15,8 +16,10 @@ module Giblish
 
       dst_tree.traverse_preorder do |level, dst_node|
         unless dst_node.leaf?
-          dst_node.data = DataDelegator.new if dst_node.data.nil?
-          dst_node.data.add(FileHistory.new(current_branch))
+          # Non-leaf nodes don't have conversion info yet, create NodeDataProvider with history
+          if dst_node.data.nil?
+            dst_node.data = NodeDataProvider.new(FileHistory.new(current_branch))
+          end
           next
         end
 
@@ -33,7 +36,9 @@ module Giblish
             log_entry["sha"]
           )
         end
-        dst_node.data.add(file_log)
+
+        # Add history provider to existing NodeDataProvider
+        dst_node.data.add_provider(file_log)
       end
     end
   end

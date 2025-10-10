@@ -2,6 +2,7 @@ require "asciidoctor"
 require "asciidoctor-pdf"
 require "gran"
 require_relative "conversion_info"
+require_relative "node_data_provider"
 require_relative "utils"
 
 module Giblish
@@ -127,20 +128,24 @@ module Giblish
     end
 
     # the default callback will tie a 'SuccessfulConversion' instance
-    # to the destination node as its data
+    # to the destination node as its data, wrapped in NodeDataProvider
+    # to allow dynamic addition of other providers (e.g., history)
     def self.on_success(src_node, dst_node, dst_tree, doc, adoc_log_str)
-      dst_node.data = DataDelegator.new(SuccessfulConversion.new(
+      conversion_info = SuccessfulConversion.new(
         src_node: src_node, dst_node: dst_node, dst_top: dst_tree, adoc: doc, adoc_stderr: adoc_log_str
-      ))
+      )
+      dst_node.data = NodeDataProvider.new(conversion_info)
     end
 
     # the default callback will tie a 'FailedConversion' instance
-    # to the destination node as its data
+    # to the destination node as its data, wrapped in NodeDataProvider
+    # to allow dynamic addition of other providers (e.g., history)
     def self.on_failure(src_node, dst_node, dst_tree, ex, adoc_log_str)
       Giblog.logger.error { ex.message }
-      dst_node.data = DataDelegator.new(FailedConversion.new(
+      conversion_info = FailedConversion.new(
         src_node: src_node, dst_node: dst_node, dst_top: dst_tree, error_msg: ex.message
-      ))
+      )
+      dst_node.data = NodeDataProvider.new(conversion_info)
     end
   end
 

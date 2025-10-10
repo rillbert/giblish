@@ -55,7 +55,7 @@ module Giblish
     XREF_TEST
 
     def convert(src_tree, configurator)
-      data_provider = DataDelegator.new(SrcFromFile.new, configurator.doc_attr)
+      data_provider = NodeDataProvider.new(configurator.doc_attr, SrcFromFile.new)
       src_tree.traverse_preorder do |level, node|
         next unless node.leaf?
 

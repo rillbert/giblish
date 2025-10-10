@@ -2,6 +2,7 @@ require "gran"
 require_relative "cmdline"
 require_relative "configurator"
 require_relative "treeconverter"
+require_relative "node_data_provider"
 require_relative "gitrepos/checkoutmanager"
 
 module Giblish
@@ -64,8 +65,8 @@ module Giblish
     def setup_converter(src_tree, adoc_src_provider, configurator)
       # compose the doc attribute provider.
       configurator.doc_attr.add_doc_attr_providers(adoc_src_provider)
-      # NOTE: The order in the line below is important!
-      data_provider = DataDelegator.new(configurator.doc_attr, adoc_src_provider)
+      # compose the data provider for the source nodes
+      data_provider = NodeDataProvider.new(configurator.doc_attr, adoc_src_provider)
 
       # associate the data providers with each source node in the tree
       src_tree.traverse_preorder do |level, node|
@@ -129,9 +130,9 @@ module Giblish
       conf = Configurator.new(@user_opts)
       s = @gm.summary_provider
       s.index_basename = conf.config_opts.index_basename
-      data_provider = DataDelegator.new(
-        SrcFromString.new(s.source),
-        conf.doc_attr
+      data_provider = NodeDataProvider.new(
+        conf.doc_attr,
+        SrcFromString.new(s.source)
       )
       srctree = Gran::PathTree.new("/" + conf.config_opts.index_basename + ".adoc", data_provider)
       TreeConverter.new(srctree, @dst_topdir, conf.build_options).run
