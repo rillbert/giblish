@@ -44,7 +44,7 @@ module Gran
             color_scheme: "bright"
           )
         ),
-        Logging.appenders.io(in_mem_storage,
+        Logging.appenders.io("test_memory", in_mem_storage,
           layout: Logging.layouts.pattern(
             pattern: '[%d] %-5l %c: %m\n'
           ))
