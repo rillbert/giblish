@@ -9,7 +9,7 @@ module Giblish
     # Builds complete HTML layout configuration.
     #
     # @param resource_paths [ResourcePaths] Resolved paths for resources, styles, and templates
-    # @param config_opts [Cmdline::Options] User configuration options
+    # @param config_opts [CmdLine::Options] User configuration options
     # @return [LayoutConfigResult] Complete layout configuration with all components
     def self.build(resource_paths, config_opts)
       # AIDEV-NOTE: Create search provider once and reuse in both extensions and post_builders
@@ -48,7 +48,7 @@ module Giblish
     end
 
     # @param search_provider [HeadingIndexer, nil]
-    # @param config_opts [Cmdline::Options]
+    # @param config_opts [CmdLine::Options]
     # @return [Hash{Symbol => Array<Object>}]
     def self.build_adoc_extensions(search_provider, config_opts)
       extensions = {}
@@ -60,7 +60,7 @@ module Giblish
     end
 
     # @param resource_paths [ResourcePaths]
-    # @param config_opts [Cmdline::Options]
+    # @param config_opts [CmdLine::Options]
     # @return [Array<Object>]
     def self.build_docattr_providers(resource_paths, config_opts)
       providers = []

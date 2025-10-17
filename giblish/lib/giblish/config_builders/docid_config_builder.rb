@@ -31,7 +31,7 @@ module Giblish
     # Builds complete DocId configuration based on user options.
     # Returns a null configuration if DocId resolution is disabled.
     #
-    # @param config_opts [Cmdline::Options] User configuration with resolve_docid flag
+    # @param config_opts [CmdLine::Options] User configuration with resolve_docid flag
     # @return [DocIdConfig] Configuration with pre-builders, preprocessors, and post-builders
     def self.build(config_opts)
       return null_config unless config_opts.resolve_docid
@@ -48,7 +48,7 @@ module Giblish
       )
     end
 
-    # @param config_opts [Cmdline::Options]
+    # @param config_opts [CmdLine::Options]
     # @param docid_processor [DocIdExtension::DocidProcessor]
     # @return [Array<DependencyGraphPostBuilder>]
     def self.build_post_builders(config_opts, docid_processor)

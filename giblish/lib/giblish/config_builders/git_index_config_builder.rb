@@ -8,7 +8,7 @@ module Giblish
     # Builds complete Index configuration with git history support.
     # Returns a null configuration if index generation is disabled.
     #
-    # @param config_opts [Cmdline::Options] User configuration with no_index flag
+    # @param config_opts [CmdLine::Options] User configuration with no_index flag
     # @param resource_paths [ResourcePaths] Resolved paths for templates
     # @param doc_attr [DocAttrBuilder] Document attribute builder
     # @param git_repo_dir [Pathname] Path to git repository root

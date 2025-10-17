@@ -16,12 +16,12 @@ module Giblish
     # @return [DocAttrBuilder] Document attribute builder
     attr_reader :doc_attr
 
-    # @return [Cmdline::Options] User configuration options
+    # @return [CmdLine::Options] User configuration options
     attr_reader :config_opts
 
     # Creates configuration by assembling layout, DocId, and index configurations.
     #
-    # @param config_opts [Cmdline::Options] User configuration options
+    # @param config_opts [CmdLine::Options] User configuration options
     def initialize(config_opts)
       @config_opts = config_opts
       @resource_paths = ResourcePaths.new(config_opts)
@@ -46,7 +46,7 @@ module Giblish
 
     private
 
-    # @param config_opts [Cmdline::Options]
+    # @param config_opts [CmdLine::Options]
     # @return [LayoutConfigResult]
     def build_layout_config(config_opts)
       case config_opts
@@ -57,7 +57,7 @@ module Giblish
       end
     end
 
-    # @param config_opts [Cmdline::Options]
+    # @param config_opts [CmdLine::Options]
     # @return [IndexConfig]
     def build_index_config(config_opts)
       IndexConfigBuilder.build(config_opts, @resource_paths, @doc_attr)
@@ -66,7 +66,7 @@ module Giblish
     # @param layout_config [LayoutConfigResult]
     # @param docid_config [DocIdConfig]
     # @param index_config [IndexConfig]
-    # @param config_opts [Cmdline::Options]
+    # @param config_opts [CmdLine::Options]
     # @return [Hash]
     def assemble_build_options(layout_config, docid_config, index_config, config_opts)
       # Start with layout configuration
@@ -103,7 +103,7 @@ module Giblish
   class GitRepoConfigurator < Configurator
     # Creates configuration for git repository conversion with history support.
     #
-    # @param config_opts [Cmdline::Options] User configuration options
+    # @param config_opts [CmdLine::Options] User configuration options
     # @param git_repo_dir [Pathname] Path to git repository root
     def initialize(config_opts, git_repo_dir)
       @git_repo_dir = git_repo_dir
@@ -113,7 +113,7 @@ module Giblish
 
     private
 
-    # @param config_opts [Cmdline::Options]
+    # @param config_opts [CmdLine::Options]
     # @return [IndexConfig]
     def build_index_config(config_opts)
       GitIndexConfigBuilder.build(config_opts, @resource_paths, @doc_attr, @git_repo_dir)

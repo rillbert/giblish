@@ -21,7 +21,7 @@ module Giblish
     # Builds complete Index configuration with index generation support.
     # Returns a null configuration if index generation is disabled.
     #
-    # @param config_opts [Cmdline::Options] User configuration with no_index flag
+    # @param config_opts [CmdLine::Options] User configuration with no_index flag
     # @param resource_paths [ResourcePaths] Resolved paths for templates
     # @param doc_attr [DocAttrBuilder] Document attribute builder
     # @param adoc_src_provider_class [Class] Class for generating index source (defaults to SubtreeIndexBase)
