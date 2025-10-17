@@ -1,8 +1,9 @@
 require "gran"
+require_relative "adocsrc_providers"
 require_relative "cmdline"
 require_relative "configurator"
-require_relative "treeconverter"
 require_relative "node_data_provider"
+require_relative "treeconverter"
 require_relative "gitrepos/checkoutmanager"
 
 module Giblish
