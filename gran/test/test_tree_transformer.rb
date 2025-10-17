@@ -151,7 +151,7 @@ module Gran
         # In postorder, children come before parents
         # So we should see files before directories
         assert order_tracker.order.count > 0
-        logger.info { "Postorder processing: #{order_tracker.order.join(', ')}" }
+        logger.info { "Postorder processing: #{order_tracker.order.join(", ")}" }
       end
     end
 

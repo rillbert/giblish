@@ -1,4 +1,4 @@
-require_relative "./treeoperators"
+require_relative "treeoperators"
 
 require_relative "../test_helper"
 

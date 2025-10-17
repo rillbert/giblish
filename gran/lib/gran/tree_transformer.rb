@@ -104,7 +104,7 @@ module Gran
       @finalizers = []
 
       # Validate traversal method
-      unless @src_tree.respond_to?("traverse_#{@traversal}")
+      unless @src_tree.respond_to?(:"traverse_#{@traversal}")
         raise ArgumentError, "Invalid traversal order: #{@traversal}"
       end
     end
@@ -169,7 +169,7 @@ module Gran
       processed = 0
       errors = 0
 
-      @src_tree.send("traverse_#{@traversal}") do |level, src_node|
+      @src_tree.send(:"traverse_#{@traversal}") do |level, src_node|
         # Check if this node should be transformed
         should_process = if @transformer.respond_to?(:should_transform?)
           @transformer.should_transform?(src_node, @context)
