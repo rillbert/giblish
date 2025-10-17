@@ -1,0 +1,23 @@
+# IDE and editor files
+.vscode/
+*.swp
+*.swo
+*~
+
+# Asciidoctor cache and generated files
+.asciidoctor/
+
+# Test artifacts
+test/tmp/
+test/output/
+coverage/
+
+# Build and packaging
+pkg/
+*.gem
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
