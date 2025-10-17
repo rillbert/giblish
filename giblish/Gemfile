@@ -9,7 +9,7 @@ gem "gran", path: "../gran"
 
 group :development, :test do
   gem "yard", "~> 0.9"
-  gem "ruby-lsp", "~> 0.18"
+  gem "solargraph", "~> 0.57"
   gem "standard", "~> 1.0"
   gem "rake", "~> 13.0"
   gem "oga", "~> 3.0"
