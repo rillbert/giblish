@@ -14,6 +14,7 @@ module Gran
     #
     # @return [None]
     #
+    # AIDEV-NOTE: uses in-memory logging to avoid filesystem artifacts during tests
     def self.config_test_logger
       # Configure a logger object to use for the gem
 
@@ -32,8 +33,10 @@ module Gran
       # Create a logger object
       logger = Logging.logger["GranTest"]
 
-      # Set up the logger to log to stdout and to the
-      # file "test.log"
+      # Create in-memory storage for log messages
+      in_mem_storage = StringIO.new
+
+      # Set up the logger to log to stdout and to in-memory storage
       logger.add_appenders(
         Logging.appenders.stdout(
           layout: Logging.layouts.pattern(
@@ -41,7 +44,7 @@ module Gran
             color_scheme: "bright"
           )
         ),
-        Logging.appenders.file("test.log",
+        Logging.appenders.io(in_mem_storage,
           layout: Logging.layouts.pattern(
             pattern: '[%d] %-5l %c: %m\n'
           ))
