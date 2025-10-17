@@ -206,7 +206,7 @@ Pull requests must meet the following to be considered for merging:
 
 To develop on giblish, you:
 
- . Install ruby on your local machine (rbenv is a good choice for handling ruby installations)
+ . Install ruby on your local machine (rbenv could be a good choice for handling ruby installations)
  . Install necessary dependencies to install the ruby 'mathematica' gem, see eg https://github.com/gjtorikian/mathematical/blob/47041d5492cc7c5f04105031430fb44119406f49/script/install_linux_deps
  . Install graphviz
  . Clone or fork the repository
