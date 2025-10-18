@@ -1,5 +1,4 @@
 require "pathname"
-require "set"
 require_relative "loggable"
 
 module Gran

@@ -8,6 +8,7 @@ module Gran
   #
   class ToLowerConverter
     include Loggable
+
     #
     # Create a new ToLowerConverter
     #
