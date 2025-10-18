@@ -1,4 +1,5 @@
 require "pathname"
+require "set"
 require_relative "loggable"
 
 module Gran
@@ -455,7 +456,7 @@ module Gran
       result = []
 
       traverse_preorder do |level, node|
-        q = from_root ? node.pathname : Pathname(segment) +
+        q = from_root ? node.pathname : Pathname(segment) /
           node.pathname.relative_path_from(pathname)
         result << node if q.to_s.include?(sub_str)
       end
