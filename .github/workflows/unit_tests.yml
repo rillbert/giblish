@@ -5,26 +5,49 @@ on:
     branches: [ personal/rillbert/*, main ]
 
 jobs:
-  test:
+  test-gran:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         ruby-version: [ "3.3", "3.4" ]
     steps:
-    - name: Install binutils
-      run: |
-        sudo apt -y install binutils
-    - name: Install needed packages
-      run: |
-        sudo apt-get -y install libpango1.0-dev graphviz libwebp-dev libzstd-dev
-    - name: Checkout Giblish
+    - name: Checkout repository
       uses: actions/checkout@v3
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
-        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - name: Run tests
-      run: |
-        bundle exec rake
+        bundler-cache: true
+        working-directory: ./gran
+    - name: Run gran tests
+      working-directory: ./gran
+      run: bundle exec rake test
+    - name: Run gran linter
+      working-directory: ./gran
+      run: bundle exec rake standard
+
+  test-giblish:
+    runs-on: ubuntu-latest
+    needs: test-gran
+    strategy:
+      matrix:
+        ruby-version: [ "3.3", "3.4" ]
+    steps:
+    - name: Install binutils
+      run: sudo apt -y install binutils
+    - name: Install needed packages
+      run: sudo apt-get -y install libpango1.0-dev graphviz libwebp-dev libzstd-dev
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true
         working-directory: ./giblish
+    - name: Run giblish tests
+      working-directory: ./giblish
+      run: bundle exec rake test
+    - name: Run giblish linter
+      working-directory: ./giblish
+      run: bundle exec rake standard

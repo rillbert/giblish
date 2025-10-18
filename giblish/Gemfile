@@ -4,7 +4,7 @@ source "https://rubygems.org"
 # metadata on the gem
 gemspec
 
-# Use local gran gem during development
+# Use local gran gem during development and CI
 gem "gran", path: "../gran"
 
 group :development, :test do
