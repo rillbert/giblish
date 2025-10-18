@@ -2,29 +2,32 @@ name: Giblish CI checks
 
 on:
   push:
-    branches: [personal/rillbert/*, main]
+    branches: [ personal/rillbert/*, main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version: ["3.3", "3.4"]
-
+        ruby-version: [ "3.3", "3.4" ]
+    defaults:
+      run:
+        working-directory: ./giblish
     steps:
-      - name: Install binutils
-        run: |
-          sudo apt -y install binutils
-      - name: Install needed packages
-        run: |
-          sudo apt-get -y install libpango1.0-dev graphviz libwebp-dev libzstd-dev
-      - name: Checkout Giblish
-        uses: actions/checkout@v3
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-      - name: Run tests
-        run: |
-          bundle exec rake
+    - name: Install binutils
+      run: |
+        sudo apt -y install binutils
+    - name: Install needed packages
+      run: |
+        sudo apt-get -y install libpango1.0-dev graphviz libwebp-dev libzstd-dev
+    - name: Checkout Giblish
+      uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        entrypoint: ./giblish
+        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: Run tests
+      run: |
+        bundle exec rake
