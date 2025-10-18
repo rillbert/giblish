@@ -74,8 +74,10 @@ From top to bottom:
   - private instance methods
 
 - **Documentation**:
+  - YARD is used to document classes and methods
   - Document all public classes and methods, include the types of arguments for methods
-  - Use self-documenting variable names
+  - **ALWAYS** use correct type hints for method parameters and return values when updating/adding code
+  - solargraph is used to provide IDE integration with regards to intellisense, jump-to-types etc
 
 ### 3.2 Coding patterns and guidelines
 
