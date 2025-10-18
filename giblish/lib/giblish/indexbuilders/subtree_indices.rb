@@ -76,11 +76,9 @@ module Giblish
 
         #{"Purpose::\n#{node_data.purpose_str}" unless node_data.purpose_str.to_s.empty?}
 
-        #{if node_data.stderr.empty?
-            ""
-          else
+        #{unless node_data.stderr.empty?
             "Conversion issues::\n"\
-            "#{node_data.stderr.gsub(/^/, " * ")}"
+              "#{node_data.stderr.gsub(/^/, " * ")}"
           end
         }
 

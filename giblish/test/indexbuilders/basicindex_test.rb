@@ -121,14 +121,14 @@ module Giblish
         tc.run
 
         # filter out the 'index.html' files in a new tree
-        it = tc.dst_tree.match(/.*index.html$/)
+        index_tree = tc.dst_tree.match(/.*index.html$/)
 
         # assert that there now are 2 index files under "dst"
-        assert_equal(2, it.leave_pathnames.count)
+        assert_equal(2, index_tree.leave_pathnames.count)
 
         # assert that the css link is relative to the specific
         # css file (../web_assets/css/giblish.css)
-        tmp_docs.get_html_dom(it) do |n, doc_dom|
+        tmp_docs.get_html_dom(index_tree) do |n, doc_dom|
           css_links = doc_dom.xpath("html/head/link")
           assert_equal 2, css_links.count
 
@@ -139,7 +139,7 @@ module Giblish
             assert_equal "stylesheet", csslink.get("rel")
 
             # get the expected relative path from the top dst dir
-            rp = it.pathname.relative_path_from(n.pathname.dirname) / css_path
+            rp = index_tree.pathname.relative_path_from(n.pathname.dirname) / css_path
 
             assert_equal rp.to_s,
               csslink.get("href")
@@ -179,9 +179,9 @@ module Giblish
         tc.run
 
         # filter out the 'index.pdf' files in a new tree
-        it = tc.dst_tree.match(/.*index.pdf$/)
+        index_tree = tc.dst_tree.match(/.*index.pdf$/)
 
-        assert_equal(2, it.leave_pathnames.count)
+        assert_equal(2, index_tree.leave_pathnames.count)
       end
     end
   end

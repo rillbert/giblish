@@ -117,7 +117,7 @@ module Giblish
         origin.add_path(p, d)
       }
       copy = origin.dup
-      assert(copy.object_id != origin.object_id)
+      assert(!copy.equal?(origin))
       assert_equal(origin.count, copy.count)
 
       copy.traverse_preorder do |l, n|
@@ -128,7 +128,7 @@ module Giblish
 
         origin_node = origin.node(n.pathname, from_root: true)
 
-        assert(origin_node.object_id != n.object_id)
+        assert(!origin_node.equal?(n))
         assert(origin_node.data.equal?(n.data)) unless origin_node.data.nil?
         assert_equal(origin_node.segment, n.segment)
         assert_equal(origin_node.data, n.data)
@@ -144,7 +144,7 @@ module Giblish
         origin.add_path(p, d)
       }
       copy = origin.dup
-      assert(copy.object_id != origin.object_id)
+      assert(!copy.equal?(origin))
 
       copy.traverse_preorder do |l, n|
         unless n.leaf?
@@ -154,7 +154,7 @@ module Giblish
 
         origin_node = origin.node(n.pathname, from_root: true)
 
-        assert(origin_node.object_id != n.object_id)
+        assert(!origin_node.equal?(n))
         assert(origin_node.data.equal?(n.data)) unless origin_node.data.nil?
         assert_equal(origin_node.segment, n.segment)
         assert_equal(origin_node.data, n.data)

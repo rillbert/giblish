@@ -27,7 +27,7 @@ module Giblish
       raise ArgumentError, "The path: #{cmd_opts.srcdir} is not within a git repo!" if @repo_root.nil?
 
       @local_only = cmd_opts.local_only
-      @abort_on_error = cmd_opts.abort_on_error.nil? ? true : cmd_opts.abort_on_error
+      @abort_on_error = cmd_opts.abort_on_error.nil? || cmd_opts.abort_on_error
 
       @git_repo = init_git_repo(@repo_root, @local_only)
       @branches = select_user_branches(cmd_opts.branch_regex, @local_only)
@@ -76,7 +76,8 @@ module Giblish
 
       # merge branches with their upstream at origin unless
       # 'only local'
-      unless (treeish.respond_to?(:tag?) && treeish.tag?) || @local_only
+      is_tag = treeish.respond_to?(:tag?) && treeish.tag?
+      if !is_tag && !@local_only
         # this is a branch, make sure it is up-to-date
         Giblog.logger.info { "Merging with origin/#{treeish.name}" }
         @git_repo.merge "origin/#{treeish.name}"

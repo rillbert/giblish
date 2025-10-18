@@ -201,8 +201,8 @@ module Giblish
           tc.run
 
           # assert that there now are 3 html files under "dst/<branch_name>"
-          it = tc.dst_tree.match(/index.html$/).node(branch_dst, from_root: true)
-          assert_equal(3, it.leave_pathnames.count)
+          index_tree = tc.dst_tree.match(/index.html$/).node(branch_dst, from_root: true)
+          assert_equal(3, index_tree.leave_pathnames.count)
         end
       end
     end
