@@ -3,14 +3,15 @@
 require_relative "lib/gran/version"
 
 Gem::Specification.new do |spec|
+  spec.required_ruby_version = ">= 3.3.0"
   spec.name = "gran"
   spec.version = Gran::VERSION
   spec.authors = ["Anders Rillbert"]
   spec.email = ["anders.rillbert@kutso.se"]
 
-  spec.summary = "Provides utilities for working with trees of file paths"
-  spec.description = "Provides utilities for working with trees of file paths"
-  spec.homepage = "https://github.com/rillbert/giblish"
+  spec.summary = "Provides utility classes for working with trees of file paths"
+  spec.description = "Provides classes for creatting and transforming trees of PathName nodes"
+  spec.homepage = "https://github.com/rillbert/giblish/tree/main/gran"
   spec.license = "MIT"
 
   spec.metadata = {

@@ -6,6 +6,7 @@ end
 
 Gem::Specification.new do |spec|
   spec.name = "giblish"
+  spec.required_ruby_version = ">= 3.3"
   spec.version = Giblish::VERSION
   spec.summary = "A tool for publishing asciidoc docs stored in git repos"
   spec.description = <<~EOF
@@ -49,12 +50,12 @@ Gem::Specification.new do |spec|
   # and ruby 3.1
   # sorbet-runtime
   spec.add_runtime_dependency "gran", "~> 0.1"
-  spec.add_runtime_dependency "matrix", "~>0.4"
+  #  spec.add_runtime_dependency "matrix", "~>0.4"
   spec.add_runtime_dependency "warning", "~>1.0"
-  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.20"
-  spec.add_runtime_dependency "asciidoctor-diagram", ["~> 2.0"]
-  spec.add_runtime_dependency "asciidoctor-pdf", "~> 2.0"
-  spec.add_runtime_dependency "git", "~> 1.0"
-  spec.add_runtime_dependency "rouge", "~> 3.0"
-  spec.add_runtime_dependency "prawn-svg", "~> 0.32.0"
+  spec.add_runtime_dependency "asciidoctor", "~>2.0", ">= 2.0.25"
+  spec.add_runtime_dependency "asciidoctor-diagram", ["~> 3.0"]
+  spec.add_runtime_dependency "asciidoctor-pdf", "~> 2.3"
+  spec.add_runtime_dependency "git", "~> 4.0"
+  spec.add_runtime_dependency "rouge", "~> 4.6"
+  spec.add_runtime_dependency "prawn-svg", "~> 0.34"
 end
