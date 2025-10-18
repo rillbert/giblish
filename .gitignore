@@ -5,6 +5,8 @@
 *.gem
 *.rbc
 
+**/.bundle/
+
 /.config
 /coverage/
 /InstalledFiles
@@ -16,6 +18,10 @@
 /test/tmp/
 /test/version_tmp/
 /tmp/
+
+# personal notes
+claude_notes.txt
+*.swp
 
 # Used by dotenv library to load environment variables.
 # .env

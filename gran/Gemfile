@@ -1,0 +1,18 @@
+source "https://rubygems.org"
+
+# Use the gemspec for all runtime dependencies and other
+# metadata on the gem
+gemspec
+
+group :development, :test do
+  gem "logging", "~> 2.4"
+  gem "yard", "~> 0.9"
+  gem "ruby-lsp", "~> 0.18"
+  gem "standard", "~> 1.0"
+  gem "rake", "~> 13.0"
+end
+
+group :test do
+  gem "minitest", "~> 5.0"
+  gem "minitest-hooks", "~> 1.5"
+end
