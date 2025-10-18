@@ -23,9 +23,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
-        entrypoint: ./giblish
+        working-directory: ./giblish
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Run tests
-      run: |
-        bundle exec rake
+      run: bundle exec rake
         working-directory: ./giblish
