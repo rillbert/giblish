@@ -35,10 +35,19 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-    - name: Install binutils
-      run: sudo apt -y install binutils
-    - name: Install needed packages
-      run: sudo apt-get -y install libpango1.0-dev graphviz libwebp-dev libzstd-dev
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install \
+          binutils \
+          graphviz \
+          libpango1.0-dev \
+          libgdk-pixbuf2.0-dev \
+          libxml2-dev \
+          libcairo2-dev \
+          libwebp-dev \
+          libzstd-dev \
+          cmake
     - name: Set up Ruby and install dependencies
       uses: ruby/setup-ruby@v1
       with:
