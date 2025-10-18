@@ -10,9 +10,6 @@ jobs:
     strategy:
       matrix:
         ruby-version: [ "3.3", "3.4" ]
-    defaults:
-      run:
-        working-directory: ./giblish
     steps:
     - name: Install binutils
       run: |
@@ -31,3 +28,4 @@ jobs:
     - name: Run tests
       run: |
         bundle exec rake
+        working-directory: ./giblish
