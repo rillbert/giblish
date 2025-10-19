@@ -5,17 +5,14 @@ require "pathname"
 require "optparse"
 require "fileutils"
 
-# Release automation script for gran and giblish gems
-class ReleaseManager
-  REPO_ROOT = Pathname.new(__dir__).parent
-  GRAN_DIR = REPO_ROOT / "gran"
-  GIBLISH_DIR = REPO_ROOT / "giblish"
+# Release automation script for giblish gem
+class GiblishReleaseManager
+  GIBLISH_DIR = Pathname.new(__dir__).parent
 
-  VALID_PROJECTS = %w[gran giblish both].freeze
   VALID_COMMANDS = %w[prepare publish all].freeze
   VALID_VERSION_TYPES = %w[major minor patch].freeze
 
-  attr_reader :project, :command, :version_type, :dry_run, :yes, :specific_version
+  attr_reader :command, :version_type, :dry_run, :yes, :specific_version
 
   def initialize(args)
     @dry_run = false
@@ -26,12 +23,11 @@ class ReleaseManager
   end
 
   def run
-    puts "\n=== Release Manager ==="
-    puts "Project: #{project}"
+    puts "\n=== Giblish Release Manager ==="
     puts "Command: #{command}"
     puts "Version: #{version_type || specific_version}"
     puts "Dry-run: #{dry_run}"
-    puts "========================\n\n"
+    puts "================================\n\n"
 
     case command
     when "prepare"
@@ -48,9 +44,8 @@ class ReleaseManager
 
   def parse_options(args)
     OptionParser.new do |opts|
-      opts.banner = "Usage: release.rb [options] PROJECT COMMAND [VERSION]"
+      opts.banner = "Usage: release.rb [options] COMMAND [VERSION]"
       opts.separator ""
-      opts.separator "PROJECT: #{VALID_PROJECTS.join(", ")}"
       opts.separator "COMMAND: #{VALID_COMMANDS.join(", ")}"
       opts.separator "VERSION: #{VALID_VERSION_TYPES.join(", ")} or specific version (e.g., 0.2.0)"
       opts.separator ""
@@ -70,28 +65,22 @@ class ReleaseManager
       end
     end.parse!(args)
 
-    @project = args[0]
-    @command = args[1]
+    @command = args[0]
 
     # Parse version argument
-    if args[2]
-      if VALID_VERSION_TYPES.include?(args[2])
-        @version_type = args[2]
-      elsif args[2] =~ /^\d+\.\d+\.\d+$/
-        @specific_version = args[2]
+    if args[1]
+      if VALID_VERSION_TYPES.include?(args[1])
+        @version_type = args[1]
+      elsif args[1] =~ /^\d+\.\d+\.\d+$/
+        @specific_version = args[1]
       else
-        puts "ERROR: Invalid version '#{args[2]}'. Must be #{VALID_VERSION_TYPES.join(", ")} or a version number (e.g., 0.2.0)"
+        puts "ERROR: Invalid version '#{args[1]}'. Must be #{VALID_VERSION_TYPES.join(", ")} or a version number (e.g., 0.2.0)"
         exit 1
       end
     end
   end
 
   def validate_args
-    unless VALID_PROJECTS.include?(project)
-      puts "ERROR: Invalid project '#{project}'. Must be one of: #{VALID_PROJECTS.join(", ")}"
-      exit 1
-    end
-
     unless VALID_COMMANDS.include?(command)
       puts "ERROR: Invalid command '#{command}'. Must be one of: #{VALID_COMMANDS.join(", ")}"
       exit 1
@@ -104,74 +93,30 @@ class ReleaseManager
   end
 
   def prepare_release
-    if project == "both"
-      prepare_gran
-      prepare_giblish
-    elsif project == "gran"
-      prepare_gran
-    else
-      prepare_giblish
-    end
-  end
-
-  def publish_release
-    if project == "both"
-      publish_gran
-      wait_for_rubygems("gran")
-      publish_giblish
-    elsif project == "gran"
-      publish_gran
-    else
-      publish_giblish
-    end
-  end
-
-  def prepare_gran
-    puts "\n📦 Preparing gran for release...\n"
-    with_dir(GRAN_DIR) do
-      run_safety_checks("gran")
-      new_version = bump_version(GRAN_DIR / "lib/gran/version.rb")
-      update_changelog("gran", new_version)
-      build_gem("gran")
-      create_git_commit_and_tag("gran", new_version)
-      success("Gran prepared for release: v#{new_version}")
-    end
-  end
-
-  def prepare_giblish
     puts "\n📦 Preparing giblish for release...\n"
     with_dir(GIBLISH_DIR) do
-      run_safety_checks("giblish")
+      run_safety_checks
       check_gran_dependency
       new_version = bump_version(GIBLISH_DIR / "lib/giblish/version.rb")
-      update_changelog("giblish", new_version)
-      build_gem("giblish")
-      create_git_commit_and_tag("giblish", new_version)
+      update_changelog(new_version)
+      build_gem
+      create_git_commit_and_tag(new_version)
       success("Giblish prepared for release: v#{new_version}")
     end
   end
 
-  def publish_gran
-    puts "\n🚀 Publishing gran to RubyGems...\n"
-    with_dir(GRAN_DIR) do
-      push_to_github("gran")
-      publish_gem("gran")
-      success("Gran published!")
-    end
-  end
-
-  def publish_giblish
+  def publish_release
     puts "\n🚀 Publishing giblish to RubyGems...\n"
     with_dir(GIBLISH_DIR) do
-      push_to_github("giblish")
-      publish_gem("giblish")
+      push_to_github
+      publish_gem
       success("Giblish published!")
     end
   end
 
   # Safety Checks
-  def run_safety_checks(project_name)
-    step("Running safety checks for #{project_name}")
+  def run_safety_checks
+    step("Running safety checks")
     check_git_status
     check_on_main_branch
     run_tests
@@ -217,25 +162,13 @@ class ReleaseManager
       latest_gran = get_latest_rubygems_version("gran")
 
       if latest_gran && Gem::Version.new(latest_gran) > Gem::Version.new(current_dep)
-        puts "⚠️  Gran dependency in giblish.gemspec is #{current_dep}, but #{latest_gran} is available on RubyGems"
-        if confirm("Update gran dependency to ~> #{latest_gran}?")
-          update_gran_dependency(latest_gran)
+        puts "⚠️  Gran dependency in giblish.gemspec is ~> #{current_dep}"
+        puts "    Latest gran on RubyGems is #{latest_gran}"
+        puts "    Consider updating the dependency before releasing."
+        unless confirm("Continue with current gran dependency?")
+          error("Aborted. Update gran dependency first.")
         end
       end
-    end
-  end
-
-  def update_gran_dependency(version)
-    gemspec_path = GIBLISH_DIR / "giblish.gemspec"
-    content = File.read(gemspec_path)
-    content.gsub!(/(add_runtime_dependency\s+"gran",\s+)"~>\s*[\d.]+"/,
-                  "\\1\"~> #{version}\"")
-
-    if dry_run
-      puts "[DRY-RUN] Would update gran dependency to ~> #{version}"
-    else
-      File.write(gemspec_path, content)
-      puts "✓ Updated gran dependency to ~> #{version}"
     end
   end
 
@@ -292,29 +225,29 @@ class ReleaseManager
   end
 
   # Changelog
-  def update_changelog(project, version)
+  def update_changelog(version)
     step("Updating CHANGELOG")
     puts "⚠️  Please update the CHANGELOG manually with changes for v#{version}"
     puts "Press Enter when done..."
-    gets unless yes
+    $stdin.gets unless yes
   end
 
   # Gem Operations
-  def build_gem(project)
-    step("Building #{project} gem")
+  def build_gem
+    step("Building giblish gem")
 
     if dry_run
-      puts "[DRY-RUN] Would run: gem build #{project}.gemspec"
+      puts "[DRY-RUN] Would run: gem build giblish.gemspec"
     else
-      unless system("gem build #{project}.gemspec")
+      unless system("gem build giblish.gemspec")
         error("Failed to build gem")
       end
       puts "✓ Gem built successfully"
     end
   end
 
-  def publish_gem(project)
-    gem_file = Dir.glob("#{project}-*.gem").max_by { |f| File.mtime(f) }
+  def publish_gem
+    gem_file = Dir.glob("giblish-*.gem").max_by { |f| File.mtime(f) }
 
     unless gem_file
       error("No gem file found to publish")
@@ -337,9 +270,9 @@ class ReleaseManager
   end
 
   # Git Operations
-  def create_git_commit_and_tag(project, version)
-    tag_name = "#{project}-v#{version}"
-    commit_message = "Release #{project} v#{version}"
+  def create_git_commit_and_tag(version)
+    tag_name = "giblish-v#{version}"
+    commit_message = "Release giblish v#{version}"
 
     step("Creating git commit and tag")
 
@@ -360,7 +293,7 @@ class ReleaseManager
     end
   end
 
-  def push_to_github(project)
+  def push_to_github
     step("Pushing to GitHub")
 
     unless confirm("Push commits and tags to GitHub?")
@@ -383,14 +316,6 @@ class ReleaseManager
   end
 
   # Helpers
-  def wait_for_rubygems(gem_name)
-    return if dry_run
-
-    puts "\n⏳ Waiting for #{gem_name} to appear on RubyGems.org..."
-    puts "Press Enter when #{gem_name} is available on RubyGems.org..."
-    gets unless yes
-  end
-
   def get_latest_rubygems_version(gem_name)
     output = `gem search ^#{gem_name}$ --remote 2>/dev/null`
     if output =~ /#{gem_name}\s+\(([\d.]+)\)/
@@ -409,7 +334,7 @@ class ReleaseManager
   def confirm(message)
     return true if yes
     print "#{message} (y/N): "
-    response = gets.strip.downcase
+    response = $stdin.gets.strip.downcase
     response == "y" || response == "yes"
   end
 
@@ -430,11 +355,11 @@ end
 # Run the script
 if __FILE__ == $0
   if ARGV.empty?
-    puts "Usage: release.rb [options] PROJECT COMMAND [VERSION]"
+    puts "Usage: release.rb [options] COMMAND [VERSION]"
     puts "Run with --help for more information"
     exit 1
   end
 
-  manager = ReleaseManager.new(ARGV)
+  manager = GiblishReleaseManager.new(ARGV)
   manager.run
 end
