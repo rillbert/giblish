@@ -71,7 +71,7 @@ class GiblishReleaseManager
     if args[1]
       if VALID_VERSION_TYPES.include?(args[1])
         @version_type = args[1]
-      elsif args[1] =~ /^\d+\.\d+\.\d+$/
+      elsif args[1].match?(/^\d+\.\d+\.\d+$/)
         @specific_version = args[1]
       else
         puts "ERROR: Invalid version '#{args[1]}'. Must be #{VALID_VERSION_TYPES.join(", ")} or a version number (e.g., 0.2.0)"
@@ -214,7 +214,7 @@ class GiblishReleaseManager
   def update_version_file(version_file, old_version, new_version)
     content = File.read(version_file)
     content.gsub!(/VERSION\s*=\s*"#{Regexp.escape(old_version)}"/,
-                  "VERSION = \"#{new_version}\"")
+      "VERSION = \"#{new_version}\"")
 
     if dry_run
       puts "[DRY-RUN] Would update #{version_file.basename} to #{new_version}"
