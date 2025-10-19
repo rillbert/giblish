@@ -224,7 +224,7 @@ module Giblish
           topdir,
           "giblish",
           nil,
-          "docs",
+          "giblish/docs",
           dstdir,
           Giblog.logger
         )
