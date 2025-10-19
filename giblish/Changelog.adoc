@@ -7,6 +7,11 @@
  ** write instructions for github webhook triggered generation
  * Update the default css for giblish html generation.
 
+== v3.0.1
+
+ * add release scripts
+ * fix some linting issues
+
 == v3.0.0
 
  * break out the pathtree operations into a separate gem (gran)
