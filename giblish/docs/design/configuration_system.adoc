@@ -1,0 +1,440 @@
+= Giblish Configuration System Design
+:docid: G-CFG-001
+:toc: left
+:toclevels: 3
+:numbered:
+
+== Overview
+
+This document describes a proposed configuration system for giblish that enables:
+
+* File-based configuration instead of (or in addition to) CLI flags
+* Named style profiles that can be shared across projects
+* Multiple conversion jobs in a single configuration
+* Hierarchical configuration discovery
+
+== Design Goals
+
+. **Ease of use** - Simple YAML format, minimal boilerplate
+. **Portability** - Profiles can be shared across repos/machines
+. **Transparency** - Clear output showing which configs are used
+. **Flexibility** - Works with git repos and arbitrary source trees
+
+== Directory Structure
+
+Configuration files live in a `.giblish/` directory:
+
+[source]
+----
+repo/
+├── .giblish/
+│   ├── profiles.yml    # Style/output profiles
+│   └── jobs.yml        # Build job definitions
+├── docs/
+│   ├── api/
+│   └── public/
+└── src/
+----
+
+Personal/global profiles can also live in the user's home directory:
+
+[source]
+----
+~/.giblish/
+└── profiles.yml        # Personal profiles available everywhere
+----
+
+== File Formats
+
+=== Profiles File (`profiles.yml`)
+
+Profiles define *what* a conversion looks like - format, styling, attributes, etc.
+A profile is a named collection of settings that can be referenced by jobs.
+
+==== Schema
+
+[source,yaml]
+----
+profiles:
+  <profile-name>:
+    # Output format (optional, default: html)
+    format: html | pdf
+
+    # Styling (optional)
+    resource_dir: <path>          # Path to resources (fonts, themes, css)
+    style: <name>                 # Style name (css for html, yml for pdf)
+    server_css_path: <url-path>   # Absolute CSS path for server deployment
+
+    # Document attributes (optional)
+    attributes:
+      <key>: <value>
+      ...
+
+    # Processing options (optional)
+    resolve_docid: true | false   # Enable docid resolution
+    make_searchable: true | false # Enable search indexing (html only)
+    search_action_path: <path>    # URL path for search requests
+
+    # Index generation (optional)
+    no_index: true | false        # Suppress index generation
+    index_basename: <name>        # Base name for index files
+----
+
+==== Example: Corporate Profiles
+
+[source,yaml]
+----
+# .giblish/profiles.yml
+
+profiles:
+  corporate-html:
+    format: html
+    resource_dir: /shared/company-styles
+    style: corporate-2024
+    attributes:
+      toc: left
+      icons: font
+      source-highlighter: rouge
+      company-name: Acme Corp
+    resolve_docid: true
+
+  corporate-pdf:
+    format: pdf
+    resource_dir: /shared/company-styles
+    style: corporate-2024
+    attributes:
+      toc: preamble
+      icons: font
+      company-name: Acme Corp
+
+  technical-dark:
+    format: html
+    resource_dir: ./resources
+    style: dark-mono
+    attributes:
+      source-highlighter: rouge
+      rouge-style: monokai
+----
+
+==== Example: Personal Profiles
+
+[source,yaml]
+----
+# ~/.giblish/profiles.yml
+
+profiles:
+  my-draft:
+    format: html
+    attributes:
+      toc: left
+      draft: true
+      watermark: DRAFT
+
+  my-presentation:
+    format: pdf
+    resource_dir: ~/styles/presentation
+    style: slides
+----
+
+=== Jobs File (`jobs.yml`)
+
+Jobs define *what* to build - source directories, destinations, and which profile to use.
+Each job represents one giblish conversion run.
+
+==== Schema
+
+[source,yaml]
+----
+# Default profile for all jobs (optional)
+default_profile: <profile-name>
+
+# Default settings applied to all jobs (optional)
+defaults:
+  log_level: debug | info | warn | error | fatal
+  abort_on_error: true | false
+  copy_asset_folders: <regex>
+
+jobs:
+  - name: <job-name>              # Descriptive name (required)
+    srcdir: <path>                # Source directory (required)
+    dstdir: <path>                # Destination directory (required)
+    profile: <profile-name>       # Profile to use (optional if default set)
+
+    # File selection (optional)
+    include: <regex>              # Include files matching regex
+    exclude: <regex>              # Exclude files matching regex
+    copy_asset_folders: <regex>   # Copy matching asset directories
+
+    # Git options (optional)
+    git_branches: <regex>         # Build matching branches
+    git_tags: <regex>             # Build matching tags
+    local_only: true | false      # Don't fetch from remotes
+
+    # Override profile settings (optional)
+    attributes:                   # Additional/override attributes
+      <key>: <value>
+    log_level: <level>
+    abort_on_error: true | false
+----
+
+==== Example: Simple Single Job
+
+[source,yaml]
+----
+# .giblish/jobs.yml
+
+default_profile: corporate-html
+
+jobs:
+  - name: documentation
+    srcdir: docs
+    dstdir: build/html
+----
+
+==== Example: Multiple Jobs with Different Profiles
+
+[source,yaml]
+----
+# .giblish/jobs.yml
+
+defaults:
+  log_level: info
+  abort_on_error: false
+
+jobs:
+  - name: public-docs
+    srcdir: docs/public
+    dstdir: build/public
+    profile: corporate-html
+    copy_asset_folders: "_assets$"
+
+  - name: api-reference
+    srcdir: docs/api
+    dstdir: build/api
+    profile: technical-dark
+    include: ".*_api\\.adoc$"
+
+  - name: pdf-export
+    srcdir: docs/public
+    dstdir: build/pdf
+    profile: corporate-pdf
+----
+
+==== Example: Git Multi-Branch Build
+
+[source,yaml]
+----
+# .giblish/jobs.yml
+
+jobs:
+  - name: release-branches
+    srcdir: docs
+    dstdir: /var/www/docs
+    profile: corporate-html
+    git_branches: "^(main|release/.*)$"
+    make_searchable: true
+    search_action_path: /api/search
+----
+
+==== Example: Pattern-Based File Selection
+
+[source,yaml]
+----
+# .giblish/jobs.yml
+
+jobs:
+  # All files starting with "spec_"
+  - name: specifications
+    srcdir: docs
+    dstdir: build/specs
+    profile: formal-document
+    include: ".*/spec_.*\\.adoc$"
+
+  # All files ending with "_guide"
+  - name: user-guides
+    srcdir: docs
+    dstdir: build/guides
+    profile: user-friendly
+    include: ".*_guide\\.adoc$"
+
+  # Everything except drafts
+  - name: published
+    srcdir: docs
+    dstdir: build/public
+    profile: corporate-html
+    exclude: ".*_draft\\.adoc$"
+----
+
+== Configuration Resolution
+
+=== Traversal Rules
+
+When giblish runs, it discovers configuration by traversing upward from the source directory:
+
+[source]
+----
+Start from: srcdir (the directory being converted)
+Walk up to: user's home directory (~)
+----
+
+==== Jobs Resolution
+
+**Nearest wins** - Use the first `jobs.yml` found walking upward.
+
+[source]
+----
+/home/user/myrepo/docs/api/   ← srcdir
+/home/user/myrepo/docs/.giblish/jobs.yml    ← if exists, use this
+/home/user/myrepo/.giblish/jobs.yml         ← else try this
+/home/user/.giblish/jobs.yml                ← else try this
+----
+
+==== Profiles Resolution
+
+**Layered** - Profiles are collected from nearest `.giblish/` AND `~/.giblish/`:
+
+[source]
+----
+1. Nearest .giblish/profiles.yml  (highest priority)
+2. ~/.giblish/profiles.yml        (personal profiles)
+----
+
+If the same profile name exists in both files, the nearest one wins.
+
+=== Resolution Example
+
+Given this structure:
+[source]
+----
+~/.giblish/
+└── profiles.yml          # defines: my-draft, my-presentation
+
+/home/user/myrepo/
+├── .giblish/
+│   ├── profiles.yml      # defines: corporate-html, technical-dark
+│   └── jobs.yml          # references: corporate-html, my-draft
+└── docs/
+    └── api/
+----
+
+Running `giblish docs/api build/` resolves:
+
+* Jobs: `/home/user/myrepo/.giblish/jobs.yml`
+* Profiles available:
+** `corporate-html` (from repo)
+** `technical-dark` (from repo)
+** `my-draft` (from home)
+** `my-presentation` (from home)
+
+== CLI Integration
+
+=== Running with Configuration
+
+[source,bash]
+----
+# Use discovered configuration (traversal from srcdir)
+giblish docs/ build/
+
+# Run a specific job by name
+giblish --job api-reference
+
+# Run all jobs defined in jobs.yml
+giblish --all-jobs
+
+# Override profile for this run
+giblish --profile my-draft docs/ build/
+----
+
+=== Backward Compatibility
+
+Existing CLI usage continues to work:
+
+[source,bash]
+----
+# Traditional CLI flags still work
+giblish -f pdf -r ./resources -s mystyle docs/ build/
+
+# CLI flags override config file settings
+giblish --profile corporate-html -a draft=true docs/ build/
+----
+
+== Output and Transparency
+
+Giblish should clearly report which configuration it's using:
+
+[source]
+----
+$ giblish docs/ build/
+
+Configuration:
+  Jobs:     /home/user/myrepo/.giblish/jobs.yml
+  Profiles: /home/user/myrepo/.giblish/profiles.yml
+            /home/user/.giblish/profiles.yml (2 personal profiles)
+
+Running job 'public-docs'
+  Profile:  corporate-html
+  Source:   docs/public
+  Dest:     build/public
+  Format:   html
+  Style:    corporate-2024
+  Converting 23 documents...
+  ✓ Completed (23 converted, 0 errors)
+
+Running job 'api-reference'
+  Profile:  technical-dark
+  Source:   docs/api
+  Dest:     build/api
+  ...
+----
+
+=== Warnings and Diagnostics
+
+[source]
+----
+Warning: Profile 'corporate' defined in multiple locations:
+  - /home/user/myrepo/.giblish/profiles.yml (using this)
+  - /home/user/.giblish/profiles.yml (ignored)
+
+Error: Job 'api-docs' references unknown profile 'undefined-profile'
+  Available profiles: corporate-html, technical-dark, my-draft
+----
+
+== Summary
+
+[cols="1,2"]
+|===
+| Aspect | Decision
+
+| Format
+| YAML
+
+| Directory
+| `.giblish/` in repo, `~/.giblish/` for personal
+
+| Files
+| `profiles.yml` (styles), `jobs.yml` (build definitions)
+
+| Jobs resolution
+| Nearest wins (no inheritance)
+
+| Profiles resolution
+| Layered (nearest + home, nearest wins on conflict)
+
+| Traversal boundary
+| User's home directory
+
+| Transparency
+| Verbose output showing resolved paths and profiles
+|===
+
+== Future Considerations
+
+These features are explicitly deferred for simplicity:
+
+* Profile inheritance/extension (`extends: base-profile`)
+* Explicit config path override (`--config /path/to/.giblish/`)
+* Stop markers (like EditorConfig's `root = true`)
+* Config merging strategies
+* Remote profile URLs
+
+They can be added in future versions if user demand warrants.
